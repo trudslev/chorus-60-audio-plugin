@@ -1,0 +1,8 @@
+build/
+build-*/
+Builds/
+cmake-build-*/
+.xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.DS_Store
