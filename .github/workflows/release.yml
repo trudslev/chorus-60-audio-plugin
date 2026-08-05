@@ -137,9 +137,14 @@ jobs:
           done
           exit $fail
 
-      # tar, not zip. Framework-style macOS bundles (.component, .vst3, .app) contain internal
-      # symlinks; plain zip resolves them into duplicate copies, yielding bundles that a host will
-      # refuse to load. The verify step below asserts they actually survived rather than assuming it.
+      # tar, not zip: zip does not reliably preserve the Unix executable bit or extended attributes,
+      # and a bundle whose Mach-O comes back without +x simply will not load.
+      #
+      # An earlier version of the check below asserted the archive contained symlinks. That was
+      # wrong and failed every run: *framework* bundles carry symlinks (Versions/Current and
+      # friends), but JUCE's .vst3/.component/.app are flat Contents/ trees with none at all. The
+      # replacement asserts the property actually worth guarding - that what comes back out of the
+      # archive is still a structurally valid, executable, universal bundle.
       - name: Archive bundles
         run: |
           set -euo pipefail
@@ -147,15 +152,36 @@ jobs:
           tar czf "$NAME" -C "$STAGE" .
           echo "ARCHIVE=$NAME" >> "$GITHUB_ENV"
 
-      - name: Verify symlinks survived archiving
+      - name: Verify the archive round-trips to a loadable bundle
         run: |
           set -euo pipefail
-          n=$(tar tvzf "$ARCHIVE" | grep -c '^l' || true)
-          echo "symlink entries preserved: ${n}"
-          if [ "$n" -eq 0 ]; then
-            echo "::error::No symlinks in ${ARCHIVE} - macOS bundles should contain them. The archive step has flattened the bundle structure."
-            exit 1
-          fi
+          RT="$RUNNER_TEMP/roundtrip"
+          rm -rf "$RT"; mkdir -p "$RT"
+          tar xzf "$ARCHIVE" -C "$RT"
+          fail=0
+          for rel in "VST3/${PRODUCT_NAME}.vst3" \
+                     "AU/${PRODUCT_NAME}.component" \
+                     "Standalone/${PRODUCT_NAME}.app"; do
+            macho="$RT/$rel/Contents/MacOS/${PRODUCT_NAME}"
+            if [ ! -f "$RT/$rel/Contents/Info.plist" ]; then
+              echo "::error::${rel}: Contents/Info.plist missing after extraction"
+              fail=1
+            fi
+            if [ ! -x "$macho" ]; then
+              echo "::error::${rel}: Contents/MacOS/${PRODUCT_NAME} missing or not executable after extraction"
+              fail=1
+              continue
+            fi
+            archs=$(lipo -info "$macho" | sed 's/.*: //')
+            for want in arm64 x86_64; do
+              case " ${archs} " in
+                *" ${want} "*) ;;
+                *) echo "::error::${rel}: lost the ${want} slice in archiving (found: ${archs})"; fail=1 ;;
+              esac
+            done
+            echo "  ok  ${rel}  (${archs})"
+          done
+          exit $fail
 
       - uses: actions/upload-artifact@v4
         with:
