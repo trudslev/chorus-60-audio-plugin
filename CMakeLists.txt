@@ -3,15 +3,20 @@ cmake_minimum_required(VERSION 3.24)
 # sources, and Xcode/Visual Studio tolerate that without an explicit enable_language(C), but
 # Linux's single-config Makefiles/Ninja generator does not - it fails at CMake's generate step
 # with "CMAKE_C_COMPILE_OBJECT not set" if C was never enabled at the top level.
+# These MUST come before project(): project() creates these cache entries itself, after which a
+# plain set(... CACHE ...) is a silent no-op. Sitting below project() they had never taken effect -
+# builds inherited the host architecture and the default SDK deployment target instead, which only
+# surfaced when a CI-published .pkg turned out to contain an arm64-only binary.
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Universal: Apple Silicon + Intel")
+endif()
+
 project(Chorus60 VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "")
-    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
-endif()
 
 include(FetchContent)
 FetchContent_Declare(JUCE
