@@ -1,10 +1,10 @@
-# Chorus-60
+# CHORUS-60
 
 A Juno-60/JN-80-style BBD ensemble chorus plugin (AU/VST3/Standalone on macOS; VST3/Standalone on
 Windows/Linux), built with JUCE 8. Third casting under the [Neon Foundry](../BRAND.md) umbrella,
 sibling to [TapeRot](../taperot/) and [Gatecrasher](../gatecrasher/).
 
-Chorus-60 emulates a real bucket-brigade-delay ensemble chorus: two independent modulation engines
+CHORUS-60 emulates a real bucket-brigade-delay ensemble chorus: two independent modulation engines
 (each a rounded/asymmetric LFO driving a short variable delay tap, never a pure sine) read from a
 shared BBD delay line with a fixed reconstruction-filter rolloff, decorrelated across L/R for real
 stereo width rather than panning, then given the small nonlinear "character" a real BBD circuit has

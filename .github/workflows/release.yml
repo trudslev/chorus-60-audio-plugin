@@ -1,0 +1,319 @@
+name: Release
+
+# Tag-triggered release build for CHORUS-60.
+#
+# Publishes RAW PLUGIN BUNDLES, not installers. The Neon Foundry suite installer pins a version of
+# each plugin and fetches these archives at build time; per-plugin installers are generated from the
+# same artifacts rather than being built here, so every installer agrees on component identifiers
+# and file ownership by construction instead of by review discipline.
+#
+# To cut a release, bump the project() version in CMakeLists.txt, then:
+#     git tag v0.2.0 && git push origin v0.2.0
+#
+# workflow_dispatch runs everything except the publish step, so the whole pipeline can be verified
+# without minting a tag that has to be deleted again if it fails.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # The three name axes. They are NOT interchangeable, and assuming they are is the single easiest
+  # way to break one of these workflows when copying it to another plugin:
+  #   CMAKE_TARGET  - the CMake target, and therefore the <target>_artefacts/ directory name
+  #   PRODUCT_NAME  - JUCE's PRODUCT_NAME, and therefore the bundle filenames on disk
+  #   TEST_TARGET   - the console-app target holding the DSP suite
+  # They diverge whenever the brand name isn't a legal CMake identifier: CHORUS-60 builds from
+  # target Chorus60 but produces CHORUS-60.vst3.
+  CMAKE_TARGET: Chorus60
+  PRODUCT_NAME: CHORUS-60
+  TEST_TARGET: Chorus60Tests
+
+jobs:
+  version:
+    # Deliberately its own job ahead of the builds: a tag that disagrees with CMakeLists.txt should
+    # fail in about fifteen seconds, not after three full plugin builds have run.
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve and verify version
+        id: v
+        run: |
+          set -euo pipefail
+          # Anchored to the project() line rather than grepping for a bare "VERSION x.y.z": the
+          # loose form would also match cmake_minimum_required(VERSION 3.x.y) the moment anyone
+          # added a patch component there, and would then silently release the wrong number.
+          CMAKE_VERSION=$(grep -oE '^project\([A-Za-z0-9_-]+ VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt \
+                          | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          if [ -z "$CMAKE_VERSION" ]; then
+            echo "::error::Could not parse a version from the project() line in CMakeLists.txt."
+            exit 1
+          fi
+
+          if [ "${GITHUB_REF_TYPE:-}" = tag ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            if [ "$TAG_VERSION" != "$CMAKE_VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} declares ${TAG_VERSION} but CMakeLists.txt declares ${CMAKE_VERSION}. Bump project() or retag - the suite installer pins these by version and cannot tell them apart otherwise."
+              exit 1
+            fi
+            echo "version=${CMAKE_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${CMAKE_VERSION}-dev.${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-macos:
+    needs: version
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Note the absence of -DCMAKE_OSX_ARCHITECTURES. That is deliberate: the architecture list
+      # belongs in CMakeLists.txt (where it must appear *before* project(), or the cache entry
+      # already exists and the set() is a silent no-op). Passing it here would paper over any
+      # regression in that setting - which is precisely how a green run once published an
+      # arm64-only package. The "Verify universal" step below is the real gate.
+      - name: Configure (ad-hoc signing; architectures come from CMakeLists.txt)
+        run: |
+          cmake -B build -G Xcode \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Manual \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="-" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=YES \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=YES
+
+      - name: Build (AU/VST3/Standalone + tests)
+        run: cmake --build build --config Release
+
+      - name: Run DSP test suite
+        run: ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
+
+      - name: Stage raw bundles
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/bundles"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/VST3" "$STAGE/AU" "$STAGE/Standalone"
+          A="build/${CMAKE_TARGET}_artefacts/Release"
+          cp -R "$A/VST3/${PRODUCT_NAME}.vst3"      "$STAGE/VST3/"
+          cp -R "$A/AU/${PRODUCT_NAME}.component"   "$STAGE/AU/"
+          cp -R "$A/Standalone/${PRODUCT_NAME}.app" "$STAGE/Standalone/"
+          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+
+      # An automated gate rather than a manual spot-check. A missing x86_64 slice is invisible
+      # locally, survives a fully green build, and only surfaces when an Intel user reports the
+      # plugin won't load at all - Rosetta does not bridge audio plugins into an arm64 host.
+      - name: Verify universal (arm64 + x86_64)
+        run: |
+          set -euo pipefail
+          fail=0
+          for macho in \
+            "$STAGE/VST3/${PRODUCT_NAME}.vst3/Contents/MacOS/${PRODUCT_NAME}" \
+            "$STAGE/AU/${PRODUCT_NAME}.component/Contents/MacOS/${PRODUCT_NAME}" \
+            "$STAGE/Standalone/${PRODUCT_NAME}.app/Contents/MacOS/${PRODUCT_NAME}"; do
+            rel="${macho#"$STAGE/"}"
+            if [ ! -f "$macho" ]; then
+              echo "::error::Expected Mach-O missing: ${rel}"
+              fail=1
+              continue
+            fi
+            archs=$(lipo -info "$macho" | sed 's/.*: //')
+            for want in arm64 x86_64; do
+              case " ${archs} " in
+                *" ${want} "*) ;;
+                *) echo "::error::${rel} has no ${want} slice (found: ${archs})"; fail=1 ;;
+              esac
+            done
+            echo "  ${archs}  <-  ${rel}"
+          done
+          exit $fail
+
+      # tar, not zip. Framework-style macOS bundles (.component, .vst3, .app) contain internal
+      # symlinks; plain zip resolves them into duplicate copies, yielding bundles that a host will
+      # refuse to load. The verify step below asserts they actually survived rather than assuming it.
+      - name: Archive bundles
+        run: |
+          set -euo pipefail
+          NAME="${PRODUCT_NAME}-${{ needs.version.outputs.version }}-macos-bundles.tar.gz"
+          tar czf "$NAME" -C "$STAGE" .
+          echo "ARCHIVE=$NAME" >> "$GITHUB_ENV"
+
+      - name: Verify symlinks survived archiving
+        run: |
+          set -euo pipefail
+          n=$(tar tvzf "$ARCHIVE" | grep -c '^l' || true)
+          echo "symlink entries preserved: ${n}"
+          if [ "$n" -eq 0 ]; then
+            echo "::error::No symlinks in ${ARCHIVE} - macOS bundles should contain them. The archive step has flattened the bundle structure."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-bundles
+          path: ${{ env.PRODUCT_NAME }}-${{ needs.version.outputs.version }}-macos-bundles.tar.gz
+          retention-days: 14
+
+  build-windows:
+    needs: version
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configure/build/test run in the runner's native pwsh: CMake's Visual Studio generator finds
+      # VS through vswhere.exe internally, which is unreliable when invoked from Git Bash here.
+      #
+      # No explicit -G. Hardcoding "Visual Studio 17 2022" breaks the moment GitHub rolls
+      # windows-latest forward (it has already moved to VS2026); omitting -G lets CMake detect
+      # whatever VS is installed, and -A x64 still applies to that generator.
+      - name: Configure
+        run: cmake -B build -A x64
+
+      - name: Build (VST3/Standalone + tests)
+        run: cmake --build build --config Release
+
+      - name: Run DSP test suite
+        # $(...) rather than bare ${env:X}: the variable is immediately followed by literal text
+        # ("_artefacts"), which PowerShell would otherwise read as part of the variable name.
+        run: '& ".\build\Tests\$($env:TEST_TARGET)_artefacts\Release\$($env:TEST_TARGET).exe"'
+
+      - name: Stage raw bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/bundles"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/VST3" "$STAGE/Standalone"
+          A="build/${CMAKE_TARGET}_artefacts/Release"
+          # No AU on this platform - it is an Apple-only format.
+          cp -R "$A/VST3/${PRODUCT_NAME}.vst3"     "$STAGE/VST3/"
+          cp    "$A/Standalone/${PRODUCT_NAME}.exe" "$STAGE/Standalone/"
+          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+
+      # zip is correct here (unlike macOS): Windows VST3 bundles are plain directories with no
+      # symlinks, and zip is what every Windows consumer expects to be handed.
+      - name: Archive bundles
+        shell: pwsh
+        run: |
+          $name = "${env:PRODUCT_NAME}-${{ needs.version.outputs.version }}-windows-bundles.zip"
+          Compress-Archive -Path "${env:STAGE}\*" -DestinationPath $name
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-bundles
+          path: ${{ env.PRODUCT_NAME }}-${{ needs.version.outputs.version }}-windows-bundles.zip
+          retention-days: 14
+
+  build-linux:
+    needs: version
+    # Pinned to 22.04 rather than ubuntu-latest for an older glibc baseline, so the binaries load on
+    # users' older distributions.
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JUCE Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev libjack-jackd2-dev \
+            libcurl4-openssl-dev \
+            libfreetype6-dev libfontconfig1-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
+            libwebkit2gtk-4.1-dev \
+            libglu1-mesa-dev mesa-common-dev
+
+      # Single-config generator: CMAKE_BUILD_TYPE must be set at configure time, unlike the
+      # Xcode/Visual Studio multi-config generators used above.
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      # Capped at 2 jobs rather than one-per-core. JUCE's amalgamated per-module translation units
+      # (juce_dsp.cpp, juce_gui_basics.cpp, ...) are heavy enough that building several at once
+      # OOM-killed cc1plus on this runner's memory.
+      - name: Build (VST3/Standalone + tests)
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Run DSP test suite
+        run: ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
+
+      - name: Stage raw bundles
+        run: |
+          set -euo pipefail
+          STAGE="$RUNNER_TEMP/bundles"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/VST3" "$STAGE/Standalone"
+          A="build/${CMAKE_TARGET}_artefacts/Release"
+          # No AU on this platform - it is an Apple-only format.
+          cp -R "$A/VST3/${PRODUCT_NAME}.vst3"  "$STAGE/VST3/"
+          cp    "$A/Standalone/${PRODUCT_NAME}" "$STAGE/Standalone/"
+          echo "STAGE=$STAGE" >> "$GITHUB_ENV"
+
+      - name: Archive bundles
+        run: tar czf "${PRODUCT_NAME}-${{ needs.version.outputs.version }}-linux-bundles.tar.gz" -C "$STAGE" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundles
+          path: ${{ env.PRODUCT_NAME }}-${{ needs.version.outputs.version }}-linux-bundles.tar.gz
+          retention-days: 14
+
+  publish:
+    # Skipped on workflow_dispatch: a manual run is for verifying the pipeline, not for releasing.
+    if: needs.version.outputs.publish == 'true'
+    needs: [version, build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download built bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # The suite installer fetches these archives by pinned version at build time. Checksums are
+      # what let it verify it received the bytes this release actually published, rather than
+      # trusting whatever the URL happens to serve later.
+      - name: Generate checksums
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          sha256sum *.tar.gz *.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: "${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}"
+          body: |
+            Raw plugin bundles for **${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}**.
+
+            These are the unpackaged plugin bundles, not an installer - they are what the Neon
+            Foundry suite installer consumes. If you are looking for something to double-click,
+            use the Neon Foundry installer instead.
+
+            | Archive | Contains |
+            |---|---|
+            | `*-macos-bundles.tar.gz` | AU, VST3, Standalone (universal: arm64 + x86_64) |
+            | `*-windows-bundles.zip` | VST3, Standalone (x64) |
+            | `*-linux-bundles.tar.gz` | VST3, Standalone (x86_64, glibc from Ubuntu 22.04) |
+
+            Verify with `sha256sum -c SHA256SUMS.txt`.
+
+            Nothing here is signed or notarized, so installing manually means clearing the
+            quarantine attribute on macOS (`xattr -dr com.apple.quarantine <bundle>`).
+          artifacts: "dist/*"
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}

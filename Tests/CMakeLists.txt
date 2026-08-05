@@ -18,9 +18,14 @@ target_sources(Chorus60Tests PRIVATE
     ../Source/DSP/OutputMixStage.cpp
     ../Source/DSP/ProgramManager.cpp)
 
+# NF_COMPANY_NAME/NF_PRODUCT_NAME come from the parent CMakeLists and must match what the plugin
+# target gets - ProgramManager.cpp is compiled into both, and builds the user-Programs path from
+# them. Inherited from the parent scope rather than restated here, so there is nothing to re-sync.
 target_compile_definitions(Chorus60Tests PRIVATE
     JUCE_WEB_BROWSER=0
-    JUCE_USE_CURL=0)
+    JUCE_USE_CURL=0
+    NF_COMPANY_NAME="${CHORUS60_COMPANY_NAME}"
+    NF_PRODUCT_NAME="${CHORUS60_PRODUCT_NAME}")
 
 target_link_libraries(Chorus60Tests PRIVATE
     juce::juce_dsp

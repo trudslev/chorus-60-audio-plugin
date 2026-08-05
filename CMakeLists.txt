@@ -58,9 +58,19 @@ else()
     set(CHORUS60_EXTRA_ARGS "")
 endif()
 
+# Single source of truth for the two identity strings that appear BOTH in the bundle metadata and
+# in ProgramManager's user-Programs directory path. ProgramManager.cpp can't read JUCE's
+# JucePlugin_* macros - they only exist in the plugin target's generated header, and that file is
+# also compiled into the Tests console app - so it used to carry a hand-synced copy marked "keep in
+# sync". It didn't stay in sync: COMPANY_NAME became "Neon Foundry" while the copy still said
+# "Tanis", quietly pointing saved Programs at the old directory. CMake now hands both targets the
+# same values, so drift is a build error instead of silent data loss.
+set(CHORUS60_COMPANY_NAME "Neon Foundry")
+set(CHORUS60_PRODUCT_NAME "CHORUS-60")
+
 juce_add_plugin(Chorus60
-    PRODUCT_NAME "Chorus-60"
-    COMPANY_NAME "Neon Foundry"
+    PRODUCT_NAME "${CHORUS60_PRODUCT_NAME}"
+    COMPANY_NAME "${CHORUS60_COMPANY_NAME}"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-1024.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-256.png"
     BUNDLE_ID "com.neonfoundry.chorus60"
@@ -98,7 +108,9 @@ target_sources(Chorus60 PRIVATE
 target_compile_definitions(Chorus60 PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
-    JUCE_VST3_CAN_REPLACE_VST2=0)
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    NF_COMPANY_NAME="${CHORUS60_COMPANY_NAME}"
+    NF_PRODUCT_NAME="${CHORUS60_PRODUCT_NAME}")
 
 target_link_libraries(Chorus60
     PRIVATE

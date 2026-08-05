@@ -8,10 +8,18 @@ namespace
     // Deliberately not JucePlugin_Manufacturer/JucePlugin_Name: those macros only exist in the
     // real plugin target's JUCE-generated headers, and ProgramManager.cpp is also compiled
     // directly into the Tests console-app target (see Tests/CMakeLists.txt) so
-    // ProgramManagerTests.cpp can exercise it without linking the whole plugin. Matches
-    // CMakeLists.txt's COMPANY_NAME/PRODUCT_NAME - keep in sync if those change.
-    constexpr const char* pluginCompanyName = "Tanis";
-    constexpr const char* pluginProductName = "Chorus-60";
+    // ProgramManagerTests.cpp can exercise it without linking the whole plugin.
+    //
+    // These previously carried literals marked "keep in sync with CMakeLists.txt". They didn't stay
+    // in sync - COMPANY_NAME became "Neon Foundry" while this file still said "Tanis", so saved
+    // Programs were being written to (and looked for in) the old directory with nothing to signal
+    // it. Both targets are now handed the same values by CMake; a missing definition is a hard
+    // error rather than a silent fallback, because a silent fallback is precisely the failure.
+#if !defined(NF_COMPANY_NAME) || !defined(NF_PRODUCT_NAME)
+ #error "NF_COMPANY_NAME and NF_PRODUCT_NAME must be defined by CMake - see CMakeLists.txt."
+#endif
+    constexpr const char* pluginCompanyName = NF_COMPANY_NAME;
+    constexpr const char* pluginProductName = NF_PRODUCT_NAME;
 }
 
 ProgramManager::ProgramManager(juce::AudioProcessorValueTreeState& stateToControl)

@@ -2,20 +2,20 @@
 
 This file provides guidance to Claude Code when working with code in this repository.
 
-Chorus-60 is its own independent repo and does not depend on `../taperot/` or `../gatecrasher/` at
+CHORUS-60 is its own independent repo and does not depend on `../taperot/` or `../gatecrasher/` at
 runtime - it's a sibling casting under the shared [Neon Foundry](../BRAND.md) umbrella, read here
 purely as a structural reference (JUCE/CMake setup, APVTS conventions, DSP folder organization,
 Tests/ approach, BUILDING.md shape, and - for Gatecrasher specifically - the Program storage
 architecture and several GUI components ported directly rather than redesigned). Read `../BRAND.md`
 first for the cross-plugin design system (naming, "Program" not "Preset", the one-accent-color rule,
-component grammar), then this file for Chorus-60's own conventions and status.
+component grammar), then this file for CHORUS-60's own conventions and status.
 `design/CHORUS60-GUI-SPEC.md` and `design/CLAUDE.md` remain the authoritative source for exact GUI
 pixel/asset detail and the sections ported from Gatecrasher; `design/BBD-TECHNICAL-NOTES.md` is the
 authoritative source for the real circuit behavior the DSP layer models.
 
 ## Commands
 
-Chorus-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
+CHORUS-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
 (VST3 + Standalone) — AU is Apple-only. JUCE 8.0.14 is fetched automatically via CMake
 `FetchContent` on any platform, no local checkout needed.
 
@@ -171,7 +171,7 @@ plugin target) plus its own JUCE-`UnitTest` files - new DSP `.cpp` files need to
 `target_sources(Chorus60 ...)` here and `target_sources(Chorus60Tests ...)` in `Tests/CMakeLists.txt`
 to be covered by tests.
 
-Unlike Gatecrasher, Chorus-60 has no sidechain input bus - `BusesProperties` is plain stereo in/out.
+Unlike Gatecrasher, CHORUS-60 has no sidechain input bus - `BusesProperties` is plain stereo in/out.
 
 ## Status
 

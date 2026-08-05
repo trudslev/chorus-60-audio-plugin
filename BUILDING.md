@@ -1,6 +1,6 @@
-# Building Chorus-60
+# Building CHORUS-60
 
-Chorus-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
+CHORUS-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
 (VST3 + Standalone) — AU is Apple-only. JUCE 8.0.14 is fetched automatically via CMake
 `FetchContent` on first configure (no local JUCE checkout needed) on any platform.
 
@@ -22,8 +22,8 @@ cmake --build build --config Release
 This builds AU, VST3, and a Standalone app, and installs the AU/VST3 bundles to:
 
 ```
-~/Library/Audio/Plug-Ins/Components/Chorus-60.component
-~/Library/Audio/Plug-Ins/VST3/Chorus-60.vst3
+~/Library/Audio/Plug-Ins/Components/CHORUS-60.component
+~/Library/Audio/Plug-Ins/VST3/CHORUS-60.vst3
 ```
 
 ### Validate
@@ -34,7 +34,7 @@ auval -v aufx Ch60 Nfdy                      # full AU validation
 
 /Applications/pluginval.app/Contents/MacOS/pluginval \
     --strictness-level 8 \
-    --validate ~/Library/Audio/Plug-Ins/VST3/Chorus-60.vst3
+    --validate ~/Library/Audio/Plug-Ins/VST3/CHORUS-60.vst3
 ```
 
 If Logic Pro doesn't pick up a freshly built AU: Preferences → Audio Units Manager → "Reset & Rescan Selection", or restart Logic.
@@ -61,13 +61,13 @@ cmake --build build --config Release
 ```
 
 This builds VST3 and a Standalone app. VST3 install location is JUCE's own platform default
-(`%COMMONPROGRAMFILES%\VST3\Chorus-60.vst3`, i.e. usually `C:\Program Files\Common Files\VST3\`) —
-Chorus-60 doesn't override `VST3_COPY_DIR` on Windows.
+(`%COMMONPROGRAMFILES%\VST3\CHORUS-60.vst3`, i.e. usually `C:\Program Files\Common Files\VST3\`) —
+CHORUS-60 doesn't override `VST3_COPY_DIR` on Windows.
 
 ### Validate
 
 ```bat
-pluginval.exe --strictness-level 8 --validate "%COMMONPROGRAMFILES%\VST3\Chorus-60.vst3"
+pluginval.exe --strictness-level 8 --validate "%COMMONPROGRAMFILES%\VST3\CHORUS-60.vst3"
 ```
 
 ### Run the unit/DSP tests
@@ -105,12 +105,12 @@ Unlike the Xcode/Visual Studio generators used on macOS/Windows, CMake's default
 (Makefiles/Ninja) are single-config, so `CMAKE_BUILD_TYPE=Release` must be set at configure time.
 
 This builds VST3 and a Standalone app. VST3 install location is JUCE's own platform default
-(`~/.vst3/Chorus-60.vst3`) — Chorus-60 doesn't override `VST3_COPY_DIR` on Linux.
+(`~/.vst3/CHORUS-60.vst3`) — CHORUS-60 doesn't override `VST3_COPY_DIR` on Linux.
 
 ### Validate
 
 ```sh
-./pluginval --strictness-level 8 --validate ~/.vst3/Chorus-60.vst3
+./pluginval --strictness-level 8 --validate ~/.vst3/CHORUS-60.vst3
 ```
 
 ### Run the unit/DSP tests
