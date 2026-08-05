@@ -25,6 +25,9 @@ public:
 private:
     static constexpr int maxChannels = 2;
     static constexpr float maxDelayMs = 50.0f;
+    // Floor for a tap's requested delay - see readTap's clamp. Comfortably above zero so the
+    // fractional interpolation always straddles two genuinely written samples.
+    static constexpr float minDelayMs = 0.1f;
     static constexpr float inputPreFilterHz = 12000.0f;
     static constexpr float reconstructionFilterHz = 7000.0f;
 

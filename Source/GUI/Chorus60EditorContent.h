@@ -8,6 +8,7 @@
 #include "EngineButtonComponent.h"
 #include "ProgramHeader.h"
 #include "WordmarkComponent.h"
+#include "PanelChrome.h"
 #include "../PluginProcessor.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
@@ -47,7 +48,10 @@ private:
     Chorus60AudioProcessor& processorRef;
     Chorus60LookAndFeel lookAndFeel;
 
+    // Draw order: the bare plate, then every silkscreened glyph on top of it, then the live
+    // controls above that.
     Chorus60PanelBackground panelBackground;
+    PanelChrome panelChrome;
     WordmarkComponent wordmark;
 
     std::array<std::unique_ptr<KnobFilmstripComponent>, Chorus60Theme::Layout::knobs.size()> knobs;

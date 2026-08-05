@@ -40,6 +40,7 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool isFactoryProgram(int index) const noexcept { return programManager.isFactoryProgram(index); }
+    bool isCurrentProgramModified() const { return programManager.isModifiedFromLoadedProgram(); }
     void saveNewUserProgram(const juce::String& name) { programManager.saveNewUserProgram(name); }
     void deleteUserProgram(int index) { programManager.deleteUserProgram(index); }
 

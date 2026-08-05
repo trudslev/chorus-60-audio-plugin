@@ -46,8 +46,8 @@ Follow-up work identified during PROMPT #1, not yet done:
    program's parameter values by ear once the DSP tuning pass (item 1) is done - don't tune the bank
    against untuned DSP.
 
-3. Confirm PLUGIN_MANUFACTURER_CODE (Chr6), PLUGIN_CODE (Ch60), BUNDLE_ID
-   (com.chorus60.chorus60), and COMPANY_NAME in CMakeLists.txt before any real release - currently
+3. DONE. PLUGIN_MANUFACTURER_CODE is Nfdy (shared across the suite), PLUGIN_CODE Ch60, BUNDLE_ID
+   com.neonfoundry.chorus60, COMPANY_NAME "Neon Foundry". Previously
    placeholders, effectively permanent once shipped or automated against.
 
 4. No LICENSE.txt/OFL notice ships alongside the Barlow Condensed / Share Tech Mono / Librestile

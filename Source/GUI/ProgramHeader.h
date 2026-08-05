@@ -29,6 +29,7 @@ public:
     bool hitTest(int x, int y) override;
     void mouseDown(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
+    void mouseMove(const juce::MouseEvent&) override;
     bool keyPressed(const juce::KeyPress&) override;
 
 private:
@@ -39,6 +40,8 @@ private:
     void enterNamingMode();
     void commitStore();
     void cancelNaming();
+    void showProgramMenu();
+    bool isProgramMenuAvailableAt(juce::Point<float>) const;
     HeaderButton buttonAt(juce::Point<float>) const;
     bool isButtonEnabled(HeaderButton) const;
 
@@ -47,6 +50,15 @@ private:
     // Mirrors whatever program was loaded before SAVE was pressed - CANCEL reverts the display to
     // this without ever touching APVTS (the user's tweaked-but-unsaved knob values must survive a
     // Cancel, per section 6). Never written to while namingMode is true.
+    // Polled alongside the program index rather than read straight from the processor inside
+    // paint()/isButtonEnabled(): it changes on any parameter move, from the GUI or from host
+    // automation, so it needs the same repaint-on-change handling the program index gets.
+    bool displayedIsModified = false;
+
+    // Tracks a press that began on the program-name cell, so releasing outside it (a drag-off)
+    // cancels rather than opening the menu - the same press/release contract the buttons use.
+    bool pressedNameCell = false;
+
     int displayedProgramIndex = -1;
     juce::String displayedProgramName;
     bool displayedIsFactory = true;

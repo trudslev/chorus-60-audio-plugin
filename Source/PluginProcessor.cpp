@@ -74,14 +74,6 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (int ch = 0; ch < numChannels; ++ch)
         dryBuffer.copyFrom(ch, 0, mainIO, ch, 0, numSamples);
 
-    // Write the raw dry signal into the shared BBD buffer before anything else reads from it.
-    for (int ch = 0; ch < numChannels; ++ch)
-    {
-        const auto* dry = dryBuffer.getReadPointer(ch);
-        for (int i = 0; i < numSamples; ++i)
-            bbdDelayLine.pushSample(ch, dry[i]);
-    }
-
     // Drift is a single slow-moving value per block (retargets every ~0.6s - see CharacterStage),
     // shared by both engines' tap-position calculations.
     const float driftOffsetMs = characterStage.advanceDrift(numSamples, driftParam->load());
@@ -96,6 +88,14 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
     mainIO.clear(); // now used as the wet accumulator - dry was already captured above
 
+    // CRITICAL: the write into the BBD buffer and the tap reads must be interleaved per sample, not
+    // done as two passes over the block. BBDDelayLine::readTap resolves its read position relative
+    // to that channel's writeIndex, and only pushSample advances it - so pushing the whole block
+    // first leaves writeIndex parked at the block's END while every read happens against it. Each
+    // sample in the block then reads from very nearly the same buffer position, and the wet signal
+    // collapses to a single value held for the whole block: a staircase stepping at the block rate
+    // (~86Hz at 512 samples / 44.1kHz) carrying almost none of the input. Audibly that is a low
+    // rumble that survives at Mix 100% while the actual chorus does not.
     float lastOffset1 = 0.0f, lastOffset2 = 0.0f;
     for (int i = 0; i < numSamples; ++i)
     {
@@ -107,6 +107,10 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 
         for (int ch = 0; ch < numChannels; ++ch)
         {
+            // This sample goes in before the taps for this sample are read, so both engines read a
+            // buffer whose write head is exactly here.
+            bbdDelayLine.pushSample(ch, dryBuffer.getSample(ch, i));
+
             float sample = 0.0f;
             if (engine1On)
                 sample += bbdDelayLine.readTap(ch, 0, delayCenterMs + offset1 + driftOffsetMs);

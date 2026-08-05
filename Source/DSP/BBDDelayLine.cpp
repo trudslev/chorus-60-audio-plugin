@@ -47,7 +47,18 @@ void BBDDelayLine::pushSample(int channel, float sample)
 float BBDDelayLine::readTap(int channel, int tapIndex, float delayMs)
 {
     const int numBufferSamples = buffer.getNumSamples();
-    const float delaySamples = (float) (0.001 * delayMs * sampleRate);
+
+    // The requested delay is clamped to a window the buffer can actually satisfy. A tap must never
+    // read at or past the write head: at delayMs <= 0 the read position lands on (or ahead of) the
+    // sample just written, which after the modulo wrap means stale audio from a whole buffer ago -
+    // an instant discontinuity, not a short delay. That is reachable in normal use, because the tap
+    // position is Delay Center plus a signed modulation excursion plus drift: at minimum Delay
+    // Center (5ms) with Depth at 100% (+-5ms excursion) the trough of the sweep reaches zero.
+    // Clamping here rather than at the call site keeps the invariant with the buffer that owns it,
+    // so no caller can violate it. The audible result at those settings is that the deepest part of
+    // the sweep flattens against the floor instead of glitching.
+    const float clampedDelayMs = juce::jlimit(minDelayMs, maxDelayMs - 1.0f, delayMs);
+    const float delaySamples = (float) (0.001 * clampedDelayMs * sampleRate);
 
     float readPos = (float) writeIndex[(size_t) channel] - delaySamples;
     while (readPos < 0.0f)

@@ -26,6 +26,10 @@ namespace Chorus60Theme
         inline const juce::Colour valueText{0xFFC6CED3};
         inline const juce::Colour captionTertiary{0xFF7B8287};
         inline const juce::Colour inactiveLabel{0xFF5F666B};
+        inline const juce::Colour footerText{0xFF5A6165};
+        inline const juce::Colour stripeText{0xFFEEF2F4};
+        inline const juce::Colour modelLinePrimary{0xFF8A9196};   // "BBD CHORUS PROCESSOR"
+        inline const juce::Colour modelLineSecondary{0xFF5F666B}; // "MODEL CH-60 - STEREO"
 
         inline const juce::Colour ledWindowBg{0xFF07090A};
         inline const juce::Colour ledWindowBorder{0xFF363C41};
@@ -62,6 +66,20 @@ namespace Chorus60Theme
         inline const juce::Colour tagFactory{0xFF6F797F};
         inline const juce::Colour tagUser{0xFFCFD7DC};
         inline const juce::Colour headerName{0xFFDFE6EA};
+
+        // SAVE / DELETE, section 6: "Gatecrasher's exact treatment ... the only light-steel
+        // elements on this panel and that is intentional - the utility surface is shared across the
+        // suite." Values are identical to GatecrasherTheme's own by design, not by accident.
+        inline const juce::Colour buttonEnabledTop{0xFFDBE0E3};
+        inline const juce::Colour buttonEnabledBottom{0xFFAAB1B6};
+        inline const juce::Colour buttonEnabledBorder{0xFF6D7478};
+        inline const juce::Colour buttonEnabledLabel{0xFF22272B};
+        inline const juce::Colour buttonPressedTop{0xFFA9B0B5};
+        inline const juce::Colour buttonPressedBottom{0xFFC9D0D4};
+        inline const juce::Colour buttonDisabledTop{0xFFC2C8CC};
+        inline const juce::Colour buttonDisabledBottom{0xFFA8AFB3};
+        inline const juce::Colour buttonDisabledBorder{0xFF8D9498};
+        inline const juce::Colour buttonDisabledLabel{0xFF8B9297};
     }
 
     enum class KnobFilmstripSize { large, small };
@@ -201,6 +219,34 @@ namespace Chorus60Theme
 
         // Wordmark, section 8 - owned separately from ProgramHeader (see headerCrop comment above).
         constexpr float wordmarkX = 25.0f, wordmarkY = 30.0f, wordmarkW = 308.0f, wordmarkH = 31.0f;
+
+        // ---- Static chrome (PanelChrome) ----------------------------------------------------
+        // Model lines, section 8: "right of the wordmark at x 351 ... Barlow Condensed 600, 11px,
+        // .24em, 4px apart", over the wordmark's own 31px block.
+        constexpr float modelLineX = 351.0f;
+        constexpr float modelLine1CentreY = 38.0f;
+        constexpr float modelLine2CentreY = 53.0f;
+
+        // Blue stripe caption, section 4: centred in the top stripe (x 25, y 94, 232 x 24).
+        constexpr float stripeCaptionCentreX = 141.0f, stripeCaptionCentreY = 106.0f;
+
+        // Group panel titles sit in each box's title row, over the plate's own hairline rule.
+        // Section 7 gives the boxes' rects and a 9/14/14 padding convention; the title baseline is
+        // measured off the dressed render, which puts the text centre 19px below the box top.
+        constexpr float groupTitleCentreBelowTop = 19.0f;
+        constexpr float groupTitleInsetX = 14.0f;      // left inset for title-only boxes
+        constexpr float groupTitleInsetXWithLed = 24.0f; // MOD ENGINE I/II clear their O8 LED
+
+        // The IN / OUT captions above their windows.
+        constexpr float headerCaptionCentreY = 22.0f;
+
+        // Below this the IN/OUT readouts show -INF rather than a number: the plugin's own noise
+        // floor (BBD clock noise is always running) sits well above it, so anything lower is
+        // silence, and "-100.0" overflows the 54px window anyway.
+        constexpr float meterFloorDb = -60.0f;
+
+        // Footer status line, right-aligned in the footer band (y 602, h 29).
+        constexpr float footerRight = 1377.0f, footerCentreY = 616.0f;
     }
 
     // Angle (degrees, clockwise from 12 o'clock) for a normalised 0..1 value across the knob arc.
@@ -343,6 +389,37 @@ namespace Chorus60Theme
     {
         return juce::Font(juce::FontOptions(heightPx).withTypeface(shareTechMonoTypeface()));
     }
+    // The spec quotes every type size as CSS px, but a juce::Font's height parameter is
+    // ascent+descent - for a given typeface a fixed multiple of the CSS em size, not equal to it.
+    // Passing a spec size straight to labelFont() therefore renders noticeably small. These convert,
+    // calibrating the ratio once off a reference string whose rendered width was measured directly
+    // from the dressed reference render (the baked "DECORRELATION" knob label, 13 glyphs of
+    // section 7's 10px / .18em, spanning 79.4px in canvas units) - so one real measurement scales
+    // every size on the panel. Same approach, and same underlying trap, as Gatecrasher's.
+    inline float fontHeightForTrackedWidth(const juce::Font& probeFont, float probeHeight,
+                                            const juce::String& text, float trackingPx, float targetWidthPx)
+    {
+        const float glyphsAtProbe = trackedTextWidth(text, probeFont, 0.0f);
+        const float trackingTotal = trackingPx * (float) juce::jmax(0, text.length() - 1);
+        if (glyphsAtProbe <= 0.0f)
+            return probeHeight;
+        return juce::jmax(1.0f, (targetWidthPx - trackingTotal) * probeHeight / glyphsAtProbe);
+    }
+
+    inline float trackingPxForEm(float em, float cssPx) { return em * cssPx; }
+
+    inline float labelFontHeightForCssPx(float cssPx)
+    {
+        static const float ratio = [&]
+        {
+            constexpr float probeHeight = 40.0f, refCssPx = 10.0f, refWidth = 79.4f;
+            return fontHeightForTrackedWidth(labelFont(probeHeight), probeHeight, "DECORRELATION",
+                                              trackingPxForEm(0.18f, refCssPx), refWidth)
+                 / refCssPx;
+        }();
+        return cssPx * ratio;
+    }
+
     inline juce::Font monoFontBold(float heightPx)
     {
         return juce::Font(juce::FontOptions(heightPx).withTypeface(shareTechMonoTypeface())).boldened();
@@ -356,10 +433,20 @@ namespace Chorus60Theme
     // repeated PNG decode on every repaint/instantiation - the knob filmstrips in particular are
     // 128x16384 sheets). Centralised here rather than in each component, same rationale as
     // GatecrasherTheme.h's own equivalent block.
+    // The background plate (spec preamble): the full static fascia with NO controls and no text -
+    // panel material and frame, header chrome with empty PROGRAM / IN / OUT wells, the blue stripes
+    // and blank CHORUS strip, section divider, empty scope well, and the empty group boxes with
+    // their heading rules. Every glyph and every control is drawn on top of it.
+    //
+    // This replaced chorus60-panel-bypass@2x.png, a fully dressed render that carried baked copies
+    // of the knobs (pointers included), all the labels and all the value readouts. Compositing live
+    // elements over that meant each one fought a frozen copy of itself - the same class of bug that
+    // had to be unpicked across the whole of Gatecrasher's GUI before it got its own bare chassis.
+    // The dressed renders stay in design/assets/ as pixel-matching acceptance targets.
     inline const juce::Image& panelBackgroundImage()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::chorus60panelbypass2x_png, (size_t) BinaryData::chorus60panelbypass2x_pngSize);
+            BinaryData::chorus60backgroundplate2x_png, (size_t) BinaryData::chorus60backgroundplate2x_pngSize);
         return image;
     }
 
@@ -377,27 +464,6 @@ namespace Chorus60Theme
         return image;
     }
 
-    inline const juce::Image& headerFactoryImage()
-    {
-        static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::headerfactoryprogram3x_png, (size_t) BinaryData::headerfactoryprogram3x_pngSize);
-        return image;
-    }
-
-    inline const juce::Image& headerUserImage()
-    {
-        static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::headeruserprogram3x_png, (size_t) BinaryData::headeruserprogram3x_pngSize);
-        return image;
-    }
-
-    inline const juce::Image& headerNameEntryImage()
-    {
-        static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::headernameentry3x_png, (size_t) BinaryData::headernameentry3x_pngSize);
-        return image;
-    }
-
     // Chorus-60-specific value-text formatting, matching the exact display conventions baked into
     // the reference renders (design/assets/chorus60-panel*@2x.png) rather than Gatecrasher's own
     // popup-only formatter: Hz -> 2 decimals ("0.45 Hz"), % -> 0 decimals with a space before the
@@ -407,8 +473,12 @@ namespace Chorus60Theme
         const auto label = param.getLabel();
         if (label == "Hz")
             return juce::String(value, 2) + " Hz";
+        // roundToInt, NOT juce::String(value, 0): JUCE treats a decimal-place count of 0 as "use the
+        // default conversion" rather than "round to a whole number", so that spelling prints the
+        // full value (a Depth of 68.5916 rendered as "68.5916 %"). It only looked correct while the
+        // displayed values happened to land on whole numbers, which every factory program's do.
         if (label == "%")
-            return juce::String(value, 0) + " %";
+            return juce::String(juce::roundToInt(value)) + " %";
         if (label == "ms")
             return juce::String(value, 1) + " ms";
         if (label == "dB")

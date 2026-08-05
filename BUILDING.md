@@ -15,7 +15,7 @@ Chorus-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone),
 ### Build
 
 ```sh
-cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake -B build -G Xcode
 cmake --build build --config Release
 ```
 
@@ -30,7 +30,7 @@ This builds AU, VST3, and a Standalone app, and installs the AU/VST3 bundles to:
 
 ```sh
 auval -a | grep -i chorus                    # confirm AU registration + 4-char codes
-auval -v aufx Ch60 Chr6                      # full AU validation
+auval -v aufx Ch60 Nfdy                      # full AU validation
 
 /Applications/pluginval.app/Contents/MacOS/pluginval \
     --strictness-level 8 \
@@ -135,8 +135,8 @@ covered here — see the "DSP tuning" note below.
 
 ## Notes
 
-- `PLUGIN_MANUFACTURER_CODE` (`Chr6`), `PLUGIN_CODE` (`Ch60`), `BUNDLE_ID`
-  (`com.chorus60.chorus60`), and `COMPANY_NAME` in `CMakeLists.txt` are placeholders — finalize
+- `PLUGIN_MANUFACTURER_CODE` (`Nfdy`, shared across the suite), `PLUGIN_CODE` (`Ch60`), `BUNDLE_ID`
+  (`com.neonfoundry.chorus60`), and `COMPANY_NAME` (`Neon Foundry`) — finalize
   these before any real release, since they're effectively permanent once shipped or automated
   against.
 - JUCE's free/personal tier splash screen is enabled (no paid license configured).

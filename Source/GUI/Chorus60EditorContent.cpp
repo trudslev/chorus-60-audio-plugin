@@ -53,6 +53,9 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     panelBackground.setBounds(getLocalBounds());
     addAndMakeVisible(panelBackground);
 
+    panelChrome.setBounds(getLocalBounds());
+    addAndMakeVisible(panelChrome);
+
     wordmark.setBounds(getLocalBounds());
     addAndMakeVisible(wordmark);
 

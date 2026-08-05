@@ -105,6 +105,22 @@ EngineButtonComponent::EngineButtonComponent(Chorus60AudioProcessor& processor, 
 {
     setInterceptsMouseClicks(true, false);
 
+    // The engine engages on the way DOWN, not on release - that's how the real JN-80's latching
+    // switches behave: the LED is already lit by the time the cap bottoms out. Waiting for mouse-up
+    // (JUCE's default) puts the state change after the travel, which reads as lag on a control whose
+    // whole character is that it's instant.
+    setTriggeredOnMouseDown(true);
+
+    if (role != EngineButtonRole::off)
+    {
+        // Section 4: "State is latching, not momentary." Without this the button never changes its
+        // own toggle state on a click, so the ButtonAttachment bound to engine1/engine2 has nothing
+        // to observe and the parameter is never written - i.e. the engines simply cannot be switched
+        // on from the panel. OFF is deliberately excluded: it IS momentary, and clears both engines
+        // through its onClick below rather than carrying a state of its own.
+        setClickingTogglesState(true);
+    }
+
     if (role == EngineButtonRole::off)
     {
         engine1Raw = processorRef.apvts.getRawParameterValue(ParamIDs::engine1);
@@ -169,10 +185,15 @@ void EngineButtonComponent::paintButton(juce::Graphics& g, bool, bool)
 
     const auto style = styleFor(role);
 
-    g.saveState();
-    g.addTransform(juce::AffineTransform::translation(0.0f, pressOffsetPx));
-
-    drawButtonFace(g, style.faceRect, style.top, style.bottom, style.highlightAlpha);
+    // Only the button's own face travels on a press. The LED and the roman legend sit outside it -
+    // section 4 puts the LEDs at x 167 and the labels 27px right of those, while the buttons end at
+    // x 147 - so they're panel furniture the button is pressed *next to*, not printed on. Sinking
+    // them with it made the whole assembly look like one flexing sheet.
+    {
+        juce::Graphics::ScopedSaveState pressedFace(g);
+        g.addTransform(juce::AffineTransform::translation(0.0f, pressOffsetPx));
+        drawButtonFace(g, style.faceRect, style.top, style.bottom, style.highlightAlpha);
+    }
 
     bool labelBright;
     juce::Rectangle<float> labelRect;
@@ -198,8 +219,6 @@ void EngineButtonComponent::paintButton(juce::Graphics& g, bool, bool)
     const auto labelColour = labelBright ? Colour::engravedHeadingText : dimColour;
     drawTrackedText(g, style.label, labelFontBold(style.labelFontPx), style.labelFontPx * style.labelTrackingEm,
                      labelRect, juce::Justification::centredLeft, labelColour);
-
-    g.restoreState();
 }
 
 EngineLedIndicator::EngineLedIndicator(juce::Rectangle<float> ledBoundsAbsolute)

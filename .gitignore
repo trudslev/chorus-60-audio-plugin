@@ -6,3 +6,7 @@ cmake-build-*/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 .DS_Store
+
+# Designer hand-off archives: every file in them is extracted into design/ already, so committing
+# the archive too would duplicate ~18MB of binary assets in a public repo for no benefit.
+design/*.zip

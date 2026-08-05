@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "")
-    set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
 endif()
 
 include(FetchContent)
@@ -32,10 +32,7 @@ FetchContent_MakeAvailable(JUCE)
 # match Gatecrasher's exact treatment (design/CLAUDE.md: "same as Gatecrasher").
 juce_add_binary_data(Chorus60BinaryData
     SOURCES
-        design/assets/chorus60-panel-bypass@2x.png
-        design/assets/header-factory-program@3x.png
-        design/assets/header-user-program@3x.png
-        design/assets/header-name-entry@3x.png
+        design/assets/chorus60-background-plate@2x.png
         design/assets/knob_large_128px_128f.png
         design/assets/knob_small_128px_128f.png
         design/assets/LibrestileExtBold.ttf
@@ -58,9 +55,11 @@ endif()
 
 juce_add_plugin(Chorus60
     PRODUCT_NAME "Chorus-60"
-    COMPANY_NAME "Chorus-60"
-    BUNDLE_ID "com.chorus60.chorus60"
-    PLUGIN_MANUFACTURER_CODE Chr6
+    COMPANY_NAME "Neon Foundry"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-1024.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-256.png"
+    BUNDLE_ID "com.neonfoundry.chorus60"
+    PLUGIN_MANUFACTURER_CODE Nfdy
     PLUGIN_CODE Ch60
     FORMATS ${CHORUS60_FORMATS}
     VST3_CATEGORIES Fx Modulation
@@ -88,6 +87,7 @@ target_sources(Chorus60 PRIVATE
     Source/GUI/EngineButtonComponent.cpp
     Source/GUI/ProgramHeader.cpp
     Source/GUI/WordmarkComponent.cpp
+    Source/GUI/PanelChrome.cpp
     Source/GUI/Chorus60EditorContent.cpp)
 
 target_compile_definitions(Chorus60 PUBLIC

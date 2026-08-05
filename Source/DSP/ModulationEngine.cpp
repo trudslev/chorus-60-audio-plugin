@@ -16,7 +16,11 @@ namespace
 
     // "Only a couple of milliseconds" of excursion even at full depth - much tighter than a modern
     // chorus's 5-25ms swing, per the notes' Delay Modulation section.
-    constexpr float maxExcursionMs = 2.5f;
+    // Doubled from 2.5ms after listening against the real JN-80 - the original ceiling didn't travel
+    // far enough to reach the deeper end of what the hardware does. BBDDelayLine::readTap clamps the
+    // resulting tap position, so a deep sweep against a low Delay Center flattens at the buffer's
+    // floor rather than wrapping - see that clamp's comment.
+    constexpr float maxExcursionMs = 5.0f;
 }
 
 void ModulationEngine::prepare(double newSampleRate)

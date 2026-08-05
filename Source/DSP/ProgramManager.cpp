@@ -1,4 +1,5 @@
 #include "ProgramManager.h"
+#include <cmath>
 #include "../Parameters.h"
 #include <algorithm>
 
@@ -9,7 +10,7 @@ namespace
     // directly into the Tests console-app target (see Tests/CMakeLists.txt) so
     // ProgramManagerTests.cpp can exercise it without linking the whole plugin. Matches
     // CMakeLists.txt's COMPANY_NAME/PRODUCT_NAME - keep in sync if those change.
-    constexpr const char* pluginCompanyName = "Chorus-60";
+    constexpr const char* pluginCompanyName = "Tanis";
     constexpr const char* pluginProductName = "Chorus-60";
 }
 
@@ -28,6 +29,33 @@ void ProgramManager::initialise()
     refreshUserProgramList();
     applyFactoryProgram(kFactoryPrograms[(size_t) defaultFactoryProgramIndex]);
     currentProgramIndex.store(defaultFactoryProgramIndex, std::memory_order_relaxed);
+    captureCleanSnapshot();
+}
+
+void ProgramManager::captureCleanSnapshot()
+{
+    const auto& params = apvts.processor.getParameters();
+    cleanSnapshot.clear();
+    cleanSnapshot.reserve((size_t) params.size());
+    for (const auto* param : params)
+        cleanSnapshot.push_back(param->getValue());
+}
+
+bool ProgramManager::isModifiedFromLoadedProgram() const
+{
+    const auto& params = apvts.processor.getParameters();
+    if (cleanSnapshot.size() != (size_t) params.size())
+        return false;
+
+    // Compared in normalised 0..1 space, so one epsilon is meaningful for every parameter whatever
+    // its real-world range. Loose enough to absorb the float round-trip through a user program's
+    // XML (so a just-loaded user program doesn't read as modified), far tighter than the smallest
+    // movement any control can actually produce.
+    for (int i = 0; i < params.size(); ++i)
+        if (std::abs(params[i]->getValue() - cleanSnapshot[(size_t) i]) > 1.0e-4f)
+            return true;
+
+    return false;
 }
 
 int ProgramManager::getNumPrograms() const noexcept
@@ -117,6 +145,7 @@ void ProgramManager::applyProgramByIndex(int index)
     }
 
     currentProgramIndex.store(index, std::memory_order_relaxed);
+    captureCleanSnapshot();
     if (onProgramListChanged)
         onProgramListChanged();
 }
@@ -160,6 +189,9 @@ void ProgramManager::saveNewUserProgram(const juce::String& requestedName)
     refreshUserProgramList();
     const int newIndex = kNumFactoryPrograms + userProgramFiles.indexOf(file);
     currentProgramIndex.store(newIndex, std::memory_order_relaxed);
+    // The just-saved program IS the current parameter state, so this becomes the new clean baseline
+    // and SAVE goes back to disabled immediately after storing, until something moves again.
+    captureCleanSnapshot();
     if (onProgramListChanged)
         onProgramListChanged();
 }
@@ -186,6 +218,14 @@ void ProgramManager::deleteUserProgram(int index)
 void ProgramManager::setCurrentProgramIndexWithoutApplying(int index) noexcept
 {
     currentProgramIndex.store(index, std::memory_order_relaxed);
+
+    // Treats the restored session as its own clean baseline rather than diffing it against the
+    // remembered program's stored values - those aren't loaded here by design (the caller restores
+    // parameters from the session itself), and re-reading them off disk to answer "were there
+    // unsaved edits when this session was saved?" isn't worth it for a button's enablement. The
+    // only consequence is that SAVE starts out disabled after reopening a session that had unsaved
+    // edits, and it enables again the moment any control moves.
+    captureCleanSnapshot();
 }
 
 void ProgramManager::cancelPendingChange() noexcept

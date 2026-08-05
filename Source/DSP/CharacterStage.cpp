@@ -8,16 +8,22 @@ namespace
     constexpr float maxDriftMs = 0.15f;       // "tens of microseconds" of jitter, capped small even at Drift=100
     constexpr float maxGainWobbleDb = 0.1f;   // "gentle gain fluctuation (+-0.1dB)" per the technical notes
 
-    // output = tanh(driveGain*x) / tanh(driveGain) - driveGain stays low (0.02 to 1.2) across the
-    // whole Saturation range so this is always a "tiny" character stage, never dominant, and stays
-    // near-transparent at Saturation=0 the same way (and for the same reason) Gatecrasher's own
-    // SlamSaturation had to be fixed to - see that class's history for why a driveGain floor near
-    // 1.0 would boost quieter material instead of passing it through cleanly.
+    // output = tanh(driveGain*x) / tanh(driveGain). driveGain stays near-transparent at
+    // Saturation=0 the same way (and for the same reason) Gatecrasher's own SlamSaturation had to
+    // be fixed to - see that class's history for why a driveGain floor near 1.0 would boost quieter
+    // material instead of passing it through cleanly.
+    // Both ranges were doubled after listening against the real JN-80: what used to be the maximum
+    // turned out to be comfortably usable rather than an extreme, so the top of each knob now
+    // reaches twice as far and the OLD maximum sits at the 50% mark. The minima are unchanged, so
+    // the bottom half of each control behaves exactly as before - only the headroom above it is new.
+    //
+    // Solved rather than eyeballed: jmap is linear, so for the old top T to land at 50% the new top
+    // must be 2T - min. Saturation: 2(1.2) - 0.02 = 2.38. Noise: 2(-55) - (-75) = -35 dB.
     constexpr float minDriveGain = 0.02f;
-    constexpr float maxDriveGain = 1.2f;
+    constexpr float maxDriveGain = 2.38f;  // 50% == the previous 1.2
 
     constexpr float minNoiseFloorDb = -75.0f;
-    constexpr float maxNoiseFloorDb = -55.0f;
+    constexpr float maxNoiseFloorDb = -35.0f; // 50% == the previous -55dB
 }
 
 void CharacterStage::prepare(double newSampleRate)

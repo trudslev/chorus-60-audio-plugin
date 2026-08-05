@@ -11,7 +11,7 @@ public:
     {
         const double sampleRate = 48000.0;
 
-        beginTest("Output stays finite and never exceeds the depth-scaled max excursion (~2.5ms at 100%)");
+        beginTest("Output stays finite and never exceeds the depth-scaled max excursion (~5ms at 100%)");
         {
             ModulationEngine engine;
             engine.prepare(sampleRate);
@@ -25,7 +25,7 @@ public:
                 maxAbs = juce::jmax(maxAbs, std::abs(offset));
             }
 
-            expect(maxAbs <= 2.6f, "Excursion should stay close to the ~2.5ms cap even at full depth");
+            expect(maxAbs <= 5.1f, "Excursion should stay close to the ~5ms cap even at full depth");
             expect(maxAbs > 0.5f, "A full-depth, several-cycle run should actually swing a meaningful amount");
         }
 

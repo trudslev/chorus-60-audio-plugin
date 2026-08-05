@@ -2,6 +2,24 @@
 
 Panel: **1400 × 632 px** at 1× (fixed aspect, 2.22:1 — the same ratio as Gatecrasher's 960 × 434,
 per BRAND.md's fixed-aspect-canvas rule). Reference renders in `assets/`.
+
+**Background plate:** `assets/chorus60-background-plate@2x.png` (2804 × 1266, draw at 1400 × 632)
+is the full static fascia with **no controls and no text over top** — panel material and frame, header
+chrome with empty PROGRAM / IN / OUT wells, blue stripes and the blank `CHORUS` strip, section divider,
+empty scope well, and the empty group boxes with their heading rules. Every glyph on the panel is drawn
+by the host, not baked in: the wordmark and model lines, all captions, section headings, knob labels,
+button legends (I / II / OFF) and the footer status line — plus the three chorus buttons, all six LEDs,
+the nine knob filmstrips and value readouts, the scope trace and annotations, PROGRAM text +
+SAVE/DELETE, and the IN/OUT numbers. Text positions are unchanged from the plate's geometry (label
+boxes are reserved at their measured heights), so §§2–8 coordinates apply as written. Blit the plate
+once as the editor background. Re-render from `Chorus-60 Background Plate.dc.html` if the fascia changes.
+**Product icon:** `assets/icon/` — dark plate at 1024 / 512 / 256 / 128 / 64 / 32 / 16 px plus
+`chorus60-icon-light-512.png` for light hosts and print. Mark is the Librestile `60` in `#EEF2F4` with a
+`#FF2B1C` ghost copy offset down-right (the chorus double), over the panel chassis gradient and a
+`#2F6DB8` → `#1F5798` stripe. Proportions: glyph cap size 41.4% of tile, ghost offset 5.1% x / 3.1% y,
+corner radius 20.3%, stripe inset 20.3% and 1.6% tall at 15.2% up from the bottom. The stripe is
+dropped at 48px and below, the inner hairline frame below 128px, and the ghost stays fully opaque
+below 128px (it is 90% at larger sizes). Re-render from `Chorus-60 Icon.dc.html`.
 All coordinates below are panel-local, origin = top-left of the 1400 × 632 panel.
 Suite sibling: Gatecrasher GR-85 — where a component exists in both plugins the Gatecrasher spec
 governs its construction and this document only states what differs.
