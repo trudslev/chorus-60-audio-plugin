@@ -9,10 +9,29 @@ namespace
     // mechanically repetitive (see BBD-TECHNICAL-NOTES.md's "tiny imperfections" note).
     constexpr float riseFraction = 0.55f;
 
-    // Corner-rounding time constant - short relative to the ~0.5-2s LFO period, just enough to
-    // remove the triangle's sharp direction changes ("very smooth modulation... no abrupt
-    // direction changes" per the notes) without eating the fundamental shape.
-    constexpr double cornerSmoothingSeconds = 0.05;
+    // Corner-rounding time constant - short relative to the LFO period, just enough to remove the
+    // triangle's sharp direction changes ("very smooth modulation... no abrupt direction changes"
+    // per the notes) without eating the fundamental shape.
+    //
+    // 50ms was chosen against the sub-2Hz rates of configurations I and II, where it is a small
+    // fraction of a 0.5-2s period. It cannot stay fixed now that I+II runs at 9.75-14Hz: as a
+    // one-pole its corner sits near 3.2Hz, so at 9.75Hz it would attenuate the modulation to about
+    // a third and at 14Hz to about a quarter. The fast configuration would come out *weaker* than
+    // the slow ones rather than faster - precisely inverting what the addendum describes.
+    //
+    // So the constant holds at 50ms up to 2Hz, which leaves every rate configurations I and II
+    // actually use (0.35-1.8Hz in the factory bank) bit-identical to before, and above that scales
+    // as 1/rate to keep the same proportion of the cycle. At 9.75Hz that is ~10ms (corner ~15Hz)
+    // and at 14Hz ~7ms (corner ~22Hz) - still rounding the corners, no longer swallowing the shape.
+    constexpr double cornerSmoothingSecondsMax = 0.05;
+    constexpr double cornerSmoothingRateProduct = 0.1; // = cornerSmoothingSecondsMax * 2Hz
+
+    double cornerSmoothingSecondsFor(float rateHz)
+    {
+        if (rateHz <= 2.0f)
+            return cornerSmoothingSecondsMax;
+        return cornerSmoothingRateProduct / (double) rateHz;
+    }
 
     // "Only a couple of milliseconds" of excursion even at full depth - much tighter than a modern
     // chorus's 5-25ms swing, per the notes' Delay Modulation section.
@@ -26,7 +45,6 @@ namespace
 void ModulationEngine::prepare(double newSampleRate)
 {
     sampleRate = newSampleRate;
-    smoothingCoeff = 1.0f - std::exp((float) (-1.0 / (cornerSmoothingSeconds * sampleRate)));
     reset();
 }
 
@@ -48,7 +66,13 @@ float ModulationEngine::nextLfoValue(float rateHz)
     if (phase >= 1.0f)
         phase -= 1.0f;
 
-    smoothedLfo += smoothingCoeff * (raw - smoothedLfo);
+    // Recomputed per sample rather than cached in prepare(): the coefficient now depends on Rate,
+    // which is a live parameter and, unlike sample rate, changes while audio is running - including
+    // discontinuously when the engaged configuration changes from a slow page to the fast I+II one.
+    const float coeff =
+        1.0f - std::exp((float) (-1.0 / (cornerSmoothingSecondsFor(rateHz) * sampleRate)));
+
+    smoothedLfo += coeff * (raw - smoothedLfo);
     return smoothedLfo;
 }
 

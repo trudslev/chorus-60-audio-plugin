@@ -11,12 +11,28 @@ Chorus60AudioProcessor::Chorus60AudioProcessor()
 {
     engine1Param = apvts.getRawParameterValue(ParamIDs::engine1);
     engine2Param = apvts.getRawParameterValue(ParamIDs::engine2);
-    rate1Param = apvts.getRawParameterValue(ParamIDs::rate1);
-    depth1Param = apvts.getRawParameterValue(ParamIDs::depth1);
-    rate2Param = apvts.getRawParameterValue(ParamIDs::rate2);
-    depth2Param = apvts.getRawParameterValue(ParamIDs::depth2);
-    delayCenterParam = apvts.getRawParameterValue(ParamIDs::delayCenter);
-    decorrelationParam = apvts.getRawParameterValue(ParamIDs::decorrelation);
+
+    const auto bindConfiguration = [this] (ConfigurationParams& target,
+                                           const char* rateId,
+                                           const char* depthId,
+                                           const char* centreId,
+                                           const char* decorrId,
+                                           const char* monoId)
+    {
+        target.rate = apvts.getRawParameterValue(rateId);
+        target.depth = apvts.getRawParameterValue(depthId);
+        target.centre = apvts.getRawParameterValue(centreId);
+        target.decorrelation = apvts.getRawParameterValue(decorrId);
+        target.mono = apvts.getRawParameterValue(monoId);
+    };
+
+    bindConfiguration(configI, ParamIDs::rate1, ParamIDs::depth1, ParamIDs::center1,
+                      ParamIDs::decorr1, ParamIDs::mono1);
+    bindConfiguration(configII, ParamIDs::rate2, ParamIDs::depth2, ParamIDs::center2,
+                      ParamIDs::decorr2, ParamIDs::mono2);
+    bindConfiguration(configBoth, ParamIDs::rateB, ParamIDs::depthB, ParamIDs::centerB,
+                      ParamIDs::decorrB, ParamIDs::monoB);
+
     driftParam = apvts.getRawParameterValue(ParamIDs::drift);
     saturationParam = apvts.getRawParameterValue(ParamIDs::saturation);
     noiseParam = apvts.getRawParameterValue(ParamIDs::noise);
@@ -39,8 +55,7 @@ void Chorus60AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     juce::dsp::ProcessSpec spec{ sampleRate, (juce::uint32) samplesPerBlock,
                                   (juce::uint32) getMainBusNumOutputChannels() };
 
-    modulationEngine1.prepare(sampleRate);
-    modulationEngine2.prepare(sampleRate);
+    modulationEngine.prepare(sampleRate);
     bbdDelayLine.prepare(spec);
     stereoDecorrelationStage.prepare(spec);
     characterStage.prepare(sampleRate);
@@ -62,6 +77,39 @@ bool Chorus60AudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) 
         && layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo();
 }
 
+Chorus60AudioProcessor::ActiveConfiguration Chorus60AudioProcessor::resolveActiveConfiguration() const
+{
+    const bool engine1On = engine1Param->load() > 0.5f;
+    const bool engine2On = engine2Param->load() > 0.5f;
+
+    ActiveConfiguration result;
+    result.engaged = engine1On || engine2On;
+
+    if (! result.engaged)
+    {
+        result.which = Configuration::bypassed;
+        return result;
+    }
+
+    // Both latches engaged selects I+II, which is its own configuration rather than I and II
+    // running together - see design/BBD-TECHNICAL-NOTES-ADDENDUM.md. The values it uses are its
+    // own: typically far faster and centred on a much narrower delay.
+    result.which = (engine1On && engine2On) ? Configuration::both
+                 : (engine1On              ? Configuration::one
+                                           : Configuration::two);
+
+    const ConfigurationParams& source = (engine1On && engine2On) ? configBoth
+                                      : (engine1On              ? configI
+                                                                : configII);
+
+    result.rateHz = source.rate->load();
+    result.depthPercent = source.depth->load();
+    result.centreMs = source.centre->load();
+    result.decorrelationPercent = source.decorrelation->load();
+    result.mono = source.mono->load() > 0.5f;
+    return result;
+}
+
 void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
@@ -78,13 +126,7 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     // shared by both engines' tap-position calculations.
     const float driftOffsetMs = characterStage.advanceDrift(numSamples, driftParam->load());
 
-    const bool engine1On = engine1Param->load() > 0.5f;
-    const bool engine2On = engine2Param->load() > 0.5f;
-    const float rate1 = rate1Param->load();
-    const float depth1 = depth1Param->load();
-    const float rate2 = rate2Param->load();
-    const float depth2 = depth2Param->load();
-    const float delayCenterMs = delayCenterParam->load();
+    const auto active = resolveActiveConfiguration();
 
     mainIO.clear(); // now used as the wet accumulator - dry was already captured above
 
@@ -96,37 +138,55 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     // collapses to a single value held for the whole block: a staircase stepping at the block rate
     // (~86Hz at 512 samples / 44.1kHz) carrying almost none of the input. Audibly that is a low
     // rumble that survives at Mix 100% while the actual chorus does not.
-    float lastOffset1 = 0.0f, lastOffset2 = 0.0f;
+    float lastOffset = 0.0f;
     for (int i = 0; i < numSamples; ++i)
     {
-        // LFO phase always advances, engaged or not, so re-engaging an engine never phase-jumps.
-        const float offset1 = modulationEngine1.getNextOffsetMs(rate1, depth1);
-        const float offset2 = modulationEngine2.getNextOffsetMs(rate2, depth2);
-        lastOffset1 = offset1;
-        lastOffset2 = offset2;
+        // The LFO advances whether or not anything is engaged, so returning from bypass - or
+        // switching pages - never phase-jumps.
+        const float offset = modulationEngine.getNextOffsetMs(active.rateHz, active.depthPercent);
+        lastOffset = offset;
 
         for (int ch = 0; ch < numChannels; ++ch)
         {
-            // This sample goes in before the taps for this sample are read, so both engines read a
-            // buffer whose write head is exactly here.
+            // This sample goes in before the tap for this sample is read, so the tap reads a buffer
+            // whose write head is exactly here.
             bbdDelayLine.pushSample(ch, dryBuffer.getSample(ch, i));
 
-            float sample = 0.0f;
-            if (engine1On)
-                sample += bbdDelayLine.readTap(ch, 0, delayCenterMs + offset1 + driftOffsetMs);
-            if (engine2On)
-                sample += bbdDelayLine.readTap(ch, 1, delayCenterMs + offset2 + driftOffsetMs);
-            mainIO.setSample(ch, i, sample);
+            if (! active.engaged)
+                continue;
+
+            // The entire stereo mechanism of the real circuit: one LFO feeding two BBD lines, with
+            // the right channel's modulation inverted 180 degrees. Mono applies no inversion, which
+            // is what the hardware does in I+II - both lines then track together and the wet signal
+            // is identical in both channels.
+            const float channelOffset = (! active.mono && ch == 1) ? -offset : offset;
+
+            // Tap index is per channel, so one engine uses a single tap. The second tap exists for
+            // BBDDelayLine's own interpolation state and is no longer a second engine's read.
+            mainIO.setSample(ch, i,
+                             bbdDelayLine.readTap(ch, 0,
+                                                  active.centreMs + channelOffset + driftOffsetMs));
         }
     }
 
-    modulationDisplayValue.store((engine1On ? lastOffset1 : 0.0f) + (engine2On ? lastOffset2 : 0.0f),
-                                  std::memory_order_relaxed);
+    modulationDisplayValue.store(active.engaged ? lastOffset : 0.0f, std::memory_order_relaxed);
     driftDisplayValue.store(driftOffsetMs, std::memory_order_relaxed);
 
-    stereoDecorrelationStage.process(mainIO, decorrelationParam->load());
-    characterStage.process(mainIO, saturationParam->load(), noiseParam->load());
-    outputMixStage.process(mainIO, dryBuffer, mixParam->load(), trimParam->load());
+    if (active.engaged)
+    {
+        stereoDecorrelationStage.process(mainIO, active.mono ? 0.0f : active.decorrelationPercent);
+        characterStage.process(mainIO, saturationParam->load(), noiseParam->load());
+        outputMixStage.process(mainIO, dryBuffer, mixParam->load(), trimParam->load());
+    }
+    else
+    {
+        // Neither latch engaged is the panel's OFF state, which reads BYPASS - SETTINGS RETAINED
+        // and powers down MOD ENGINE, CHARACTER and OUTPUT together. So it is a true bypass: the
+        // dry signal passes through untouched rather than being mixed with a silent wet path, which
+        // would otherwise fade the instrument out as Mix rose.
+        for (int ch = 0; ch < numChannels; ++ch)
+            mainIO.copyFrom(ch, 0, dryBuffer, ch, 0, numSamples);
+    }
 
     // IN/OUT meters: simple peak-hold-ish ballistics, updated every block (spec calls for ~6Hz
     // display update, which the GUI's own polling timer governs - this just tracks the real level).

@@ -1,11 +1,16 @@
 #pragma once
 
-// One chorus engine's LFO: Rate drives a rounded/asymmetric waveform (never a pure sine, per
+// The chorus LFO: Rate drives a rounded/asymmetric waveform (never a pure sine, per
 // BBD-TECHNICAL-NOTES.md - "rounded triangle / slightly asymmetric sine / analog integrator with
-// tiny imperfections"), Depth scales how far the resulting delay-time offset swings. Two instances
-// exist (Engine I, Engine II), each fully independent - this class owns only the LFO and the
-// offset calculation, not a delay line; PluginProcessor adds the returned offset to Delay Center
-// and the shared Drift offset before asking BBDDelayLine to read a tap there.
+// tiny imperfections"), Depth scales how far the resulting delay-time offset swings. This class
+// owns only the LFO and the offset calculation, not a delay line; PluginProcessor adds the returned
+// offset to that configuration's Delay Center and the shared Drift offset before asking
+// BBDDelayLine to read a tap there.
+//
+// There is exactly ONE instance. The real circuit has a single LFO, and the correction in
+// design/BBD-TECHNICAL-NOTES-ADDENDUM.md establishes that I+II is a third distinct configuration
+// of that one engine rather than I and II running together - so the plugin selects which set of
+// Rate/Depth values to feed this engine, and never runs two of them at once.
 class ModulationEngine
 {
 public:
@@ -23,5 +28,4 @@ private:
     double sampleRate = 44100.0;
     float phase = 0.0f;
     float smoothedLfo = 0.0f;
-    float smoothingCoeff = 0.0f;
 };

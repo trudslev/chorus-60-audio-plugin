@@ -5,11 +5,6 @@
 
 ModScope::ModScope(Chorus60AudioProcessor& processor) : processorRef(processor)
 {
-    engine1Raw = processorRef.apvts.getRawParameterValue(ParamIDs::engine1);
-    engine2Raw = processorRef.apvts.getRawParameterValue(ParamIDs::engine2);
-    depth1Raw = processorRef.apvts.getRawParameterValue(ParamIDs::depth1);
-    depth2Raw = processorRef.apvts.getRawParameterValue(ParamIDs::depth2);
-    delayCenterRaw = processorRef.apvts.getRawParameterValue(ParamIDs::delayCenter);
     noiseRaw = processorRef.apvts.getRawParameterValue(ParamIDs::noise);
 
     setInterceptsMouseClicks(false, false);
@@ -56,22 +51,26 @@ void ModScope::paint(juce::Graphics& g)
     using namespace Chorus60Theme;
     using namespace Chorus60Theme::Layout;
 
-    const bool engine1On = engine1Raw != nullptr && engine1Raw->load(std::memory_order_relaxed) > 0.5f;
-    const bool engine2On = engine2Raw != nullptr && engine2Raw->load(std::memory_order_relaxed) > 0.5f;
-    const bool engaged = engine1On || engine2On;
+    // Same resolver the audio thread uses, so the trace can never disagree with what is being
+    // heard about which configuration is engaged.
+    const auto active = processorRef.resolveActiveConfiguration();
+    const bool engaged = active.engaged;
 
     // --- Caption row: "DELAY MODULATION" + right-aligned state/depth/division readouts (section 5) ---
     const juce::Rectangle<float> captionRect(captionRowX, captionRowY, captionRowW, captionRowH);
     drawTrackedText(g, "DELAY MODULATION", labelFontBold(11.0f), 11.0f * 0.28f, captionRect,
                      juce::Justification::centredLeft, engaged ? Colour::engravedHeadingText : Colour::captionTertiary);
 
-    const juce::String stateText = (engine1On && engine2On) ? "ENGINE I + II"
-                                  : engine1On ? "ENGINE I"
-                                  : engine2On ? "ENGINE II"
+    using Configuration = Chorus60AudioProcessor::Configuration;
+    const juce::String stateText = active.which == Configuration::both ? "ENGINE I + II"
+                                  : active.which == Configuration::one ? "ENGINE I"
+                                  : active.which == Configuration::two ? "ENGINE II"
                                   : "ENGINE BYPASS";
-    const float depthSum = (engine1On && depth1Raw != nullptr ? depth1Raw->load(std::memory_order_relaxed) : 0.0f)
-                          + (engine2On && depth2Raw != nullptr ? depth2Raw->load(std::memory_order_relaxed) : 0.0f);
-    const juce::String depthText = "DEPTH " + juce::String((int) std::round(depthSum)) + "%";
+
+    // The engaged configuration's own depth, not a sum. Summing two engines' depths was the old
+    // architecture's reading of I+II and no longer describes anything real - I+II has one depth.
+    const juce::String depthText =
+        "DEPTH " + juce::String((int) std::round(engaged ? active.depthPercent : 0.0f)) + "%";
     const juce::String divText = "250 ms / DIV";
 
     const auto readoutFont = monoFont(11.0f);
@@ -111,11 +110,10 @@ void ModScope::paint(juce::Graphics& g)
     for (float x = innerRect.getRight() - gridScrollPhase; x >= innerRect.getX(); x -= gridSpacing)
         g.drawVerticalLine((int) x, innerRect.getY(), innerRect.getBottom());
 
-    // Vertical centre offset by Delay Center (section 5's formula, adapted to Parameters.h's actual
-    // [5,15]ms range - see Chorus60Theme::Layout::delayCenterRangeMid/Half's comment).
-    const float delayCenterNorm = delayCenterRaw != nullptr
-        ? juce::jlimit(-1.0f, 1.0f, (delayCenterRaw->load(std::memory_order_relaxed) - delayCenterRangeMid) / delayCenterRangeHalf)
-        : 0.0f;
+    // Vertical centre offset by the engaged configuration's Delay Center (section 5's formula,
+    // against Parameters.h's [2,14]ms range - see Chorus60Theme::Layout::delayCenterRangeMid/Half).
+    const float delayCenterNorm =
+        juce::jlimit(-1.0f, 1.0f, (active.centreMs - delayCenterRangeMid) / delayCenterRangeHalf);
     const float centreY = innerRect.getCentreY() + scopeCentreOffsetFraction * innerRect.getHeight() * delayCenterNorm;
 
     g.setColour(Colour::scopeCentreLine);

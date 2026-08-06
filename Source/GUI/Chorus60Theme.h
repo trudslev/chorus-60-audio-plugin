@@ -184,7 +184,7 @@ namespace Chorus60Theme
         // Parameters.h's ranges are authoritative, not the spec table's.
         constexpr float scopeAmplitudeFraction = 0.34f;
         constexpr float scopeCentreOffsetFraction = 0.10f;
-        constexpr float delayCenterRangeMid = 10.0f, delayCenterRangeHalf = 5.0f;
+        constexpr float delayCenterRangeMid = 8.0f, delayCenterRangeHalf = 6.0f;
 
         // The real DSP's own theoretical ceiling for combined modulation + drift offset (ms), used
         // as the value that maps to the full scopeAmplitudeFraction*h swing. ModulationEngine.cpp's

@@ -53,25 +53,57 @@ public:
     float getInputMeterDb() const noexcept { return inputMeterDb.load(std::memory_order_relaxed); }
     float getOutputMeterDb() const noexcept { return outputMeterDb.load(std::memory_order_relaxed); }
 
+    // Which of the three parameter sets the engine latches currently select. Public because the
+    // GUI needs exactly the same answer the audio thread uses - the scope has to follow the engaged
+    // configuration's rate, depth and centre, and the paged MOD ENGINE box shows that page. Having
+    // one implementation rather than two is the point: a second copy of this selection in the GUI
+    // is precisely the kind of duplicated fact that drifts.
+    enum class Configuration { one, two, both, bypassed };
+
+    // The resolved values for the block being processed.
+    struct ActiveConfiguration
+    {
+        Configuration which = Configuration::bypassed;
+        float rateHz = 0.0f;
+        float depthPercent = 0.0f;
+        float centreMs = 0.0f;
+        float decorrelationPercent = 0.0f;
+        bool mono = false;
+        bool engaged = false; // false when neither latch is on - the panel's OFF/bypass state
+    };
+
+    ActiveConfiguration resolveActiveConfiguration() const;
+
 private:
     ProgramManager programManager;
 
+    // One configuration's five parameters. Three of these exist - I, II and I+II - and exactly one
+    // is selected per block by the engine latches; see resolveActiveConfiguration().
+    struct ConfigurationParams
+    {
+        std::atomic<float>* rate = nullptr;
+        std::atomic<float>* depth = nullptr;
+        std::atomic<float>* centre = nullptr;
+        std::atomic<float>* decorrelation = nullptr;
+        std::atomic<float>* mono = nullptr;
+    };
+
     std::atomic<float>* engine1Param = nullptr;
     std::atomic<float>* engine2Param = nullptr;
-    std::atomic<float>* rate1Param = nullptr;
-    std::atomic<float>* depth1Param = nullptr;
-    std::atomic<float>* rate2Param = nullptr;
-    std::atomic<float>* depth2Param = nullptr;
-    std::atomic<float>* delayCenterParam = nullptr;
-    std::atomic<float>* decorrelationParam = nullptr;
+
+    ConfigurationParams configI;
+    ConfigurationParams configII;
+    ConfigurationParams configBoth;
+
     std::atomic<float>* driftParam = nullptr;
     std::atomic<float>* saturationParam = nullptr;
     std::atomic<float>* noiseParam = nullptr;
     std::atomic<float>* mixParam = nullptr;
     std::atomic<float>* trimParam = nullptr;
 
-    ModulationEngine modulationEngine1;
-    ModulationEngine modulationEngine2;
+    // Singular, deliberately. The real circuit has one LFO; I+II is a third configuration of it,
+    // not I and II summed. See design/BBD-TECHNICAL-NOTES-ADDENDUM.md.
+    ModulationEngine modulationEngine;
     BBDDelayLine bbdDelayLine;
     StereoDecorrelationStage stereoDecorrelationStage;
     CharacterStage characterStage;

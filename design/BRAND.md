@@ -114,7 +114,7 @@ What *is* shared is the rule, not the hex values:
 |---|---|---|---|
 | **TapeRot** | AU/VST3/Standalone | Warm, worn, analog decay | Shipping — all DSP stages implemented |
 | **Gatecrasher** | AU/VST3/Standalone | Cold, aggressive, gated reverb | In design — GUI mockup approved, DSP/build pending |
-| **CHORUS-60** | AU/VST3/Standalone | Near-black synth panel, BBD chorus, dual mod engines | In design — GUI mockup approved, DSP/build pending |
+| **Chorus-60** | AU/VST3/Standalone | Near-black synth panel, BBD chorus, dual mod engines | In design — GUI mockup approved, DSP/build pending |
 
 Update this table as new castings are started or shipped.
 

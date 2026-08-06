@@ -3,7 +3,7 @@
 Panel: **1400 × 632 px** at 1× (fixed aspect, 2.22:1 — the same ratio as Gatecrasher's 960 × 434,
 per BRAND.md's fixed-aspect-canvas rule). Reference renders in `assets/`.
 
-**Background plate:** `assets/chorus60-background-plate@2x.png` (2804 × 1266, draw at 1400 × 632)
+**Background plate:** `assets/chorus60-background-plate@2x.png` (2804 × 1268, draw at 1400 × 632)
 is the full static fascia with **no controls and no text over top** — panel material and frame, header
 chrome with empty PROGRAM / IN / OUT wells, blue stripes and the blank `CHORUS` strip, section divider,
 empty scope well, and the empty group boxes with their heading rules. Every glyph on the panel is drawn
@@ -13,6 +13,8 @@ the nine knob filmstrips and value readouts, the scope trace and annotations, PR
 SAVE/DELETE, and the IN/OUT numbers. Text positions are unchanged from the plate's geometry (label
 boxes are reserved at their measured heights), so §§2–8 coordinates apply as written. Blit the plate
 once as the editor background. Re-render from `Chorus-60 Background Plate.dc.html` if the fascia changes.
+It carries the paged MOD ENGINE box and the CHARACTER / OUTPUT boxes — there is no BBD LINE box.
+
 **Product icon:** `assets/icon/` — dark plate at 1024 / 512 / 256 / 128 / 64 / 32 / 16 px plus
 `chorus60-icon-light-512.png` for light hosts and print. Mark is the Librestile `60` in `#EEF2F4` with a
 `#FF2B1C` ghost copy offset down-right (the chorus double), over the panel chassis gradient and a
@@ -20,6 +22,7 @@ once as the editor background. Re-render from `Chorus-60 Background Plate.dc.htm
 corner radius 20.3%, stripe inset 20.3% and 1.6% tall at 15.2% up from the bottom. The stripe is
 dropped at 48px and below, the inner hairline frame below 128px, and the ghost stays fully opaque
 below 128px (it is 90% at larger sizes). Re-render from `Chorus-60 Icon.dc.html`.
+
 All coordinates below are panel-local, origin = top-left of the 1400 × 632 panel.
 Suite sibling: Gatecrasher GR-85 — where a component exists in both plugins the Gatecrasher spec
 governs its construction and this document only states what differs.
@@ -76,8 +79,9 @@ hardware, not an accent — they appear twice, above and below the button column
 | Section divider | 279 | 94 | 1 | 488 |
 | Control column | 302 | 94 | 1075 | 488 |
 
-Body padding: 18 top / 24 sides / 20 bottom. Control column stacks with 16px gaps:
-scope caption row (h 21) → scope (h 124) → engine row (h 159) → lower row (h 143).
+Body padding: 18 top / 24 sides / 23 bottom. Control column stacks with 16px gaps:
+scope caption row (h 21) → scope (h 124) → **paged MOD ENGINE box** (h 160) → lower row (h 149).
+Footer band starts at y 605.
 
 ## 4. Button column — the hardware chorus section
 
@@ -226,13 +230,69 @@ Group panels (1px `#000`, gradient per §1, 9/14/14 padding, title row over a ha
 
 | Group | x | y | w | h | Title row |
 |---|---|---|---|---|---|
-| MOD ENGINE I | 302 | 255 | 530 | 159 | Ø8 LED (engine I state) + title |
-| MOD ENGINE II | 848 | 255 | 530 | 159 | Ø8 LED (engine II state) + title |
-| BBD LINE | 302 | 430 | 302 | 143 | title only |
-| CHARACTER | 620 | 430 | 438 | 143 | title only |
-| OUTPUT | 1075 | 430 | 302 | 143 | title only |
+| MOD ENGINE (paged) | 302 | 255 | 1075 | 160 | Ø8 LED (any engine engaged) + page title + right-hand page note |
+| CHARACTER | 302 | 431 | 628 | 149 | title only |
+| OUTPUT | 946 | 431 | 431 | 149 | title only |
+
+There is **no BBD LINE box** — those parameters live inside the paged MOD ENGINE box (§7a).
+CHARACTER knobs (Ø48) at x 403 / 592 / 780, OUTPUT at x 1045 / 1230, all y 476.
+Group padding 8 top / 18 sides / 12 bottom; title rule 7px below the title baseline row.
 
 Knobs are distributed `space-evenly` inside each group.
+
+## 7a. The paged MOD ENGINE box
+
+**The physical I / II / OFF buttons are the pager.** There is no tab strip, no page arrows and no
+separate navigation control anywhere on the panel — pressing the same buttons that engage the chorus
+is what changes this box.
+
+| Buttons | Page | Title | Parameters (slot 1 → 4, then switch) |
+|---|---|---|---|
+| I only | `I` | `MOD ENGINE I` | RATE I · DEPTH I · DELAY CENTER I · DECORRELATION I · MONO/STEREO I (**Stereo**) |
+| II only | `II` | `MOD ENGINE II` | RATE II · DEPTH II · DELAY CENTER II · DECORRELATION II · MONO/STEREO II (**Stereo**) |
+| I + II | `I+II` | `MOD ENGINE I+II` | RATE I+II · DEPTH I+II · DELAY CENTER I+II · DECORRELATION I+II · MONO/STEREO I+II (**Mono**) |
+| neither | last page held | last page's title | last page's labels, powered down |
+
+All three pages carry the **same four knobs plus the switch** — the control set never changes shape,
+only its values and suffixes. On `I+II` the mode defaults to Mono, which makes DECORRELATION
+inaudible, but the knob stays live and adjustable: it becomes meaningful the moment that page is
+switched to Stereo. Do not grey it out or disable it.
+
+Each page is a complete, independent parameter set with its own stored values; returning to a page
+restores what it had.
+
+**Fixed geometry — nothing reflows between pages.** Box 302, 255, 1075 × 160 in every state.
+Knob wells (Ø58) at x 360 / 585 / 811 / 1036, switch at x 1273 (34 × 58), all y 300. Label row
+baseline y 367 (min-height 12), value readout y 381 (min-height 14).
+
+**Page transitions are animated, and the motion is the primary signal.** On every page change —
+`I→II`, `II→I+II`, `I+II→OFF`, and back — each of the four slots slews from its current rotation to
+its new target rather than snapping. Implementation: per-slot normalised position, exponentially
+smoothed toward the target with a **time-based** coefficient (`1 − 0.002^(dt/380ms)`, i.e. ~380ms to
+settle) so travel time is independent of frame rate. A slot being dragged bypasses the slew and
+tracks the pointer 1:1. The title text change is secondary reinforcement, not the cue.
+
+**OFF powers down the whole panel, and nothing is hidden.** MOD ENGINE, CHARACTER and OUTPUT all
+fade together to opacity 0.42 / `grayscale(1) brightness(.50)` over 340ms, their group titles drop to
+`#5F666B`, and **every knob on the panel** — the four engine slots and all five Character/Output
+knobs — slews to minimum on the same 380ms curve. Layout is untouched: labels, readouts and box
+geometry stay exactly where they are, and the last page's labels and stored readouts remain legible.
+The MOD ENGINE header note reads `BYPASS · SETTINGS RETAINED`. All knobs and the switch are
+non-interactive while powered down (cursor `default`, drags rejected). Engine-slot travel is driven
+per-slot; Character/Output travel is driven by one shared 0→1 power factor multiplying each knob's
+normalised value, so the whole panel winds down together.
+
+**MONO/STEREO switch** — vertical two-position toggle, 34 × 58 track (r17, `#0A0C0D`→`#141719`,
+inset `0 2px 6px rgba(0,0,0,.85)`), Ø26 thumb (`#E4E8EA`→`#A9B0B5`) at 4px inset, travelling 24px:
+top = STEREO, bottom = MONO. Thumb transition 260ms `cubic-bezier(.3,1.5,.5,1)`. Readout below
+prints `STEREO` / `MONO` in the value style. **No sprite exists for this control yet** — either cut a
+2-frame filmstrip or implement it code-drawn from the values above.
+
+Header note (Share Tech Mono 10px, .08em, `#5F666B`, right-aligned in the title row):
+`ENGINE I ENGAGED` / `ENGINE II ENGAGED` / `BOTH ENGAGED · MONO BBD PAIR` / `BYPASS · SETTINGS RETAINED`.
+
+State renders: `assets/chorus60-page-i@2x.png`, `chorus60-page-ii@2x.png`,
+`chorus60-page-i-plus-ii@2x.png`, `chorus60-page-off@2x.png`.
 
 ## 8. Wordmark
 
@@ -256,20 +316,30 @@ Model line, right of the wordmark at x 351: `BBD CHORUS PROCESSOR` (`#8A9196`) o
 |---|---|---|---|---|
 | `engine1` | Engine I | off / on | on | latch — yellow button + LED I |
 | `engine2` | Engine II | off / on | off | latch — orange button + LED II |
-| `rate1` | Rate I | 0.05 → 8 Hz | 0.45 | log (skew ≈ .35) |
-| `depth1` | Depth I | 0 → 100 % | 38 | linear |
-| `rate2` | Rate II | 0.05 → 8 Hz | 2.90 | log (skew ≈ .35) |
-| `depth2` | Depth II | 0 → 100 % | 64 | linear |
-| `delayCenter` | Delay Center | 2 → 14 ms | 5.6 | linear — BBD tap centre; offsets the scope trace |
-| `decorrelation` | Decorrelation | 0 → 100 % | 52 | linear — L/R modulator phase offset, 0 % mono-linked → 100 % 180° apart |
+| `rate1` | Rate I | 0.05 → 8 Hz | 0.45 | log (skew ≈ .35) — page `I` |
+| `depth1` | Depth I | 0 → 100 % | 38 | linear — page `I` |
+| `center1` | Delay Center I | 2 → 14 ms | 5.6 | linear — page `I` |
+| `decorr1` | Decorrelation I | 0 → 100 % | 52 | linear — page `I` |
+| `mono1` | Mono/Stereo I | stereo / mono | **stereo** | page `I` switch |
+| `rate2` | Rate II | 0.05 → 8 Hz | 2.90 | log (skew ≈ .35) — page `II` |
+| `depth2` | Depth II | 0 → 100 % | 64 | linear — page `II` |
+| `center2` | Delay Center II | 2 → 14 ms | 4.2 | linear — page `II` |
+| `decorr2` | Decorrelation II | 0 → 100 % | 66 | linear — page `II` |
+| `mono2` | Mono/Stereo II | stereo / mono | **stereo** | page `II` switch |
+| `rateB` | Rate I+II | 0.05 → 8 Hz | 1.20 | log (skew ≈ .35) — page `I+II` |
+| `depthB` | Depth I+II | 0 → 100 % | 52 | linear — page `I+II` |
+| `centerB` | Delay Center I+II | 2 → 14 ms | 6.4 | linear — page `I+II` |
+| `decorrB` | Decorrelation I+II | 0 → 100 % | 44 | linear — page `I+II`; live but inaudible while MONO |
+| `monoB` | Mono/Stereo I+II | stereo / mono | **mono** | page `I+II` switch |
 | `drift` | Drift | 0 → 100 % | 22 | linear — slow clock wander, visible in the trace |
 | `saturation` | Saturation | 0 → 100 % | 30 | linear — BBD stage drive |
 | `noise` | Noise | 0 → 100 % | 14 | linear — clock noise, visible in the trace |
 | `mix` | Mix | 0 → 100 % | 50 | linear |
 | `trim` | Output Trim | −12 → +12 dB | 0 | linear, signed display |
 
-Both engines running simultaneously is the classic Juno "I+II" state — allow it; the depth readout
-sums and the scope shows the composite.
+Both engines running simultaneously is the classic Juno "I+II" state — allow it; it selects the
+`I+II` page and its own parameter set, and the scope follows that page's rate and depth.
+Each page's values persist independently across page changes and across bypass.
 
 Factory programs: Wide Ensemble, Juno I, Juno II, Juno I+II, Slow Swell, Vibrato, Dimension,
 Shimmer Pad, Clock Noise, Warped Tape, Deep Detune, String Machine, Bright Doubler, Mono Verify,

@@ -160,19 +160,51 @@ void ProgramManager::applyProgramByIndex(int index)
 
 void ProgramManager::applyFactoryProgram(const FactoryProgram& program)
 {
-    *dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(ParamIDs::engine1)) = program.engine1;
-    *dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(ParamIDs::engine2)) = program.engine2;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::rate1)) = program.rate1Hz;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::depth1)) = program.depth1Percent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::rate2)) = program.rate2Hz;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::depth2)) = program.depth2Percent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::delayCenter)) = program.delayCenterMs;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::decorrelation)) = program.decorrelationPercent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::drift)) = program.driftPercent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::saturation)) = program.saturationPercent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::noise)) = program.noisePercent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::mix)) = program.mixPercent;
-    *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::trim)) = program.trimDb;
+    const auto setFloat = [this] (const char* id, float value)
+    {
+        *dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(id)) = value;
+    };
+    const auto setBool = [this] (const char* id, bool value)
+    {
+        *dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(id)) = value;
+    };
+
+    // All three configurations are written on every program load, not just the one the program
+    // ships engaged. That is the bank's core invariant: the engine latches are performance
+    // controls, so punching II on a program authored for I must produce that program's considered
+    // configuration II rather than whatever the previous program happened to leave behind.
+    const auto applyConfiguration = [&] (const FactoryConfiguration& config,
+                                         const char* rateId,
+                                         const char* depthId,
+                                         const char* centreId,
+                                         const char* decorrId,
+                                         const char* monoId)
+    {
+        setFloat(rateId, config.rateHz);
+        setFloat(depthId, config.depthPercent);
+        setFloat(centreId, config.delayCentreMs);
+        setFloat(decorrId, config.decorrelationPercent);
+        setBool(monoId, config.mono);
+    };
+
+    setBool(ParamIDs::engine1, program.engine1);
+    setBool(ParamIDs::engine2, program.engine2);
+
+    applyConfiguration(program.configI,
+                       ParamIDs::rate1, ParamIDs::depth1, ParamIDs::center1,
+                       ParamIDs::decorr1, ParamIDs::mono1);
+    applyConfiguration(program.configII,
+                       ParamIDs::rate2, ParamIDs::depth2, ParamIDs::center2,
+                       ParamIDs::decorr2, ParamIDs::mono2);
+    applyConfiguration(program.configBoth,
+                       ParamIDs::rateB, ParamIDs::depthB, ParamIDs::centerB,
+                       ParamIDs::decorrB, ParamIDs::monoB);
+
+    setFloat(ParamIDs::drift, program.driftPercent);
+    setFloat(ParamIDs::saturation, program.saturationPercent);
+    setFloat(ParamIDs::noise, program.noisePercent);
+    setFloat(ParamIDs::mix, program.mixPercent);
+    setFloat(ParamIDs::trim, program.trimDb);
 }
 
 void ProgramManager::saveNewUserProgram(const juce::String& requestedName)

@@ -7,12 +7,23 @@ namespace
 {
     const char* knobTooltip(const juce::String& paramID)
     {
-        if (paramID == ParamIDs::rate1) return "Engine I LFO rate.";
-        if (paramID == ParamIDs::depth1) return "Engine I modulation depth.";
-        if (paramID == ParamIDs::rate2) return "Engine II LFO rate.";
-        if (paramID == ParamIDs::depth2) return "Engine II modulation depth.";
-        if (paramID == ParamIDs::delayCenter) return "BBD tap centre delay - offsets the scope trace.";
-        if (paramID == ParamIDs::decorrelation) return "L/R modulator phase offset: 0% mono-linked, 100% 180deg apart.";
+        if (paramID == ParamIDs::rate1) return "Configuration I LFO rate.";
+        if (paramID == ParamIDs::depth1) return "Configuration I modulation depth.";
+        if (paramID == ParamIDs::center1) return "Configuration I BBD tap centre delay - offsets the scope trace.";
+        if (paramID == ParamIDs::decorr1) return "Configuration I L/R decorrelation. No effect while set to MONO.";
+        if (paramID == ParamIDs::mono1) return "Configuration I stereo mode. STEREO inverts the right channel's modulation.";
+
+        if (paramID == ParamIDs::rate2) return "Configuration II LFO rate.";
+        if (paramID == ParamIDs::depth2) return "Configuration II modulation depth.";
+        if (paramID == ParamIDs::center2) return "Configuration II BBD tap centre delay - offsets the scope trace.";
+        if (paramID == ParamIDs::decorr2) return "Configuration II L/R decorrelation. No effect while set to MONO.";
+        if (paramID == ParamIDs::mono2) return "Configuration II stereo mode. STEREO inverts the right channel's modulation.";
+
+        if (paramID == ParamIDs::rateB) return "Configuration I+II LFO rate - reaches far higher than I and II.";
+        if (paramID == ParamIDs::depthB) return "Configuration I+II modulation depth.";
+        if (paramID == ParamIDs::centerB) return "Configuration I+II BBD tap centre delay - offsets the scope trace.";
+        if (paramID == ParamIDs::decorrB) return "Configuration I+II L/R decorrelation. Live, but inaudible until this page is set to STEREO.";
+        if (paramID == ParamIDs::monoB) return "Configuration I+II stereo mode. Defaults to MONO, as the real circuit does.";
         if (paramID == ParamIDs::drift) return "Slow BBD clock wander, visible in the scope.";
         if (paramID == ParamIDs::saturation) return "BBD stage drive.";
         if (paramID == ParamIDs::noise) return "BBD clock noise floor, visible in the scope.";

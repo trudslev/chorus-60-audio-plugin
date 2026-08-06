@@ -1,6 +1,6 @@
-# CHORUS-60 CH-60 — GUI handoff
+# Chorus-60 CH-60 — GUI handoff
 
-You are building the JUCE plugin GUI for **CHORUS-60**, a Juno-60 / JN-80 style BBD chorus and the
+You are building the JUCE plugin GUI for **Chorus-60**, a Juno-60 / JN-80 style BBD chorus and the
 third plugin in the same suite as **Gatecrasher GR-85** and **TapeRot**. The visual design is
 approved and final — implement it, don't redesign it.
 

@@ -33,11 +33,9 @@ private:
 
     Chorus60AudioProcessor& processorRef;
 
-    std::atomic<float>* engine1Raw = nullptr;
-    std::atomic<float>* engine2Raw = nullptr;
-    std::atomic<float>* depth1Raw = nullptr;
-    std::atomic<float>* depth2Raw = nullptr;
-    std::atomic<float>* delayCenterRaw = nullptr;
+    // Depth and Delay Center are per-configuration now, so the scope cannot hold fixed pointers to
+    // "the" depth or centre - it asks the processor which configuration is engaged and reads that
+    // one. Only Noise stays a direct pointer, being genuinely global.
     std::atomic<float>* noiseRaw = nullptr;
 
     struct HistorySample

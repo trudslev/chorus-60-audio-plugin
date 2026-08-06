@@ -21,19 +21,49 @@ public:
 
         beginTest("Every program's fields are within Parameters.h's declared ranges");
         {
+            // Rate I and II share the slow 0.05-8Hz range; I+II has its own wider 0.05-16Hz one
+            // because the bank specifies 9.75, 11 and 14Hz there. Checking them against the same
+            // ceiling would either reject valid I+II data or silently permit an out-of-range I/II
+            // value, so they are asserted separately and deliberately.
+            const auto checkConfiguration = [this] (const FactoryConfiguration& c,
+                                                    float maxRateHz,
+                                                    const juce::String& where)
+            {
+                expect(c.rateHz >= 0.05f && c.rateHz <= maxRateHz, where + " rate");
+                expect(c.depthPercent >= 0.0f && c.depthPercent <= 100.0f, where + " depth");
+                expect(c.delayCentreMs >= 2.0f && c.delayCentreMs <= 14.0f, where + " centre");
+                expect(c.decorrelationPercent >= 0.0f && c.decorrelationPercent <= 100.0f,
+                       where + " decorrelation");
+            };
+
             for (const auto& p : kFactoryPrograms)
             {
-                expect(p.rate1Hz >= 0.2f && p.rate1Hz <= 2.0f, p.name);
-                expect(p.depth1Percent >= 0.0f && p.depth1Percent <= 100.0f, p.name);
-                expect(p.rate2Hz >= 0.2f && p.rate2Hz <= 2.0f, p.name);
-                expect(p.depth2Percent >= 0.0f && p.depth2Percent <= 100.0f, p.name);
-                expect(p.delayCenterMs >= 5.0f && p.delayCenterMs <= 15.0f, p.name);
-                expect(p.decorrelationPercent >= 0.0f && p.decorrelationPercent <= 100.0f, p.name);
+                checkConfiguration(p.configI, 8.0f, juce::String(p.name) + " I");
+                checkConfiguration(p.configII, 8.0f, juce::String(p.name) + " II");
+                checkConfiguration(p.configBoth, 16.0f, juce::String(p.name) + " I+II");
+
                 expect(p.driftPercent >= 0.0f && p.driftPercent <= 100.0f, p.name);
                 expect(p.saturationPercent >= 0.0f && p.saturationPercent <= 100.0f, p.name);
                 expect(p.noisePercent >= 0.0f && p.noisePercent <= 100.0f, p.name);
                 expect(p.mixPercent >= 0.0f && p.mixPercent <= 100.0f, p.name);
-                expect(p.trimDb >= -24.0f && p.trimDb <= 24.0f, p.name);
+                expect(p.trimDb >= -12.0f && p.trimDb <= 12.0f, p.name);
+            }
+        }
+
+        // The correction in design/BBD-TECHNICAL-NOTES-ADDENDUM.md is a claim about what I+II *is*:
+        // a distinct fast configuration, not I and II summed. If a program's I+II rate ever drifted
+        // down among its I and II rates, the bank would silently stop expressing that - so assert
+        // the structural relationship rather than trusting the table to stay correct by inspection.
+        beginTest("I+II is genuinely a faster configuration, not a blend of I and II");
+        {
+            for (const auto& p : kFactoryPrograms)
+            {
+                const float slowest = juce::jmax(p.configI.rateHz, p.configII.rateHz);
+                expect(p.configBoth.rateHz > slowest * 2.0f,
+                       juce::String(p.name) + " I+II rate is not clearly faster than I and II");
+                expect(p.configBoth.delayCentreMs < juce::jmin(p.configI.delayCentreMs,
+                                                              p.configII.delayCentreMs),
+                       juce::String(p.name) + " I+II is not centred on a narrower delay");
             }
         }
 
@@ -42,14 +72,20 @@ public:
         // a *currently disengaged* engine matter just as much as the engaged one's. A zero (or
         // out-of-range) Depth on the idle engine would mean engaging it yields no modulation at all,
         // which is the silent-engine failure this bank exists to rule out.
-        beginTest("Every program carries usable Rate/Depth for BOTH engines, engaged or not");
+        beginTest("Every program carries usable Rate/Depth for ALL THREE configurations");
         {
             for (const auto& p : kFactoryPrograms)
             {
-                expect(p.depth1Percent > 0.0f, juce::String(p.name) + " has no Depth I");
-                expect(p.depth2Percent > 0.0f, juce::String(p.name) + " has no Depth II");
-                expect(p.rate1Hz > 0.0f, juce::String(p.name) + " has no Rate I");
-                expect(p.rate2Hz > 0.0f, juce::String(p.name) + " has no Rate II");
+                const auto usable = [this, &p] (const FactoryConfiguration& c, const char* which)
+                {
+                    expect(c.depthPercent > 0.0f,
+                           juce::String(p.name) + " has no Depth " + which);
+                    expect(c.rateHz > 0.0f,
+                           juce::String(p.name) + " has no Rate " + which);
+                };
+                usable(p.configI, "I");
+                usable(p.configII, "II");
+                usable(p.configBoth, "I+II");
             }
         }
 
