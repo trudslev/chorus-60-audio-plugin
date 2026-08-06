@@ -75,11 +75,16 @@ void PanelChrome::paintGroupTitles(juce::Graphics& g)
     // follows engine state), so their titles start further right to clear it.
     struct GroupTitle { const char* text; float x, y; bool hasLed; };
     static constexpr GroupTitle titles[] = {
-        {"MOD ENGINE I",  Layout::modEngineIGroupX,  Layout::modEngineIGroupY,  true},
-        {"MOD ENGINE II", Layout::modEngineIIGroupX, Layout::modEngineIIGroupY, true},
-        {"BBD LINE",      302.0f, 430.0f, false},
-        {"CHARACTER",     620.0f, 430.0f, false},
-        {"OUTPUT",        1075.0f, 430.0f, false},
+        // MOD ENGINE's title is NOT static any more - it names the engaged configuration
+        // ("MOD ENGINE I+II") and carries a right-aligned page note, both of which change as the
+        // latches change. Chorus60EditorContent draws it live; PanelChrome only engraves the boxes
+        // whose titles never move.
+        // No BBD LINE box any more - spec section 7 states it plainly ("There is no BBD LINE
+        // box"), because Delay Center and Decorrelation moved into the paged MOD ENGINE box when
+        // they became per-configuration. Its title was still being engraved over the CHARACTER
+        // group's left edge, labelling a box that no longer exists.
+        {"CHARACTER",     Layout::characterGroupX, Layout::characterGroupY - 1.0f, false},
+        {"OUTPUT",        Layout::outputGroupX,    Layout::outputGroupY - 1.0f,    false},
     };
 
     for (const auto& title : titles)

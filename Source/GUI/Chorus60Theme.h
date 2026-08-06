@@ -122,22 +122,88 @@ namespace Chorus60Theme
             KnobFilmstripSize size;
         };
 
-        // Section 7's full 11-knob table, in the exact ParamIDs from Source/Parameters.h (the
-        // authoritative parameter list - engine1/engine2 are the only two APVTS parameters with no
-        // knob, they bind to the button column instead).
-        inline constexpr std::array<KnobSpec, 11> knobs{ {
-            {"rate1",         "RATE I",        454.0f, 328.0f, 58.0f, KnobFilmstripSize::large},
-            {"depth1",        "DEPTH I",       680.0f, 328.0f, 58.0f, KnobFilmstripSize::large},
-            {"rate2",         "RATE II",       999.0f, 328.0f, 58.0f, KnobFilmstripSize::large},
-            {"depth2",        "DEPTH II",     1226.0f, 328.0f, 58.0f, KnobFilmstripSize::large},
-            {"delayCenter",   "DELAY CENTER",  385.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"decorrelation", "DECORRELATION", 521.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"drift",         "DRIFT",         703.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"saturation",    "SATURATION",    839.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"noise",         "NOISE",         976.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"mix",           "MIX",          1158.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
-            {"trim",          "OUTPUT TRIM",  1294.0f, 495.0f, 42.0f, KnobFilmstripSize::small},
+        // --- The paged MOD ENGINE box (section 7a) -------------------------------------------
+        //
+        // Four knob SLOTS, not four fixed knobs. Which parameter each slot drives depends on which
+        // configuration the I/II latches have selected, so the paramID is not a property of the
+        // slot - see pageFor() below. The control set never changes shape between pages; only the
+        // values and the label suffixes do.
+        //
+        // The spec gives well positions as top-left ("switch at x 1273 (34 x 58)" fixes the
+        // convention, and a Ø58 well topped at y 300 puts its label baseline at 367, i.e. the 9px
+        // gap section 7 specifies). Everything below therefore converts to centres explicitly
+        // rather than leaving the reader to guess which convention a bare pair of numbers uses.
+        constexpr float slotWellD = 58.0f;
+        constexpr float slotWellY = 300.0f;
+        inline constexpr std::array<float, 4> slotWellX{ {360.0f, 585.0f, 811.0f, 1036.0f} };
+
+        constexpr float slotCentreY = slotWellY + slotWellD * 0.5f;
+        inline constexpr float slotCentreX(int slot) noexcept { return slotWellX[(size_t) slot] + slotWellD * 0.5f; }
+
+        // Mono/Stereo switch: vertical two-position toggle. No sprite exists for this control, so
+        // it is drawn in code from section 7a's own values - see MonoStereoSwitch.
+        constexpr float switchX = 1273.0f, switchY = 300.0f, switchW = 34.0f, switchH = 58.0f;
+
+        // One page: the five parameters of one configuration, and how the box titles itself.
+        struct EnginePage
+        {
+            const char* rateID;
+            const char* depthID;
+            const char* centreID;
+            const char* decorrID;
+            const char* monoID;
+            const char* title;      // group title, e.g. "MOD ENGINE I+II"
+            const char* headerNote; // right-aligned note in the title row
+            const char* suffix;     // appended to each slot's label, e.g. "I+II"
+        };
+
+        inline constexpr EnginePage pageI{
+            "rate1", "depth1", "center1", "decorr1", "mono1",
+            "MOD ENGINE I", "ENGINE I ENGAGED", "I"};
+        inline constexpr EnginePage pageII{
+            "rate2", "depth2", "center2", "decorr2", "mono2",
+            "MOD ENGINE II", "ENGINE II ENGAGED", "II"};
+        inline constexpr EnginePage pageBoth{
+            "rateB", "depthB", "centerB", "decorrB", "monoB",
+            "MOD ENGINE I+II", "BOTH ENGAGED \xc2\xb7 MONO BBD PAIR", "I+II"};
+
+        // The four slot labels, in order. The page's suffix is appended at draw time.
+        inline constexpr std::array<const char*, 4> slotLabels{
+            {"RATE", "DEPTH", "DELAY CENTER", "DECORRELATION"}};
+
+        // Shown while nothing is engaged. The last page's own title and labels are retained - the
+        // panel powers down rather than emptying - so only the note changes.
+        constexpr const char* bypassHeaderNote = "BYPASS \xc2\xb7 SETTINGS RETAINED";
+
+        // --- Genuinely global knobs (CHARACTER and OUTPUT) ------------------------------------
+        //
+        // Five, not seven: Delay Center and Decorrelation moved into the paged box when they became
+        // per-configuration. Ø48 per section 7's group table, well top-left again.
+        constexpr float globalKnobD = 48.0f;
+        constexpr float globalKnobWellY = 476.0f;
+        constexpr float globalKnobCentreY = globalKnobWellY + globalKnobD * 0.5f;
+
+        inline constexpr std::array<KnobSpec, 5> knobs{ {
+            {"drift",      "DRIFT",       403.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
+            {"saturation", "SATURATION",  592.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
+            {"noise",      "NOISE",       780.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
+            {"mix",        "MIX",        1045.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
+            {"trim",       "OUTPUT TRIM",1230.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
         } };
+
+        // --- Transition timing (section 7a) ---------------------------------------------------
+        //
+        // "each of the four slots slews from its current rotation to its new target rather than
+        // snapping... exponentially smoothed toward the target with a time-based coefficient
+        // (1 - 0.002^(dt/380ms))". Time-based rather than per-frame so travel takes the same wall
+        // time regardless of frame rate, and so a dropped frame does not shorten the motion.
+        constexpr float slewSettleMs = 380.0f;
+        constexpr float slewRemainderAtSettle = 0.002f;
+
+        // The panel-wide fade when nothing is engaged.
+        constexpr float powerDownFadeMs = 340.0f;
+        constexpr float powerDownOpacity = 0.42f;
+        constexpr float powerDownBrightness = 0.50f;
 
         // Button column, section 4.
         constexpr float buttonIIX = 31.0f, buttonIIY = 144.0f, buttonW = 116.0f, buttonH = 116.0f;
@@ -161,8 +227,18 @@ namespace Chorus60Theme
         // from the group panel's own 9/14/14 padding convention (section 7) and cross-checked
         // against chorus60-panel@2x.png's baked dot position.
         constexpr float groupLedD = 8.0f;
-        constexpr float modEngineIGroupX = 302.0f, modEngineIGroupY = 255.0f;
-        constexpr float modEngineIIGroupX = 848.0f, modEngineIIGroupY = 255.0f;
+
+        // One MOD ENGINE box now, spanning what used to be two. Section 7's group table:
+        // MOD ENGINE 302,255 1075x160 | CHARACTER 302,431 628x149 | OUTPUT 946,431 431x149.
+        // Its geometry is fixed in every page state - nothing reflows between pages, and the OFF
+        // state powers the box down rather than resizing or emptying it.
+        constexpr float modEngineGroupX = 302.0f, modEngineGroupY = 255.0f;
+        constexpr float modEngineGroupW = 1075.0f, modEngineGroupH = 160.0f;
+        constexpr float characterGroupX = 302.0f, characterGroupY = 431.0f;
+        constexpr float characterGroupW = 628.0f, characterGroupH = 149.0f;
+        constexpr float outputGroupX = 946.0f, outputGroupY = 431.0f;
+        constexpr float outputGroupW = 431.0f, outputGroupH = 149.0f;
+
         constexpr float groupLedPadX = 9.0f, groupLedPadY = 18.0f; // centre inset from group top-left
 
         // Delay-modulation scope, section 5.
@@ -186,13 +262,17 @@ namespace Chorus60Theme
         constexpr float scopeCentreOffsetFraction = 0.10f;
         constexpr float delayCenterRangeMid = 8.0f, delayCenterRangeHalf = 6.0f;
 
-        // The real DSP's own theoretical ceiling for combined modulation + drift offset (ms), used
-        // as the value that maps to the full scopeAmplitudeFraction*h swing. ModulationEngine.cpp's
-        // maxExcursionMs is 2.5ms per engine (both engines can sum), CharacterStage.cpp's
-        // maxDriftMs is 0.15ms - those constants live in anonymous namespaces in DSP .cpp files so
-        // aren't directly includable here; this is their documented sum, kept as one named constant
-        // so the provenance is clear rather than a bare magic number.
-        constexpr float scopeReferenceExcursionMs = 2.5f * 2.0f + 0.15f;
+        // The real DSP's own theoretical ceiling for modulation + drift offset (ms), used as the
+        // value that maps to the full scopeAmplitudeFraction*h swing. ModulationEngine.cpp's
+        // maxExcursionMs is 5ms and CharacterStage.cpp's maxDriftMs is 0.15ms - those constants live
+        // in anonymous namespaces in DSP .cpp files so aren't directly includable here; this is
+        // their documented sum, kept as one named constant so the provenance is clear rather than a
+        // bare magic number.
+        //
+        // No longer doubled for "both engines can sum": there is one engine now, and I+II is a
+        // configuration of it rather than two engines running together. Doubling would have halved
+        // the trace's apparent amplitude against a ceiling nothing can reach.
+        constexpr float scopeReferenceExcursionMs = 5.0f + 0.15f;
 
         // Program header (section 6). The three header-state bitmaps are full-width renders of the
         // whole header band (wordmark included) - ProgramHeader only ever blits the "program
@@ -267,18 +347,15 @@ namespace Chorus60Theme
         return centre + directionForAngleDegrees(angleDegrees) * radius;
     }
 
-    // MOD ENGINE I/II group panels' own Ø8 title-row LED bounds (see Layout::groupLedPadX/Y's
-    // comment for how these were derived).
-    inline juce::Rectangle<float> modEngineILedRect() noexcept
+    // The paged MOD ENGINE box's Ø8 title-row LED (see Layout::groupLedPadX/Y's comment for how
+    // these were derived). One LED now rather than two: section 7a specifies it lights whenever
+    // *any* engine is engaged, since the box represents whichever single configuration is active
+    // rather than one engine each.
+    inline juce::Rectangle<float> modEngineLedRect() noexcept
     {
         using namespace Layout;
-        return { modEngineIGroupX + groupLedPadX - groupLedD * 0.5f, modEngineIGroupY + groupLedPadY - groupLedD * 0.5f,
-                 groupLedD, groupLedD };
-    }
-    inline juce::Rectangle<float> modEngineIILedRect() noexcept
-    {
-        using namespace Layout;
-        return { modEngineIIGroupX + groupLedPadX - groupLedD * 0.5f, modEngineIIGroupY + groupLedPadY - groupLedD * 0.5f,
+        return { modEngineGroupX + groupLedPadX - groupLedD * 0.5f,
+                 modEngineGroupY + groupLedPadY - groupLedD * 0.5f,
                  groupLedD, groupLedD };
     }
 

@@ -98,6 +98,7 @@ target_sources(Chorus60 PRIVATE
     Source/GUI/Chorus60LookAndFeel.cpp
     Source/GUI/Chorus60PanelBackground.cpp
     Source/GUI/KnobFilmstripComponent.cpp
+    Source/GUI/MonoStereoSwitch.cpp
     Source/GUI/ModScope.cpp
     Source/GUI/EngineButtonComponent.cpp
     Source/GUI/ProgramHeader.cpp

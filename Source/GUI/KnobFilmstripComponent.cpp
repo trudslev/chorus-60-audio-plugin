@@ -45,13 +45,52 @@ void KnobFilmstripComponent::paint(juce::Graphics& g)
 
     const auto& strip = filmstripSize == KnobFilmstripSize::large ? knobLargeFilmstrip() : knobSmallFilmstrip();
 
-    // sliderPos accounts for the parameter's own skew (e.g. Rate I/II's log skew) via the Slider's
+    // sliderPos accounts for the parameter's own skew (e.g. Rate's log skew) via the Slider's
     // NormalisableRange, set up by SliderAttachment from the bound RangedAudioParameter - so the
     // knob's physical rotation always matches the parameter's true travel proportion.
-    const float sliderPos = (float) valueToProportionOfLength(getValue());
+    //
+    // The override, when set, is already a proportion of travel, so it needs no conversion: the
+    // animator works in the same units precisely so a slew is linear in *rotation* rather than in
+    // parameter value, which for a skewed parameter are not the same motion.
+    const float sliderPos = getDrawnProportion();
     const int frame = juce::jlimit(0, 127, (int) std::round(sliderPos * 127.0f));
 
     g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+    g.setOpacity(dimFactor);
     g.drawImage(strip, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
                 0, frame * 128, 128, 128);
+    g.setOpacity(1.0f);
+}
+
+void KnobFilmstripComponent::setDisplayProportion(float proportion) noexcept
+{
+    const float clamped = juce::jlimit(0.0f, 1.0f, proportion);
+    if (std::abs(clamped - displayProportionOverride) < 1.0e-5f)
+        return;
+    displayProportionOverride = clamped;
+    repaint();
+}
+
+void KnobFilmstripComponent::clearDisplayProportion() noexcept
+{
+    if (displayProportionOverride < 0.0f)
+        return;
+    displayProportionOverride = -1.0f;
+    repaint();
+}
+
+float KnobFilmstripComponent::getDrawnProportion()
+{
+    if (displayProportionOverride >= 0.0f)
+        return displayProportionOverride;
+    return (float) valueToProportionOfLength(getValue());
+}
+
+void KnobFilmstripComponent::setDimFactor(float factor) noexcept
+{
+    const float clamped = juce::jlimit(0.0f, 1.0f, factor);
+    if (std::abs(clamped - dimFactor) < 1.0e-4f)
+        return;
+    dimFactor = clamped;
+    repaint();
 }

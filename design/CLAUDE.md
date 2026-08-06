@@ -8,9 +8,13 @@ Read `CHORUS60-GUI-SPEC.md` first. It has the palette, every control coordinate,
 contract, the header/program contract shared with Gatecrasher, and the scope drawing rules.
 
 **Assets**
-- `assets/chorus60-panel@2x.png` — approved reference, engine I engaged (default program)
-- `assets/chorus60-panel-both-engines@2x.png` — I + II engaged (both LEDs lit)
-- `assets/chorus60-panel-bypass@2x.png` — OFF (both LEDs dark, scope at drift floor)
+- `assets/chorus60-background-plate@2x.png` — the bare chassis actually loaded at runtime
+- `assets/chorus60-page-i@2x.png` — page I
+- `assets/chorus60-page-ii@2x.png` — page II
+- `assets/chorus60-page-i-plus-ii@2x.png` — page I+II
+- `assets/chorus60-page-off@2x.png` — OFF, whole panel powered down
+- The three older `chorus60-panel*@2x.png` renders are superseded by the four page renders above -
+  they show the pre-correction two-engine layout, which no longer exists.
 - `assets/knob_large_128px_128f.png` — 128 frames, knurled, −135°→+135° (**shared with Gatecrasher**)
 - `assets/knob_small_128px_128f.png` — 128 frames, plain skirt (**shared with Gatecrasher**)
 - `assets/header-factory-program@3x.png` — header, factory program (DELETE disabled)
@@ -37,7 +41,11 @@ behavioural reference, not as code to port.
   128px so all panel sizes downscale.
 - Tick rings are drawn in code, separately from the strips (they don't rotate).
 - Panel is fixed **1400 × 632** at 1× — 2.22:1, the same canvas ratio as Gatecrasher (BRAND.md).
-- Single page. No tabs, no pages, no hidden controls — everything is visible at once.
+- **Paged MOD ENGINE box** (spec §7a). The I / II / OFF buttons are the pager — there is no tab
+  strip and no separate navigation control. Nothing is ever hidden: all three pages carry the same
+  four knobs plus the MONO/STEREO switch, the box geometry is identical in every state, and OFF
+  powers the whole panel down rather than emptying it. This supersedes the earlier "single page, no
+  tabs, no pages" instruction, which predates the correction in BBD-TECHNICAL-NOTES-ADDENDUM.md.
 - The chassis is near-black synth-panel material, deliberately unlike Gatecrasher's light steel rack
   and TapeRot's warm tape-deck fascia. There are no rack ears and no screws: this panel reads as if
   it were unbolted out of a synthesizer.

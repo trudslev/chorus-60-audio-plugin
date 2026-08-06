@@ -23,8 +23,27 @@ public:
 
     void paint(juce::Graphics&) override;
 
+    // Draw at a rotation other than the parameter's own, so the knob can slew between values
+    // instead of snapping (spec section 7a) and can wind down to minimum while the panel is
+    // powered off *without* touching the parameter - OFF reads "SETTINGS RETAINED", so the values
+    // must survive untouched while the panel visibly winds down.
+    //
+    // Passing a negative value returns the knob to following its parameter directly.
+    void setDisplayProportion(float proportion) noexcept;
+    void clearDisplayProportion() noexcept;
+
+    // The proportion currently drawn, whether that comes from the override or the parameter. The
+    // editor's animator needs this as the starting point of a slew.
+    float getDrawnProportion();
+
+    // Dimming factor for the power-down fade, 1 = normal.
+    void setDimFactor(float factor) noexcept;
+
 private:
     Chorus60Theme::KnobFilmstripSize filmstripSize;
     float diameter;
     float tickSpacingDegrees;
+
+    float displayProportionOverride = -1.0f;
+    float dimFactor = 1.0f;
 };

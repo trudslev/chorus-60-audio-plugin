@@ -229,6 +229,24 @@ void Chorus60AudioProcessor::setStateInformation(const void* data, int sizeInByt
     if (std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes)); xml != nullptr)
         if (xml->hasTagName(apvts.state.getType()))
         {
+            // The schema version was being written but never read, which made it decorative. A v1
+            // state restored into the v2 layout produced a silent hybrid: rate1/depth1 survived
+            // because those IDs still exist, while center1/decorr1 - new in v2 - fell back to their
+            // parameter defaults, so the plugin came up showing neither the saved values nor the
+            // program's. Nothing reported a problem; the numbers were simply wrong.
+            //
+            // v1 predates the paged-engine rework, where delayCenter/decorrelation were single
+            // globals and rate1/rate2 spanned 0.2-2Hz rather than 0.05-8Hz. A stored *normalised*
+            // value therefore means something different in each, so there is nothing to salvage
+            // by reading it - the honest move is to discard it and load the default program.
+            const int savedSchema = xml->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1);
+            if (savedSchema != LegacyMigration::currentStateSchemaVersion)
+            {
+                programManager.cancelPendingChange();
+                programManager.requestProgramChange(defaultFactoryProgramIndex);
+                return;
+            }
+
             programManager.cancelPendingChange();
             apvts.replaceState(juce::ValueTree::fromXml(*xml));
 
