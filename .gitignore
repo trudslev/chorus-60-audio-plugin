@@ -10,3 +10,8 @@ cmake-build-*/
 # Designer hand-off archives: every file in them is extracted into design/ already, so committing
 # the archive too would duplicate ~18MB of binary assets in a public repo for no benefit.
 design/*.zip
+
+# Prompt logs are personal working notes, not project documentation. Any decision that matters
+# belongs in a code comment beside what it governs, or in this repo's CLAUDE.md - never only in a
+# prompt, where nobody will find it.
+prompts/
