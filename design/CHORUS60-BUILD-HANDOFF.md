@@ -112,47 +112,61 @@ lamp-on / lamp-off ship as a pair and the buttons do not. If the build wants a p
 The buttons' seating shadow is **not** baked into the sprites (it would fight the plate's material).
 Draw it under each button: `0 7px 13px -7px rgba(0,0,0,.95)`.
 
-## 4. Knob filmstrips — **re-rendered, diameters CHANGED**
+## 4. Knob filmstrips — **re-rendered: new cap, new frame boxes, @2x shipped**
 
 The layout enlarged both knob sizes. These are re-rendered at the new diameters, not scaled sprites.
 
-| File | Diameter | Frames | Sheet | Layout |
-|---|---|---|---|---|
-| `assets/knob_mod_84px_128f.png` | **84** (was 58) | 128 | 84 × 10752 | Vertical strip, frame *n* at y = −84 n |
-| `assets/knob_global_68px_128f.png` | **68** (was 48) | 128 | 68 × 8704 | Vertical strip, frame *n* at y = −68 n |
-| `assets/knob_mod_168px_128f@2x.png` | 168 | 128 | 1344 × 2688 | **8 × 16 grid**, row-major |
-| `assets/knob_global_136px_128f@2x.png` | 136 | 128 | 1088 × 2176 | **8 × 16 grid**, row-major |
+| File | Cap Ø | Frame box | Frames | Sheet | Layout |
+|---|---|---|---|---|---|
+| `assets/knob_mod_84px_128f.png` | **84** | **112** | 128 | 112 × 14336 | Vertical strip, frame *n* at y = −112 n |
+| `assets/knob_global_68px_128f.png` | **68** | **92** | 128 | 92 × 11776 | Vertical strip, frame *n* at y = −92 n |
+| `assets/knob_mod_168px_128f@2x.png` | **168** | **224** | 128 | 1792 × 3584 | **8 × 16 grid**, row-major |
+| `assets/knob_global_136px_128f@2x.png` | **136** | **184** | 128 | 1472 × 2944 | **8 × 16 grid**, row-major |
 
-The @2x sheets are grids, not strips: a 168 × 21504 vertical strip exceeds the maximum texture and
+⚠ **The frame box is larger than the cap.** Cap-to-box ratio is 0.75 (global is 0.739 — 68 / 0.75 is
+not an integer, and 92 was chosen so the @2x sheet is an exact doubling). The margin is **not
+padding**: it is where the cast shadow fades to zero. Do not re-crop the sheets, and **position each
+knob from the cap centre, not from the frame box** — treating the box as the knob makes every control
+render ~33 % oversized.
+
+Earlier revisions shipped cap-fills-frame sheets (Ø84 in an 84 box). Those clipped the cast shadow
+square at the frame edge — the generator's own guard flags it, and the retired Ø128 masters failed it
+at border alpha 88 top / 95 bottom / 38 sides. All four sheets above pass at ≤ 2.
+
+The @2x sheets are grids, not strips: a 224 × 28672 vertical strip exceeds the maximum texture and
 canvas height on most targets. Frame *n* sits at column *n* mod 8, row ⌊*n* / 8⌋.
 
 Frame 0 = −135°, frame 127 = +135°, linear in between.
 
-⚠ **Open dependency — the @2x sheets are not in this bundle.** They were previously shipped as
-upsampled placeholders; those files have been **removed** rather than left in place, because a file
-named `@2x` in an assets folder tends to get wired up on sight and would ship a soft knob under a
-retina label. The @1x strips are final and are what ships today.
+**Source: a parametric generator, not a raster master.** The knob is drawn programmatically from a
+scale factor S — cap radius, rim stroke (2 × S), shadow blur (11 × S), shadow offset (8 × S), pointer
+width/length and pointer glow all derive from it. Any diameter is reachable by re-running it; the
+retired Ø128 files were outputs, never the source. All four sheets above were produced from that
+generator at Chorus-60 diameters, natively at each size — nothing is upscaled.
 
-**The source is a parametric generator, not a raster master.** The knob art is drawn programmatically
-from a scale factor S: canvas, cap radius, rim stroke (2 × S), shadow blur (11 × S), shadow offset
-(8 × S), pointer width/length and pointer glow are all computed from it. The Ø128 files in `assets/`
-are outputs of that generator, not its source — so the old "Ø128 is the ceiling" reading in earlier
-revisions of this section was wrong. Any diameter is reachable by changing S.
+**The cap look changed this revision, deliberately.** Chorus-60 moved onto Gatecrasher's current
+render (the knob is shared — the retired Ø128 masters were byte-identical across both projects), then
+diverged on two points, both recorded in `tools/render-knob-filmstrips-chorus60.mjs`:
 
-The ask is therefore a **config change, not new artwork**: run the generator with the **Chorus-60 cap
-parameters** at **Ø336**, 128 frames, frame 0 = −135°. Ø336 covers Chorus-60 mod (Ø168) and global
-(Ø136) with headroom, and Gatecrasher (Ø240) from the same run.
+- **Darker cap, lit from the centre.** Gatecrasher lights the cap off-axis from the upper left,
+  which reads grey and flat against Chorus-60's dark fascia. Chorus-60 uses a **centred radial
+  falloff** instead — grey core, black rim, as on the original CH-60 knob. Gradient centred on the
+  cap at radius 0.62 × D with stops `#5a626a / #2d333a / #0e1114 / #030405`; top highlight .13 → .06
+  and bottom occlusion .28 → .18, since the vignette now does that work; knurl shadow band .18 → .22.
+- **Both pointers reach the cap centre.** The inherited geometry had the two knobs disagreeing: the
+  global pointer was thick and overshot (`pointerW` 0.075, tip at 0.625 D) while the mod pointer
+  stopped short at 0.468 D. Both now land at **0.520 D** — global `pointerW` 0.056 / `pointerTop`
+  0.115 / `pointerLen` 0.405, mod `pointerW` 0.048 / `pointerTop` 0.081 / `pointerLen` 0.439.
+- **The knurl rotates with the frame.** Gatecrasher draws the skirt at fixed angles, so the flutes
+  sit still while the pointer moves — visibly wrong once you turn a knob. Here the serration offset
+  advances by the frame angle.
 
-Three things to get right when the sheets arrive:
+Both @1x and @2x were re-rendered. This is a visible change to the panel, not a resolution-only swap
+— the renders in `reference/` predate it.
 
-- **Cap diameter is not frame pitch.** The generator pads each frame for the drop shadow — in the
-  Gatecrasher sheets a Ø136 cap sits in a 160 px box. Size knobs from the cap diameter or every
-  control lands ~15 % small.
-- **Do not substitute the Gatecrasher cap.** Its current render is a different design — lighter,
-  flatter, much shallower knurling. Chorus-60's panel is built against the darker knurled cap and
-  the @1x strips are final; the appearance must not change.
-- **@2x stays an 8 × 16 row-major grid** for the reason above — a Ø336 vertical strip would be far
-  past the texture-height limit.
+Retina is no longer an open dependency. The generator ships with the bundle
+(`tools/render-knob-filmstrips-chorus60.mjs`, `npm i canvas` then `node …`), so any future size is a
+re-run rather than an upscale. It carries the same shadow guard: all four sheets pass at ≤ 2.
 
 ## 5. Product icon — **exists, unchanged**
 

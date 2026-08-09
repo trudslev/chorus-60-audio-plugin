@@ -164,17 +164,27 @@ Three contents, one field:
 
 ## 6. Knob assets — **CHANGED, re-render required**
 
-| Sheet | Diameter | Frames | Sheet size | Used by |
-|---|---|---|---|---|
-| `assets/knob_mod_84px_128f.png` | **84 px** (was 58) | 128 | 84 × 10752 | Rate, Depth, Delay Center, Decorrelation |
-| `assets/knob_global_68px_128f.png` | **68 px** (was 48) | 128 | 68 × 8704 | Drift, Saturation, Noise, Mix, Output Trim |
+| Sheet | Cap Ø | Frame box | Frames | Sheet size | Used by |
+|---|---|---|---|---|---|
+| `assets/knob_mod_84px_128f.png` | **84 px** | **112** | 128 | 112 × 14336 | Rate, Depth, Delay Center, Decorrelation |
+| `assets/knob_global_68px_128f.png` | **68 px** | **92** | 128 | 92 × 11776 | Drift, Saturation, Noise, Mix, Output Trim |
+| `assets/knob_mod_168px_128f@2x.png` | **168 px** | **224** | 128 | 1792 × 3584 | as above, @2x — 8 × 16 grid |
+| `assets/knob_global_136px_128f@2x.png` | **136 px** | **184** | 128 | 1472 × 2944 | as above, @2x — 8 × 16 grid |
 
-Both sheets are **re-rendered at the new diameter** from the Ø128 masters — resampled once at build
-time, not scaled at draw time. The old `knob_large_128px_128f.png` / `knob_small_128px_128f.png`
-masters remain in `assets/` as the source of truth for future re-renders; the Ø58 / Ø48 usages are
-retired.
+**The frame box is larger than the cap** (ratio 0.75; global 0.739). The margin carries the cast
+shadow to zero — do not crop it, and centre each knob on the **cap**, not the frame box.
 
-Frame *n* (0…127) = `background-position: 0 −(n × diameter)px`. Frame 0 = −135°, frame 127 = +135°.
+All four sheets are rendered natively at their own size by a parametric generator taking a scale
+factor S — nothing is scaled at draw time and nothing is upscaled. The Ø58 / Ø48 usages are retired.
+
+**The cap look changed this revision**: lighter body, flatter falloff, knurl reaching further in.
+This matches Gatecrasher, which shares the knob. It is a visible panel change, not a resolution swap
+— reference renders predate it. The Ø128 files in `assets/` are retired outputs, not a source;
+future re-renders go back to the generator. See §4 of `CHORUS60-BUILD-HANDOFF.md`.
+
+Frame *n* (0…127) = `background-position: 0 −(n × frame box)px` for the @1x strips — that is
+−112 n for mod and −92 n for global, **not** the cap diameter. The @2x sheets are 8 × 16 grids: frame
+*n* at column *n* mod 8, row ⌊*n* / 8⌋. Frame 0 = −135°, frame 127 = +135°.
 The knurl ring that used to sit around each knob is **removed** — the printed scale replaces it.
 
 ## 7. Printed scales

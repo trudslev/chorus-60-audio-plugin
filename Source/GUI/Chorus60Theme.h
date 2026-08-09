@@ -89,13 +89,14 @@ namespace Chorus60Theme
         section 4 warns that sizing from the pitch lands every control about 15% small, and the
         padding ratio differs between sheets (Gatecrasher's Ø136 cap sits in a 160 px box).
 
-        For the @1x strips shipping today the ratio is close enough to 1 that drawing a frame into a
-        box of the section-8 diameter reproduces the reference renders EXACTLY - measured cap Ø75.0
-        for mod and Ø67.0 for global in both chorus60-page-i@2x.png and a capture of this build. So
-        capFraction is 1 here on purpose, describing what these sheets do rather than what an ideal
-        sheet would; when the @2x sheets land, set it from their real cap-to-pitch ratio and the
-        knobs keep the same on-screen size. Do NOT "correct" the @1x knobs to a Ø84 cap - that would
-        push them into the plate's printed ticks at r 42.5 and break agreement with the renders. */
+        The generator's own header states the rule: "the frame box is LARGER than the cap ... this is
+        not padding: it is where the cast shadow fades to zero. Do not re-crop, and position knobs
+        from the CAP centre, not the frame box." Measured on the shipped sheets, border alpha is <= 2
+        everywhere, so the shadow really does die inside the frame.
+
+        An earlier revision shipped sheets whose pitch WAS the cap diameter, which cost the shadow
+        its room; drawing those into a box of the section-8 diameter happened to match the renders of
+        the day. Do not reintroduce that by "simplifying" this field away. */
     struct FilmstripSheet
     {
         int framePx;
@@ -123,8 +124,13 @@ namespace Chorus60Theme
         // single source of truth for where a mark sits, and the spec is the record of why.
 
         constexpr int knobFrameCount = 128;
-        inline constexpr FilmstripSheet modSheet{84, 1, 1.0f};
-        inline constexpr FilmstripSheet globalSheet{68, 1, 1.0f};
+        // frame pitch, columns (1 = vertical strip), cap-to-pitch ratio. Taken from the shipped
+        // generator's own table (design/tools/render-knob-filmstrips-chorus60.mjs): the mod cap is
+        // Ø84 in a 112 box and the global Ø68 in a 92 box, and the difference between those two
+        // ratios is real, not rounding - the global knob's shadow needs proportionally more room.
+        // The @2x sheets are the same caps at 168/136 in 224/184, laid out as 8x16 row-major grids.
+        inline constexpr FilmstripSheet modSheet{112, 1, 84.0f / 112.0f};
+        inline constexpr FilmstripSheet globalSheet{92, 1, 68.0f / 92.0f};
 
         // ---- Section 4: regions ---------------------------------------------------------------
         constexpr float headerBandH = 78.0f;

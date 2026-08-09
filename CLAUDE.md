@@ -245,23 +245,17 @@ Unlike Gatecrasher, CHORUS-60 has no sidechain input bus - `BusesProperties` is 
   section 1.2 list - no double-prints, nothing straying onto baked furniture. The OFF state was
   measured rather than eyeballed (0.500 in the three boxes, 1.000 elsewhere, pointers unmoved), and
   the Rate pointer lands on its printed ticks to 0.20 degrees at minimum and 0.00 at maximum.
-- **One release blocker**, tracked in `prompts/PROMPTS.md`: there are no @2x knob filmstrips. The
-  earlier placeholders were upsampled and have been removed from `design/assets/` deliberately, so a
-  file named `@2x` can't get wired up on sight. The @1x strips are final and are what ships. The knob
-  comes from a **parametric generator** taking a scale factor - the Ø128 files earlier revisions
-  called "masters" were its outputs, not a ceiling - so producing the real sheets is a config change,
-  and handoff section 4 has the run parameters. `Chorus60Theme::FilmstripSheet` carries frame pitch,
-  column count and **cap-to-pitch ratio** as data so they drop in without a drawing-code change.
-- **Cap diameter is not frame pitch**, and the two must not be conflated when those sheets arrive:
-  the generator pads each frame for the drop shadow. On the current @1x strips the ratio is close
-  enough to 1 that drawing a frame into a box of the section-8 diameter reproduces the reference
-  renders exactly - measured cap Ø75.0 mod and Ø67.0 global in both `chorus60-page-i@2x.png` and a
-  capture of this build. **Do not "correct" the @1x knobs to a Ø84 cap**: that pushes them into the
-  plate's printed ticks at r 42.5 and breaks agreement with the acceptance renders.
-- **Schema 3 is a hard break.** Session restore and the user-Program load path both discard state
-  whose schema attribute is not current, so any `.chorus60program` written before this revision will
-  no longer load - the `image*` rename and the Rate widening make a v2 file unreadable as v3. Nothing
-  has shipped, so this is deliberate, but an existing user Program has to be re-saved.
+- **Knob filmstrips are complete and reproducible.** All four sheets ship rendered natively at their
+  own size, and the generator ships with them as `design/tools/render-knob-filmstrips-chorus60.mjs`,
+  so the art can be regenerated at any diameter rather than being a binary nobody can rebuild. The
+  earlier release blocker is closed.
+- **Cap diameter is not frame pitch, and `FilmstripSheet::capFraction` is what keeps them apart.**
+  The generator pads each frame so the cast shadow fades to zero inside it - measured border alpha
+  <= 2 on all four sheets - so the mod cap is Ø84 in a 112 box (0.750) and the global Ø68 in a 92 box
+  (0.739). Those two ratios differ for a real reason, not rounding. `KnobFilmstripComponent` draws
+  into `diameter / capFraction` so the CAP lands at section 8's size; size from the pitch instead and
+  every control comes out about 25% small. The generator's own header says it: "position knobs from
+  the CAP centre, not the frame box."
 - **Program bank**: 9 curated programs, `01 EIGHTY-TWO` default (spec section 11 confirms factory
   index 0; the `07 WIDE ENSEMBLE` that appears throughout the spec is an illustrative LCD string, not
   a bank entry). Values are structurally verified - ranges, the both-engines invariant, and a

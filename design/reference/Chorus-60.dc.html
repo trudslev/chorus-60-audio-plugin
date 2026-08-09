@@ -130,8 +130,8 @@ a:hover { color: #fff; }
                     <div style="position:absolute;left:{{ m.x }};top:{{ m.y }};width:52px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">{{ m.t }}</div>
                   </sc-for>
                   <div style="position:absolute;left:0;right:0;top:148px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.16em;color:#8A9196">{{ k.unit }}</div>
-                  <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:46px;top:40px;width:84px;height:84px;cursor:{{ k.cursor }}">
-                    <div style="position:absolute;inset:0;background-image:url('assets/knob_mod_84px_128f.png');background-size:84px 10752px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
+                  <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:32px;top:26px;width:112px;height:112px;cursor:{{ k.cursor }}">
+                    <div style="position:absolute;inset:0;background-image:url('assets/knob_mod_84px_128f.png');background-size:112px 14336px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
                   </div>
                 </div>
                 <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.18em;color:#A5ADB2;text-align:center">{{ k.label }}</div>
@@ -166,8 +166,8 @@ a:hover { color: #fff; }
                         <div style="position:absolute;left:{{ m.x }};top:{{ m.y }};width:46px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">{{ m.t }}</div>
                       </sc-for>
                       <div style="position:absolute;left:0;right:0;top:128px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.16em;color:#8A9196">{{ k.unit }}</div>
-                      <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:45px;top:38px;width:68px;height:68px;cursor:{{ k.cursor }}">
-                        <div style="position:absolute;inset:0;background-image:url('assets/knob_global_68px_128f.png');background-size:68px 8704px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
+                      <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:33px;top:26px;width:92px;height:92px;cursor:{{ k.cursor }}">
+                        <div style="position:absolute;inset:0;background-image:url('assets/knob_global_68px_128f.png');background-size:92px 11776px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
                       </div>
                     </div>
                     <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.18em;color:#A5ADB2;text-align:center">{{ k.label }}</div>
@@ -472,7 +472,7 @@ class Component extends DCLogic {
     const r = ring(m, GEO_GLB);
     return {
       label: m.label, unit: m.unit, ticks: r.ticks, marks: r.marks,
-      frameY: '-' + (f * 68) + 'px',
+      frameY: '-' + (f * 92) + 'px',
       cursor: live ? 'ns-resize' : 'default',
       onDown: (e) => {
         if (!this.live()) return;
@@ -504,7 +504,7 @@ class Component extends DCLogic {
     };
     return {
       label: name, unit: m.unit, ticks: r.ticks, marks: r.marks,
-      frameY: '-' + (Math.round(n * 127) * 84) + 'px',
+      frameY: '-' + (Math.round(n * 127) * 112) + 'px',
       cursor: live ? 'ns-resize' : 'default',
       onDown: (e) => {
         if (!this.live()) return;

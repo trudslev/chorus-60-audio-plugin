@@ -41,7 +41,13 @@ points; multiply by 2 for the @2x asset set.
 - **Wells are baked, contents are not.** Scope, LCD (bank cell, divider, name field) and
   both meters ship as empty inset wells in the plate.
 
-## Delta since the last spec revision
+## Delta since the last spec revision — read this before the specs
+
+**Knob filmstrips were re-rendered and the cap redesigned.** All four sheets ship (@1x and @2x, both
+sizes), the frame box is now larger than the cap, and both pointers reach 0.520 D. The reference
+renders were re-captured to match. Details in the "Knob filmstrips" section below and in
+`spec/CHORUS60-BUILD-HANDOFF.md` §4 — that section supersedes anything older it contradicts.
+
 The PROGRAM LCD now has a **chevron affordance** at the right edge of the name field:
 11 × 7 px, 1.4 px stroke, square caps, `currentColor` at 0.75 opacity, vertically centred,
 10 px inset from the field's right edge. The field gained 26 px of right padding to clear
@@ -49,17 +55,25 @@ it. It is hidden during name-entry and during parameter readouts — it appears 
 LCD is showing a stored program, where it reads as "this is a picker." This is not yet
 reflected in `CHORUS60-GUI-SPEC.md`; treat this README as the source for it.
 
-## Open dependency — blocks retina release, not the build
-The `@2x` knob filmstrips (Ø168 mod / Ø136 global) are **not in this bundle**. Earlier revisions
-shipped upsampled placeholders; those have been removed, so nothing here can be wired up by mistake
-and ship soft under a retina label. The `@1x` sheets (Ø84 / Ø68) are final and are what ships today.
+## Knob filmstrips — re-rendered, and the cap look changed
+All four sheets ship: `@1x` and `@2x`, both knob sizes, each rendered natively at its own size by
+the parametric generator. Nothing is upscaled and retina is no longer an open dependency.
 
-The knob is drawn by a **parametric generator** taking a scale factor S, so this is a config change
-rather than new artwork: run it with the **Chorus-60 cap parameters** at **Ø336**, 128 frames, frame
-0 = −135°, into **8 × 16 row-major grids**. That covers mod (Ø168), global (Ø136) and Gatecrasher
-(Ø240) in one go. Note the generator pads frames for the drop shadow — **size knobs from the cap
-diameter, not the frame pitch**. And do not substitute the current Gatecrasher cap: it is a different
-design (lighter, flatter, shallower knurling) and Chorus-60's appearance must not change.
+**Two things changed that the build must account for.**
+
+The **frame box is now larger than the cap** — Ø84 in a 112 box, Ø68 in a 92 box, doubled at `@2x`.
+The margin is where the cast shadow fades to zero, so do not crop it, and **centre each knob on the
+cap, not on the frame box**. Treating the box as the knob renders every control ~33 % oversized. The
+previous cap-fills-frame sheets clipped the shadow square at the frame edge; these pass the
+generator's shadow guard.
+
+The **cap itself looks different** — lighter body, flatter falloff, knurl reaching further in. The
+knob is shared with Gatecrasher and this brings Chorus-60 onto its current render, so the two plugins
+stay on one design. It is a visible panel change: the renders in `reference/` predate it.
+
+The generator ships with the bundle — `tools/render-knob-filmstrips-chorus60.mjs` (`npm i canvas`,
+then `node render-knob-filmstrips-chorus60.mjs <outDir>`). It regenerates all four sheets and checks
+that the cast shadow reaches zero inside every frame box.
 
 Full detail in `spec/CHORUS60-BUILD-HANDOFF.md` §4.
 
@@ -69,15 +83,19 @@ Full detail in `spec/CHORUS60-BUILD-HANDOFF.md` §4.
   `prototype/Chorus-60 Background Plate.dc.html`, which is the same markup as the panel
   with runtime strings hidden, so plate and panel cannot drift. Regenerate from that file,
   never by hand.
-- `knob_mod_84px_128f.png`, `knob_global_68px_128f.png` — final @1x filmstrips.
+- `knob_mod_84px_128f.png` (Ø84 cap / 112 box), `knob_global_68px_128f.png` (Ø68 / 92) — @1x
+  vertical strips.
+- `knob_mod_168px_128f@2x.png` (Ø168 / 224), `knob_global_136px_128f@2x.png` (Ø136 / 184) — @2x,
+  8 × 16 row-major grids.
 - `controls/` — buttons (I / II / OFF), lamps (on / off), IMAGE switch as separate
   `switch-track` (34 × 26) and `switch-thumb` (26 × 26) sprites so the thumb animates a
   true 34 px travel rather than a crossfade. `switch-mono` / `switch-stereo` are the older
   whole-switch sprites, kept for reference. Each at @1x and @2x.
 - `LibrestileExtBold.ttf` — display face for the wordmark and model line.
 
-`reference/` — rendered panel states (Engine I, Engine II, I + II, OFF). **Review images
-only.** Do not use as build inputs or slice from them.
+`reference/` — rendered panel states (Engine I, Engine II, I + II, OFF), captured from the current
+prototype and matching the shipped knob art. **Review images only.** Do not use as build inputs or
+slice from them.
 
 ## Parameter notes
 Rate uses a JUCE `NormalisableRange` with **skew 0.35 over 0.05–16 Hz**. No lookup table.
