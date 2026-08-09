@@ -50,11 +50,18 @@ LCD is showing a stored program, where it reads as "this is a picker." This is n
 reflected in `CHORUS60-GUI-SPEC.md`; treat this README as the source for it.
 
 ## Open dependency — blocks retina release, not the build
-The `@2x` knob filmstrips (Ø168 mod / Ø136 global) are placeholders. The original knob
-source must re-render **128 frames** at those diameters into **8 × 16 grids, frame 0 =
-−135°**. No vector or 3D source exists in this bundle to upscale from, so this has to go
-back to whoever owns the knob render. The `@1x` sheets (Ø84 / Ø68) are final. Ship @1x
-until the re-render lands — the placeholders drop out with no code change.
+The `@2x` knob filmstrips (Ø168 mod / Ø136 global) are **not in this bundle**. Earlier revisions
+shipped upsampled placeholders; those have been removed, so nothing here can be wired up by mistake
+and ship soft under a retina label. The `@1x` sheets (Ø84 / Ø68) are final and are what ships today.
+
+The knob is drawn by a **parametric generator** taking a scale factor S, so this is a config change
+rather than new artwork: run it with the **Chorus-60 cap parameters** at **Ø336**, 128 frames, frame
+0 = −135°, into **8 × 16 row-major grids**. That covers mod (Ø168), global (Ø136) and Gatecrasher
+(Ø240) in one go. Note the generator pads frames for the drop shadow — **size knobs from the cap
+diameter, not the frame pitch**. And do not substitute the current Gatecrasher cap: it is a different
+design (lighter, flatter, shallower knurling) and Chorus-60's appearance must not change.
+
+Full detail in `spec/CHORUS60-BUILD-HANDOFF.md` §4.
 
 ## Assets
 `assets/`
@@ -63,7 +70,6 @@ until the re-render lands — the placeholders drop out with no code change.
   with runtime strings hidden, so plate and panel cannot drift. Regenerate from that file,
   never by hand.
 - `knob_mod_84px_128f.png`, `knob_global_68px_128f.png` — final @1x filmstrips.
-- `knob_mod_168px_128f@2x.png`, `knob_global_136px_128f@2x.png` — placeholders, see above.
 - `controls/` — buttons (I / II / OFF), lamps (on / off), IMAGE switch as separate
   `switch-track` (34 × 26) and `switch-thumb` (26 × 26) sprites so the thumb animates a
   true 34 px travel rather than a crossfade. `switch-mono` / `switch-stereo` are the older

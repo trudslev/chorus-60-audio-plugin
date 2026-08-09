@@ -22,12 +22,15 @@ void KnobFilmstripComponent::paint(juce::Graphics& g)
     const auto& sheet = isMod ? Layout::modSheet : Layout::globalSheet;
     const auto& strip = isMod ? knobModFilmstrip() : knobGlobalFilmstrip();
 
-    // The sheets are re-rendered at the panel's own diameters, so a frame maps 1:1 to the knob and
-    // there is no bleed factor to allow for - the sprites carry no cast-shadow margin the way
-    // Gatecrasher's do.
-    const juce::Rectangle<int> box((int) std::round(centre.x - diameter * 0.5f),
-                                    (int) std::round(centre.y - diameter * 0.5f),
-                                    (int) std::round(diameter), (int) std::round(diameter));
+    // The frame is drawn into a box scaled so the CAP comes out at the section-8 diameter. For the
+    // @1x strips capFraction is 1, so this is the diameter itself and matches the reference renders
+    // exactly; for a padded sheet it grows the box so the shadow margin lands outside the cap rather
+    // than eating into it. See FilmstripSheet's comment - conflating cap with frame pitch is the
+    // mistake handoff section 4 calls out.
+    const float boxSize = diameter / sheet.capFraction;
+    const juce::Rectangle<int> box((int) std::round(centre.x - boxSize * 0.5f),
+                                    (int) std::round(centre.y - boxSize * 0.5f),
+                                    (int) std::round(boxSize), (int) std::round(boxSize));
 
     // sliderPos accounts for the parameter's own skew (Rate's 0.35) via the Slider's
     // NormalisableRange, set up by SliderAttachment from the bound RangedAudioParameter - so the

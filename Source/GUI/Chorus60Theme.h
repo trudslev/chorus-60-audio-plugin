@@ -78,17 +78,29 @@ namespace Chorus60Theme
     /** Which of the two re-rendered filmstrips a knob uses. */
     enum class KnobFilmstripSize { mod, global };
 
-    /** How a filmstrip sheet is laid out.
+    /** How a filmstrip sheet is laid out, and how big the cap inside a frame is.
 
-        The @1x sheets are vertical strips; the eventual @2x sheets are 8-column row-major grids,
-        because a 168 x 21504 strip exceeds the maximum texture height on most targets. Carrying
-        both shapes as data means swapping in the real @2x sheets is a table edit, not a code
-        change - which matters, because the sheets currently shipped at @2x are upsampled
-        placeholders (handoff section 4) and will be replaced. */
+        The @1x sheets are vertical strips; the @2x sheets, when they arrive, are 8-column row-major
+        grids, because a 168 x 21504 strip exceeds the maximum texture height on most targets.
+        Carrying the shape as data means the swap is a table edit rather than a code change.
+
+        `capFraction` is the load-bearing field. The generator PADS each frame for the drop shadow,
+        so the cap is smaller than the frame pitch and the two must not be conflated - handoff
+        section 4 warns that sizing from the pitch lands every control about 15% small, and the
+        padding ratio differs between sheets (Gatecrasher's Ø136 cap sits in a 160 px box).
+
+        For the @1x strips shipping today the ratio is close enough to 1 that drawing a frame into a
+        box of the section-8 diameter reproduces the reference renders EXACTLY - measured cap Ø75.0
+        for mod and Ø67.0 for global in both chorus60-page-i@2x.png and a capture of this build. So
+        capFraction is 1 here on purpose, describing what these sheets do rather than what an ideal
+        sheet would; when the @2x sheets land, set it from their real cap-to-pitch ratio and the
+        knobs keep the same on-screen size. Do NOT "correct" the @1x knobs to a Ø84 cap - that would
+        push them into the plate's printed ticks at r 42.5 and break agreement with the renders. */
     struct FilmstripSheet
     {
         int framePx;
-        int columns;   // 1 = vertical strip
+        int columns;       // 1 = vertical strip
+        float capFraction; // cap diameter as a fraction of the frame pitch
     };
 
     namespace Layout
@@ -111,8 +123,8 @@ namespace Chorus60Theme
         // single source of truth for where a mark sits, and the spec is the record of why.
 
         constexpr int knobFrameCount = 128;
-        inline constexpr FilmstripSheet modSheet{84, 1};
-        inline constexpr FilmstripSheet globalSheet{68, 1};
+        inline constexpr FilmstripSheet modSheet{84, 1, 1.0f};
+        inline constexpr FilmstripSheet globalSheet{68, 1, 1.0f};
 
         // ---- Section 4: regions ---------------------------------------------------------------
         constexpr float headerBandH = 78.0f;

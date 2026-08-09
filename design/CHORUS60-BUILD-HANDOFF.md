@@ -128,15 +128,31 @@ canvas height on most targets. Frame *n* sits at column *n* mod 8, row ⌊*n* / 
 
 Frame 0 = −135°, frame 127 = +135°, linear in between.
 
-⚠ **Open dependency — the @2x sheets cannot be produced from anything in this bundle.** The knob
-masters (`assets/knob_large_128px_128f.png`, `assets/knob_small_128px_128f.png`) are Ø128 raster
-filmstrips, and they are the highest-resolution knob art that exists here. The @1x sheets are clean
-downsamples of them. The @2x sheets need Ø168 and Ø136 — *above* the master resolution — so they are
-upsampled placeholders and re-rendering them here would only repeat the same upsample.
+⚠ **Open dependency — the @2x sheets are not in this bundle.** They were previously shipped as
+upsampled placeholders; those files have been **removed** rather than left in place, because a file
+named `@2x` in an assets folder tends to get wired up on sight and would ship a soft knob under a
+retina label. The @1x strips are final and are what ships today.
 
-This needs the **original 3D / vector knob source**, which is not in this project. Whoever holds it
-should render 128 frames at Ø168 and Ø136 into the same 8 × 16 row-major grid, frame 0 = −135°, and
-the placeholders drop out with no code change. Shipping the @1x strips until then is the right call.
+**The source is a parametric generator, not a raster master.** The knob art is drawn programmatically
+from a scale factor S: canvas, cap radius, rim stroke (2 × S), shadow blur (11 × S), shadow offset
+(8 × S), pointer width/length and pointer glow are all computed from it. The Ø128 files in `assets/`
+are outputs of that generator, not its source — so the old "Ø128 is the ceiling" reading in earlier
+revisions of this section was wrong. Any diameter is reachable by changing S.
+
+The ask is therefore a **config change, not new artwork**: run the generator with the **Chorus-60 cap
+parameters** at **Ø336**, 128 frames, frame 0 = −135°. Ø336 covers Chorus-60 mod (Ø168) and global
+(Ø136) with headroom, and Gatecrasher (Ø240) from the same run.
+
+Three things to get right when the sheets arrive:
+
+- **Cap diameter is not frame pitch.** The generator pads each frame for the drop shadow — in the
+  Gatecrasher sheets a Ø136 cap sits in a 160 px box. Size knobs from the cap diameter or every
+  control lands ~15 % small.
+- **Do not substitute the Gatecrasher cap.** Its current render is a different design — lighter,
+  flatter, much shallower knurling. Chorus-60's panel is built against the darker knurled cap and
+  the @1x strips are final; the appearance must not change.
+- **@2x stays an 8 × 16 row-major grid** for the reason above — a Ø336 vertical strip would be far
+  past the texture-height limit.
 
 ## 5. Product icon — **exists, unchanged**
 

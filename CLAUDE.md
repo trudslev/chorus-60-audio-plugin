@@ -245,10 +245,19 @@ Unlike Gatecrasher, CHORUS-60 has no sidechain input bus - `BusesProperties` is 
   section 1.2 list - no double-prints, nothing straying onto baked furniture. The OFF state was
   measured rather than eyeballed (0.500 in the three boxes, 1.000 elsewhere, pointers unmoved), and
   the Rate pointer lands on its printed ticks to 0.20 degrees at minimum and 0.00 at maximum.
-- **One release blocker**, tracked in `prompts/PROMPTS.md`: the @2x knob filmstrips are upsampled
-  placeholders. They need Ø168 / Ø136 rendered from the original knob source, which is not in this
-  project. The @1x strips ship meanwhile and are final; `Chorus60Theme::FilmstripSheet` carries the
-  sheet geometry as data so the real sheets drop in without a code change.
+- **One release blocker**, tracked in `prompts/PROMPTS.md`: there are no @2x knob filmstrips. The
+  earlier placeholders were upsampled and have been removed from `design/assets/` deliberately, so a
+  file named `@2x` can't get wired up on sight. The @1x strips are final and are what ships. The knob
+  comes from a **parametric generator** taking a scale factor - the Ø128 files earlier revisions
+  called "masters" were its outputs, not a ceiling - so producing the real sheets is a config change,
+  and handoff section 4 has the run parameters. `Chorus60Theme::FilmstripSheet` carries frame pitch,
+  column count and **cap-to-pitch ratio** as data so they drop in without a drawing-code change.
+- **Cap diameter is not frame pitch**, and the two must not be conflated when those sheets arrive:
+  the generator pads each frame for the drop shadow. On the current @1x strips the ratio is close
+  enough to 1 that drawing a frame into a box of the section-8 diameter reproduces the reference
+  renders exactly - measured cap Ø75.0 mod and Ø67.0 global in both `chorus60-page-i@2x.png` and a
+  capture of this build. **Do not "correct" the @1x knobs to a Ø84 cap**: that pushes them into the
+  plate's printed ticks at r 42.5 and breaks agreement with the acceptance renders.
 - **Schema 3 is a hard break.** Session restore and the user-Program load path both discard state
   whose schema attribute is not current, so any `.chorus60program` written before this revision will
   no longer load - the `image*` rename and the Rate widening make a v2 file unreadable as v3. Nothing

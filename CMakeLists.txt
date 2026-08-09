@@ -40,11 +40,15 @@ FetchContent_MakeAvailable(JUCE)
 # LibrestileExtBold is gone: the wordmark is baked now, so nothing draws it live. It stays in
 # design/assets/ so the plate can be re-exported.
 #
-# Knob filmstrips: the @1x strips, deliberately, not the @2x sheets. The @2x sheets need Ø168/Ø136,
-# which is above the Ø128 masters they were made from, so they ship as upsampled placeholders -
-# handoff section 4 says so and says to use the @1x strips until someone with the original
-# 3D/vector knob source can render them properly. KnobFilmstripComponent takes the sheet geometry as
-# data (frame size + column count), so the real sheets drop in with no code change. Tracked as a
+# Knob filmstrips: the @1x strips, and they are final. There are no @2x sheets to embed - earlier
+# revisions shipped upsampled placeholders and the designers REMOVED them rather than leave a file
+# named @2x sitting in an assets folder where it would get wired up on sight and ship a soft knob
+# under a retina label.
+#
+# The knob is drawn by a parametric generator taking a scale factor, so any diameter is reachable and
+# producing the real Ø168/Ø136 sheets is a config change rather than new artwork; handoff section 4
+# has the run parameters. KnobFilmstripComponent takes the sheet geometry as data - frame pitch,
+# column count and cap-to-pitch ratio - so they drop in with no drawing-code change. Tracked as a
 # release blocker in prompts/PROMPTS.md.
 #
 # Fonts: Barlow Condensed SemiBold (600 - control labels, captions, scope status) and Bold (700 -
