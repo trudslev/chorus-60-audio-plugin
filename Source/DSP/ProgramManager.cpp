@@ -55,13 +55,32 @@ bool ProgramManager::isModifiedFromLoadedProgram() const
     if (cleanSnapshot.size() != (size_t) params.size())
         return false;
 
+    // engine1 and engine2 are excluded, deliberately. They are stored in a Program - loading one
+    // still sets them - but they are the front panel's PAGER and its BYPASS, hit mid-performance,
+    // and treating a press as an edit means merely bypassing the plugin lights SAVE and claims you
+    // have unsaved work. Every other parameter counts.
+    //
+    // The cost is that switching I to I+II and pressing nothing else cannot be stored as a new
+    // Program on its own; in practice the I+II page has its own parameter set, so anyone auditioning
+    // it moves a knob and SAVE lights anyway.
+    const auto isPerformanceLatch = [] (const juce::AudioProcessorParameter* p)
+    {
+        if (const auto* withID = dynamic_cast<const juce::AudioProcessorParameterWithID*>(p))
+            return withID->paramID == ParamIDs::engine1 || withID->paramID == ParamIDs::engine2;
+        return false;
+    };
+
     // Compared in normalised 0..1 space, so one epsilon is meaningful for every parameter whatever
     // its real-world range. Loose enough to absorb the float round-trip through a user program's
     // XML (so a just-loaded user program doesn't read as modified), far tighter than the smallest
     // movement any control can actually produce.
     for (int i = 0; i < params.size(); ++i)
+    {
+        if (isPerformanceLatch(params[i]))
+            continue;
         if (std::abs(params[i]->getValue() - cleanSnapshot[(size_t) i]) > 1.0e-4f)
             return true;
+    }
 
     return false;
 }
@@ -149,6 +168,15 @@ void ProgramManager::applyProgramByIndex(int index)
         if (xml == nullptr || ! xml->hasTagName(apvts.state.getType()))
             return;
 
+        // Same schema gate as the session-restore path in PluginProcessor::setStateInformation.
+        // This path used not to check, which meant a file written under an older schema still
+        // parsed and still replaced the state - it just silently left every parameter the schema
+        // bump had renamed sitting at its default. A stale Program that refuses to load is a
+        // visible problem; one that loads two-thirds of itself is not.
+        if (xml->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1)
+                != LegacyMigration::currentStateSchemaVersion)
+            return;
+
         apvts.replaceState(juce::ValueTree::fromXml(*xml));
     }
 
@@ -178,13 +206,13 @@ void ProgramManager::applyFactoryProgram(const FactoryProgram& program)
                                          const char* depthId,
                                          const char* centreId,
                                          const char* decorrId,
-                                         const char* monoId)
+                                         const char* imageId)
     {
         setFloat(rateId, config.rateHz);
         setFloat(depthId, config.depthPercent);
         setFloat(centreId, config.delayCentreMs);
         setFloat(decorrId, config.decorrelationPercent);
-        setBool(monoId, config.mono);
+        setBool(imageId, config.imageMono);
     };
 
     setBool(ParamIDs::engine1, program.engine1);
@@ -192,13 +220,13 @@ void ProgramManager::applyFactoryProgram(const FactoryProgram& program)
 
     applyConfiguration(program.configI,
                        ParamIDs::rate1, ParamIDs::depth1, ParamIDs::center1,
-                       ParamIDs::decorr1, ParamIDs::mono1);
+                       ParamIDs::decorr1, ParamIDs::image1);
     applyConfiguration(program.configII,
                        ParamIDs::rate2, ParamIDs::depth2, ParamIDs::center2,
-                       ParamIDs::decorr2, ParamIDs::mono2);
+                       ParamIDs::decorr2, ParamIDs::image2);
     applyConfiguration(program.configBoth,
                        ParamIDs::rateB, ParamIDs::depthB, ParamIDs::centerB,
-                       ParamIDs::decorrB, ParamIDs::monoB);
+                       ParamIDs::decorrB, ParamIDs::imageB);
 
     setFloat(ParamIDs::drift, program.driftPercent);
     setFloat(ParamIDs::saturation, program.saturationPercent);

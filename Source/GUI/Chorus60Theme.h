@@ -7,69 +7,62 @@
 #include <cmath>
 
 // Centralises every pixel constant from design/CHORUS60-GUI-SPEC.md (palette, coordinates, the
-// filmstrip contract) in one place, mirroring GatecrasherTheme.h's role for Gatecrasher. Most of
-// the fascia is a static bitmap (see Chorus60PanelBackground) rather than code-drawn, so this
-// file's job is narrower: positions/sizes for the *live* pieces layered on top, plus the handful
-// of colours those live pieces need to match the baked artwork around them.
+// filmstrip contract) in one place, mirroring GatecrasherTheme.h's role for Gatecrasher.
 //
-// IMPORTANT: ranges/defaults for knob scaling and value-text formatting come from Source/Parameters.h,
-// NOT from the spec's own section 9 table - see chorus-60/CLAUDE.md's explicit note on this. This
-// file only holds *layout* (coordinates, colours, sizes), never a parameter range.
+// REVISION 2 INVERTED THIS FILE'S SCOPE. The plate used to be bare material with every glyph drawn
+// in code, so this held coordinates for two dozen strings. It now BAKES the printed scales, every
+// tick ring, every numeral and unit, the wordmark, the static labels and the group headings - see
+// design/CHORUS60-BUILD-HANDOFF.md section 1, which is the asset contract. What remains here is the
+// geometry of the nine things drawn at runtime, plus the handful of colours those need in order to
+// match the baked text beside them exactly.
+//
+// **Do not add a constant here for anything the plate bakes.** A second copy of a baked coordinate
+// is a copy that can drift, and drawing a baked string again double-prints it at a one-pixel offset.
+//
+// COORDINATES ARE INSIDE-BORDER. The exported plate is 1282 x 777 and includes a 1 px outer border;
+// both design documents measure from the first pixel of panel material inside it. Chorus60EditorContent
+// positions its content child at (1, 1) so every constant below is a literal spec value with no
+// arithmetic - see canvasWidth/contentWidth.
+//
+// IMPORTANT: ranges/defaults for knob scaling come from Source/Parameters.h, never from a spec
+// table. This file holds *layout* only.
 namespace Chorus60Theme
 {
     namespace Colour
     {
-        // Section 1 palette - only the values actually needed by live-drawn components (the fascia
-        // gradients/grain/dividers/section-stripe colours never leave the static background bitmap).
-        inline const juce::Colour engravedHeadingText{0xFFE6EBEE};
-        inline const juce::Colour controlLabelText{0xFF8A9196};
-        inline const juce::Colour valueText{0xFFC6CED3};
-        inline const juce::Colour captionTertiary{0xFF7B8287};
-        inline const juce::Colour inactiveLabel{0xFF5F666B};
-        inline const juce::Colour footerText{0xFF5A6165};
-        inline const juce::Colour stripeText{0xFFEEF2F4};
-        inline const juce::Colour modelLinePrimary{0xFF8A9196};   // "BBD CHORUS PROCESSOR"
-        inline const juce::Colour modelLineSecondary{0xFF5F666B}; // "MODEL CH-60 - STEREO"
+        // ---- Section 2 palette -------------------------------------------------------------
+        //
+        // Revision 2 lifted every grey one step for contrast, measured against the group field
+        // #131517. Runtime-drawn text must match the baked text beside it exactly, so these are not
+        // approximations. The retired values, for anyone reading an old commit: #8A9196 as a *label*
+        // colour, #7B8287, #5F666B and #5A6165 have all collapsed into the two below, and #C6CED3
+        // went with the standing value readouts.
+        inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // 12.9:1 - engaged button letters
+        inline const juce::Colour controlLabelText{0xFFA5ADB2};    //  8.04:1 - functional text
+        inline const juce::Colour captionTertiary{0xFF8A9196};     //  5.73:1 - captions, footer, scope status
 
+        // Everything inside a display well.
         inline const juce::Colour ledWindowBg{0xFF07090A};
         inline const juce::Colour ledWindowBorder{0xFF363C41};
-        inline const juce::Colour ledWindowText{0xFFDFE6EA};
+        inline const juce::Colour ledWindowDivider{0xFF2A3035};
+        inline const juce::Colour ledWindowText{0xFFDFE6EA};    // 14.6:1 on #07090A
+        inline const juce::Colour lcdParameterReadout{0xFFFFD9A0}; // 11.7:1 - only while a control moves
 
-        // "Chorus accent (ONLY colour beyond the stripes)" - reserved exclusively for the two
-        // engine LEDs and the scope trace, per spec section 1's explicit rule and BRAND.md's
-        // one-accent-colour rule. Never used for any knob/label/meter.
+        // The one accent (BRAND.md's one-colour rule): the scope trace and the engine lamps.
         inline const juce::Colour chorusAccent{0xFFFF2B1C};
-        inline const juce::Colour ledUnlit{0xFF3A1512};
 
-        inline const juce::Colour tickMark{0xFF78848C}; // rgba(120,132,140,x)
-
-        // Engine button faces, section 1/4 (160deg linear gradients).
-        inline const juce::Colour buttonIITop{0xFFE5A021}, buttonIIBottom{0xFFC07908};
-        inline const juce::Colour buttonITop{0xFFEAD681}, buttonIBottom{0xFFD0B857};
-        inline const juce::Colour buttonOffTop{0xFFEAECEC}, buttonOffBottom{0xFFC9CDCF};
-
-        // LED lit radial gradient, section 4.
-        inline const juce::Colour ledLitCore{0xFFFF2B1C}, ledLitMid{0xFFB0140C}, ledLitEdge{0xFF6D0B06};
-
-        // Delay-modulation scope, section 5 - same construction as Gatecrasher's envelope scope, so
-        // several of these numeric values match GatecrasherTheme's own literally (both were derived
-        // from the same rgba(150,180,190,*)/(160,178,186,*) greys).
+        // Delay-modulation scope. The annotations are drawn OPAQUE at #9BA3A8 (5.6:1 on the well);
+        // the old rgba(160,178,186,.55) measured 3.11:1 and is gone.
         inline const juce::Colour scopeBorder{0xFF0A0C0D};
         inline const juce::Colour scopeBgTop{0xFF06080A};
         inline const juce::Colour scopeBgBottom{0xFF0B0F11};
-        inline const juce::Colour scopeGrid{0x1A96B4BE};        // rgba(150,180,190,.10)
-        inline const juce::Colour scopeCentreLine{0x3896B4BE};  // rgba(150,180,190,.22)
-        inline const juce::Colour scopeInputUnderlay{0x38B2BEC5}; // rgba(178,190,197,.22)
-        inline const juce::Colour scopeAnnotation{0x8CA0B2BA};    // rgba(160,178,186,.55)
+        inline const juce::Colour scopeGrid{0x1A96B4BE};
+        inline const juce::Colour scopeCentreLine{0x3896B4BE};
+        inline const juce::Colour scopeInputUnderlay{0x38B2BEC5};
+        inline const juce::Colour scopeAnnotation{0xFF9BA3A8};
 
-        // Program header, section 6 - identical contract/values to Gatecrasher's own.
-        inline const juce::Colour tagFactory{0xFF6F797F};
-        inline const juce::Colour tagUser{0xFFCFD7DC};
-        inline const juce::Colour headerName{0xFFDFE6EA};
-
-        // SAVE / DELETE, section 6: "Gatecrasher's exact treatment ... the only light-steel
-        // elements on this panel and that is intentional - the utility surface is shared across the
-        // suite." Values are identical to GatecrasherTheme's own by design, not by accident.
+        // SAVE / DELETE. Identical to Gatecrasher's and TapeRot's by design, not by accident - the
+        // utility surface is shared across the suite.
         inline const juce::Colour buttonEnabledTop{0xFFDBE0E3};
         inline const juce::Colour buttonEnabledBottom{0xFFAAB1B6};
         inline const juce::Colour buttonEnabledBorder{0xFF6D7478};
@@ -82,251 +75,256 @@ namespace Chorus60Theme
         inline const juce::Colour buttonDisabledLabel{0xFF8B9297};
     }
 
-    enum class KnobFilmstripSize { large, small };
+    /** Which of the two re-rendered filmstrips a knob uses. */
+    enum class KnobFilmstripSize { mod, global };
+
+    /** How a filmstrip sheet is laid out.
+
+        The @1x sheets are vertical strips; the eventual @2x sheets are 8-column row-major grids,
+        because a 168 x 21504 strip exceeds the maximum texture height on most targets. Carrying
+        both shapes as data means swapping in the real @2x sheets is a table edit, not a code
+        change - which matters, because the sheets currently shipped at @2x are upsampled
+        placeholders (handoff section 4) and will be replaced. */
+    struct FilmstripSheet
+    {
+        int framePx;
+        int columns;   // 1 = vertical strip
+    };
 
     namespace Layout
     {
-        constexpr float canvasWidth = 1400.0f;
-        constexpr float canvasHeight = 632.0f;
+        // The exported plate, border included. Everything else is measured from inside it.
+        constexpr float canvasWidth = 1282.0f;
+        constexpr float canvasHeight = 777.0f;
+        constexpr float borderInset = 1.0f;
+        constexpr float contentWidth = 1280.0f;
+        constexpr float contentHeight = 775.0f;
 
-        // Rotation range for every knob: pointer at 12 o'clock = centre (section 7).
+        // Rotation range for every knob: pointer at 12 o'clock = centre.
         constexpr float knobArcStartDegrees = -135.0f;
         constexpr float knobArcEndDegrees = 135.0f;
 
-        // Section 7: "every 15 on the large knobs / 20 on the small ones".
-        constexpr float largeKnobTickSpacingDegrees = 15.0f;
-        constexpr float smallKnobTickSpacingDegrees = 20.0f;
+        // No tick-ring constants here, deliberately. Revision 1 drew the rings itself at even
+        // angular spacing; revision 2 bakes every tick into the plate at its LABELLED value
+        // (section 7), which on the skewed Rate knob is not evenly spaced at all. A drawn ring would
+        // lay even ticks over uneven printed ones. There is no mark table either - the plate is the
+        // single source of truth for where a mark sits, and the spec is the record of why.
 
-        // Section 7: tick ring "from r+3 to r+9".
-        constexpr float tickInnerOffset = 3.0f;
-        constexpr float tickOuterOffset = 9.0f;
+        constexpr int knobFrameCount = 128;
+        inline constexpr FilmstripSheet modSheet{84, 1};
+        inline constexpr FilmstripSheet globalSheet{68, 1};
 
-        // Filmstrip frames are square with transparent margin for the baked cast shadow - draw
-        // into the full bounding box, not just the knob circle. Same bleed factor as Gatecrasher's
-        // own port, since these are literally the same two shared filmstrip PNGs.
-        constexpr float knobBoundingBoxBleed = 1.07f;
+        // ---- Section 4: regions ---------------------------------------------------------------
+        constexpr float headerBandH = 78.0f;
+        constexpr float footerBandY = 747.0f, footerBandH = 28.0f;
 
-        // Knob label stack (section 7: "name then value, 9px gaps") - measured against
-        // chorus60-panel-bypass@2x.png's baked RATE I example (knob bottom ~y357, name centre
-        // ~y372, value centre ~y393.5 at the panel's 1x scale), which lines up almost exactly with
-        // gap=9 / nameRowH=13 / valueRowH=14.
-        constexpr float knobLabelGap = 9.0f;
-        constexpr float knobNameRowH = 13.0f;
-        constexpr float knobValueRowH = 14.0f;
+        constexpr float buttonColumnX = 22.0f, buttonColumnY = 96.0f;
+        constexpr float buttonColumnW = 220.0f, buttonColumnH = 629.0f;
+
+        constexpr float scopeBlockX = 285.0f, scopeBlockY = 96.0f, scopeBlockW = 973.0f, scopeBlockH = 140.0f;
+        constexpr float scopeWellX = 285.0f, scopeWellY = 116.0f, scopeWellW = 973.0f, scopeWellH = 120.0f;
+        constexpr float scopeCaptionRowH = 20.0f;   // block top to well top
+        constexpr float scopeInnerInset = 2.0f;
+
+        // Group boxes, confirmed by measuring the plate's own 1px black outlines: MOD ENGINE spans
+        // x 285..1257 / y 252..491, CHARACTER x 285..851, OUTPUT x 868..1257, both y 508..724.
+        constexpr float modEngineGroupX = 285.0f, modEngineGroupY = 252.0f;
+        constexpr float modEngineGroupW = 973.0f, modEngineGroupH = 240.0f;
+        constexpr float characterGroupX = 285.0f, characterGroupY = 508.0f;
+        constexpr float characterGroupW = 567.0f, characterGroupH = 218.0f;
+        constexpr float outputGroupX = 868.0f, outputGroupY = 508.0f;
+        constexpr float outputGroupW = 390.0f, outputGroupH = 218.0f;
+
+        // Heading row contents, measured off chorus60-page-i@2x.png: the MOD ENGINE box carries a
+        // lit Ø8 LED at (308.5, 268.5) - dark, not merely dimmed, in bypass - with its heading text
+        // starting at x 322 and the status note right-aligned to x 1237, 20 px inside the box. The
+        // heading row sits ABOVE the rule, so none of it dims with the OFF state.
+        constexpr float modEngineLedD = 8.0f;
+        constexpr float modEngineLedCentreX = 308.5f, modEngineLedCentreY = 268.5f;
+        constexpr float modEngineHeadingX = 322.0f;
+        constexpr float modEngineStatusRight = 1237.0f;
+        constexpr float modEngineHeadingRowY = 260.0f, modEngineHeadingRowH = 16.0f;
+
+        // Each box's heading rule, below which the OFF state's multiply applies. Measured off
+        // chorus60-page-off@2x.png as the row where the ratio against the bare plate steps from
+        // 1.000 to 0.500: y 283 for MOD ENGINE and y 539 for the other two - 31 px below each box
+        // top in all three cases.
+        constexpr float groupHeadingRuleOffset = 31.0f;
+
+        // ---- Section 8: knob positions ---------------------------------------------------------
+        //
+        // Section 7's cells are 176 x 164 (mod, knob centre at 88,82) and 158 x 144 (global, centre
+        // at 79,72). Only the centres are needed here: the cell exists to place the printed scale,
+        // and the printed scale is baked.
+        constexpr float modKnobD = 84.0f;
+        constexpr float globalKnobD = 68.0f;
+
+        constexpr float modKnobCentreY = 376.0f;
+        inline constexpr std::array<float, 4> modKnobCentreX{{402.0f, 598.0f, 794.0f, 990.0f}};
+
+        // Control label row: "below the cell, 6 px gap". The mod cell's top is centre - 82 = 294,
+        // so its bottom is 458 and the label row starts at 464. Only the mod-engine labels are drawn
+        // (their suffix is page-dependent); the five global labels are baked.
+        constexpr float modLabelRowY = 464.0f, modLabelRowH = 15.0f;
+        constexpr float modCellW = 176.0f;
+
+        constexpr float globalKnobCentreY = 620.0f;
 
         struct KnobSpec
         {
             const char* paramID;
-            const char* displayName;
             float cx, cy, diameter;
             KnobFilmstripSize size;
         };
 
-        // --- The paged MOD ENGINE box (section 7a) -------------------------------------------
+        // The five genuinely global knobs. Their names are baked, so no displayName here.
+        inline constexpr std::array<KnobSpec, 5> knobs{{
+            {"drift",       389.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+            {"saturation",  569.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+            {"noise",       749.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+            {"mix",         973.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+            {"trim",       1153.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+        }};
+
+        // ---- Section 7.2: the IMAGE switch ------------------------------------------------------
         //
-        // Four knob SLOTS, not four fixed knobs. Which parameter each slot drives depends on which
-        // configuration the I/II latches have selected, so the paramID is not a property of the
-        // slot - see pageFor() below. The control set never changes shape between pages; only the
-        // values and the label suffixes do.
-        //
-        // The spec gives well positions as top-left ("switch at x 1273 (34 x 58)" fixes the
-        // convention, and a Ø58 well topped at y 300 puts its label baseline at 367, i.e. the 9px
-        // gap section 7 specifies). Everything below therefore converts to centres explicitly
-        // rather than leaving the reader to guess which convention a bare pair of numbers uses.
-        constexpr float slotWellD = 58.0f;
-        constexpr float slotWellY = 300.0f;
-        inline constexpr std::array<float, 4> slotWellX{ {360.0f, 585.0f, 811.0f, 1036.0f} };
+        // Track and thumb ship as separate sprites so the thumb travels rather than crossfading.
+        // STEREO is thumb-up. The printed STEREO / MONO words sit at the thumb centres and are baked.
+        constexpr float switchCellX = 1098.0f, switchCellW = 132.0f;
+        constexpr float switchTrackX = 1147.5f, switchTrackY = 343.0f;
+        constexpr float switchTrackW = 34.0f, switchTrackH = 68.0f;
+        constexpr float switchThumbX = 1151.5f, switchThumbD = 26.0f;
+        constexpr float switchThumbYStereo = 347.0f, switchThumbYMono = 381.0f;
+        constexpr float switchTravelMs = 260.0f;
 
-        constexpr float slotCentreY = slotWellY + slotWellD * 0.5f;
-        inline constexpr float slotCentreX(int slot) noexcept { return slotWellX[(size_t) slot] + slotWellD * 0.5f; }
-
-        // Mono/Stereo switch: vertical two-position toggle. No sprite exists for this control, so
-        // it is drawn in code from section 7a's own values - see MonoStereoSwitch.
-        constexpr float switchX = 1273.0f, switchY = 300.0f, switchW = 34.0f, switchH = 58.0f;
-
-        // One page: the five parameters of one configuration, and how the box titles itself.
+        // ---- Section 10: the paged MOD ENGINE box ----------------------------------------------
         struct EnginePage
         {
             const char* rateID;
             const char* depthID;
             const char* centreID;
             const char* decorrID;
-            const char* monoID;
-            const char* title;      // group title, e.g. "MOD ENGINE I+II"
-            const char* headerNote; // right-aligned note in the title row
-            const char* suffix;     // appended to each slot's label, e.g. "I+II"
+            const char* imageID;
+            const char* title;      // group heading, e.g. "MOD ENGINE I+II"
+            const char* statusNote; // right-aligned note in the heading row
+            const char* suffix;     // appended to each slot label, e.g. "I+II"
         };
 
         inline constexpr EnginePage pageI{
-            "rate1", "depth1", "center1", "decorr1", "mono1",
+            "rate1", "depth1", "center1", "decorr1", "image1",
             "MOD ENGINE I", "ENGINE I ENGAGED", "I"};
         inline constexpr EnginePage pageII{
-            "rate2", "depth2", "center2", "decorr2", "mono2",
+            "rate2", "depth2", "center2", "decorr2", "image2",
             "MOD ENGINE II", "ENGINE II ENGAGED", "II"};
         inline constexpr EnginePage pageBoth{
-            "rateB", "depthB", "centerB", "decorrB", "monoB",
+            "rateB", "depthB", "centerB", "decorrB", "imageB",
             "MOD ENGINE I+II", "BOTH ENGAGED \xc2\xb7 MONO BBD PAIR", "I+II"};
 
-        // The four slot labels, in order. The page's suffix is appended at draw time.
         inline constexpr std::array<const char*, 4> slotLabels{
             {"RATE", "DEPTH", "DELAY CENTER", "DECORRELATION"}};
+        constexpr const char* imageSlotLabel = "IMAGE";
 
-        // Shown while nothing is engaged. The last page's own title and labels are retained - the
-        // panel powers down rather than emptying - so only the note changes.
-        constexpr const char* bypassHeaderNote = "BYPASS \xc2\xb7 SETTINGS RETAINED";
+        // Shown while nothing is engaged. Revision 2 dropped the "SETTINGS RETAINED" half: the
+        // pointers no longer wind to zero, so there is no false impression left to correct.
+        constexpr const char* bypassStatusNote = "BYPASS";
 
-        // --- Genuinely global knobs (CHARACTER and OUTPUT) ------------------------------------
-        //
-        // Five, not seven: Delay Center and Decorrelation moved into the paged box when they became
-        // per-configuration. Ø48 per section 7's group table, well top-left again.
-        constexpr float globalKnobD = 48.0f;
-        constexpr float globalKnobWellY = 476.0f;
-        constexpr float globalKnobCentreY = globalKnobWellY + globalKnobD * 0.5f;
-
-        inline constexpr std::array<KnobSpec, 5> knobs{ {
-            {"drift",      "DRIFT",       403.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
-            {"saturation", "SATURATION",  592.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
-            {"noise",      "NOISE",       780.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
-            {"mix",        "MIX",        1045.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
-            {"trim",       "OUTPUT TRIM",1230.0f + globalKnobD * 0.5f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::small},
-        } };
-
-        // --- Transition timing (section 7a) ---------------------------------------------------
-        //
-        // "each of the four slots slews from its current rotation to its new target rather than
-        // snapping... exponentially smoothed toward the target with a time-based coefficient
-        // (1 - 0.002^(dt/380ms))". Time-based rather than per-frame so travel takes the same wall
-        // time regardless of frame rate, and so a dropped frame does not shorten the motion.
+        // Page-change slew: "1 - 0.002^(dt/380ms)", time-based so travel takes the same wall time
+        // whatever the frame rate and a dropped frame doesn't shorten it. A drag bypasses it.
         constexpr float slewSettleMs = 380.0f;
         constexpr float slewRemainderAtSettle = 0.002f;
 
-        // The panel-wide fade when nothing is engaged.
+        // ---- Section 9: the OFF state ----------------------------------------------------------
         constexpr float powerDownFadeMs = 340.0f;
-        constexpr float powerDownOpacity = 0.42f;
-        constexpr float powerDownBrightness = 0.50f;
+        constexpr float powerDownMultiply = 0.50f;
 
-        // Button column, section 4.
-        constexpr float buttonIIX = 31.0f, buttonIIY = 144.0f, buttonW = 116.0f, buttonH = 116.0f;
-        constexpr float buttonIX = 31.0f, buttonIY = 286.0f;
-        constexpr float buttonOffX = 31.0f, buttonOffY = 428.0f;
-        constexpr float buttonCornerRadius = 5.0f;
-
-        constexpr float ledIIX = 167.0f, ledIIY = 195.0f, ledD = 15.0f;
-        constexpr float ledIX = 167.0f, ledIY = 337.0f;
-
-        // "Roman labels sit 27px right of each LED" - gap between the LED's right edge and the
-        // label's left edge.
-        constexpr float engineLabelX = ledIIX + ledD + 27.0f;
-        constexpr float engineLabelW = 70.0f;
-
+        // ---- Section 4: the engine button column -----------------------------------------------
+        //
+        // 132 x 132 at x 26, distributed rather than centred: all four vertical gaps come out at
+        // 41 px, which is the JN-80's own packed-block rhythm. Do not re-centre the stack.
+        constexpr float buttonX = 26.0f, buttonW = 132.0f, buttonH = 132.0f;
+        constexpr float buttonIIY = 183.0f, buttonIY = 356.0f, buttonOffY = 528.0f;
         constexpr float pressAnimMs = 110.0f;
         constexpr float pressOffsetPx = 3.0f;
 
-        // MOD ENGINE I/II group panels' own Ø8 title-row LED (section 7's group table: "Ø8 LED
-        // (engine I state) + title"). Not given exact sub-coordinates in the spec's tables - derived
-        // from the group panel's own 9/14/14 padding convention (section 7) and cross-checked
-        // against chorus60-panel@2x.png's baked dot position.
-        constexpr float groupLedD = 8.0f;
+        // Lamp sprites are 96 x 96 with the glow baked into the transparent margin, drawn CENTRED on
+        // the lamp position rather than placed by their top-left. The OFF button has no lamp - that
+        // position is empty on the hardware and stays empty here.
+        constexpr float lampSpriteD = 96.0f;
+        constexpr float lampIICentreX = 182.5f, lampIICentreY = 250.0f;
+        constexpr float lampICentreX = 182.5f, lampICentreY = 422.5f;
 
-        // One MOD ENGINE box now, spanning what used to be two. Section 7's group table:
-        // MOD ENGINE 302,255 1075x160 | CHARACTER 302,431 628x149 | OUTPUT 946,431 431x149.
-        // Its geometry is fixed in every page state - nothing reflows between pages, and the OFF
-        // state powers the box down rather than resizing or emptying it.
-        constexpr float modEngineGroupX = 302.0f, modEngineGroupY = 255.0f;
-        constexpr float modEngineGroupW = 1075.0f, modEngineGroupH = 160.0f;
-        constexpr float characterGroupX = 302.0f, characterGroupY = 431.0f;
-        constexpr float characterGroupW = 628.0f, characterGroupH = 149.0f;
-        constexpr float outputGroupX = 946.0f, outputGroupY = 431.0f;
-        constexpr float outputGroupW = 431.0f, outputGroupH = 149.0f;
+        // Letter block: 16 px right of the button, then 12 px past the 15 px lamp.
+        constexpr float engineLetterX = 202.0f, engineLetterW = 80.0f;
 
-        constexpr float groupLedPadX = 9.0f, groupLedPadY = 18.0f; // centre inset from group top-left
+        // ---- Section 5: the PROGRAM LCD ---------------------------------------------------------
+        //
+        // Measured off the plate's own well borders (#363C41) rather than transcribed: the spec's
+        // table gives x 571 for the window and 631 for the name field, but the plate has them at 593
+        // and 654. The two numbers the spec and the plate agree on are the ones the character budget
+        // rests on - a 59 px bank cell and a 352 px glyph run - so those are exact either way.
+        constexpr float programWindowX = 593.0f, programWindowY = 33.0f;
+        constexpr float programWindowW = 414.0f, programWindowH = 29.0f;
+        constexpr float programTagCellX = 594.0f, programTagCellY = 34.0f;
+        constexpr float programTagCellW = 59.0f, programTagCellH = 28.0f;
+        constexpr float programNameCellX = 654.0f, programNameCellY = 34.0f;
+        constexpr float programNameCellW = 352.0f, programNameCellH = 28.0f;
 
-        // Delay-modulation scope, section 5.
-        constexpr float captionRowX = 302.0f, captionRowY = 94.0f, captionRowW = 1077.0f, captionRowH = 21.0f;
-        constexpr float scopeX = 302.0f, scopeY = 115.0f, scopeW = 1077.0f, scopeH = 124.0f;
-        constexpr float scopeInnerInset = 2.0f;
+        // Share Tech Mono 15 px at .10em advances 9.6 px per character, so the 352 px run holds 36.
+        // The longest strings that can appear are a 27-character "NN " + 24-char name and a
+        // 25-character parameter readout, so both clear it with 90+ px to spare. Do not narrow the
+        // window without re-checking those two.
+        constexpr float lcdCssPx = 15.0f, lcdTrackingEm = 0.10f;
+        constexpr int lcdCharacterBudget = 36;
+        constexpr int maxProgramNameLength = 24; // mirrors ProgramManager::maxProgramNameLength
 
-        // "2.0s of history, scrolling right-to-left at 60fps... 8 vertical divisions... hence
-        // 250ms/DIV" - derived (not spec-literal) constants: pixelsPerFrame = width / (2.0s * 60fps),
-        // gridSpacing = width / 8, both computed from the actual inner rect at paint time so they
-        // stay self-consistent if the rect above is ever tuned.
+        // Held after the gesture ends before the program name returns (section 5).
+        constexpr int lcdReadoutHoldMs = 900;
+
+        // The chevron affordance at the right of the name field, added by the handoff README's
+        // "Delta since the last spec revision" (it is not in CHORUS60-GUI-SPEC.md yet): 11 x 7,
+        // 1.4 px stroke with square caps, currentColor at 0.75, vertically centred, inset 10 px
+        // from the field's right edge, and the field takes 26 px of right padding to clear it.
+        //
+        // It is DRAWN, not baked, and only while the LCD is showing a stored program - it marks the
+        // window as a picker, and there is nothing to pick during name entry or a parameter
+        // readout. That state-dependence is exactly why it cannot live in the plate.
+        constexpr float lcdChevronW = 11.0f, lcdChevronH = 7.0f;
+        constexpr float lcdChevronStroke = 1.4f;
+        constexpr float lcdChevronInsetRight = 10.0f;
+        constexpr float lcdChevronAlpha = 0.75f;
+        constexpr float lcdNameRightPadding = 26.0f;
+
+        // SAVE / DELETE aren't wells, so the plate has nothing for them; these are measured off
+        // chorus60-page-i@2x.png, which draws both.
+        constexpr float saveButtonX = 1015.0f, saveButtonY = 34.0f, saveButtonW = 43.0f, saveButtonH = 28.0f;
+        constexpr float deleteButtonX = 1066.0f, deleteButtonY = 34.0f, deleteButtonW = 55.0f, deleteButtonH = 28.0f;
+
+        constexpr float inWindowX = 1139.0f, inWindowY = 34.0f, inWindowW = 54.0f, inWindowH = 28.0f;
+        constexpr float outWindowX = 1203.0f, outWindowY = 34.0f, outWindowW = 54.0f, outWindowH = 28.0f;
+
+        // Below this the IN/OUT readouts show -INF rather than a number: the plugin's own BBD clock
+        // noise sits well above it, so anything lower is silence.
+        constexpr float meterFloorDb = -60.0f;
+
+        // ---- Scope internals --------------------------------------------------------------------
         constexpr float scopeHistorySeconds = 2.0f;
         constexpr float scopeFps = 60.0f;
         constexpr int scopeNumDivisions = 8;
-
-        // Section 5: "amplitude 0.34 x h" and the delay-centre vertical-offset formula, adapted from
-        // the spec's own [2,14]ms/centre-8/half-width-6 reference to Parameters.h's actual
-        // [5,15]ms delayCenter range (centre 10, half-width 5) - see chorus-60/CLAUDE.md's note that
-        // Parameters.h's ranges are authoritative, not the spec table's.
         constexpr float scopeAmplitudeFraction = 0.34f;
         constexpr float scopeCentreOffsetFraction = 0.10f;
+
+        // Delay Center's own range, from Parameters.h's delayCentreMs() - the scope offsets its
+        // centre line by where the active configuration sits within it.
         constexpr float delayCenterRangeMid = 8.0f, delayCenterRangeHalf = 6.0f;
 
-        // The real DSP's own theoretical ceiling for modulation + drift offset (ms), used as the
-        // value that maps to the full scopeAmplitudeFraction*h swing. ModulationEngine.cpp's
-        // maxExcursionMs is 5ms and CharacterStage.cpp's maxDriftMs is 0.15ms - those constants live
-        // in anonymous namespaces in DSP .cpp files so aren't directly includable here; this is
-        // their documented sum, kept as one named constant so the provenance is clear rather than a
-        // bare magic number.
-        //
-        // No longer doubled for "both engines can sum": there is one engine now, and I+II is a
-        // configuration of it rather than two engines running together. Doubling would have halved
-        // the trace's apparent amplitude against a ceiling nothing can reach.
+        // ModulationEngine's maxExcursionMs (5 ms) plus CharacterStage's maxDriftMs (0.15 ms). Both
+        // live in anonymous namespaces in DSP .cpp files so aren't includable here; this is their
+        // documented sum, named so the provenance is clear rather than a bare magic number.
         constexpr float scopeReferenceExcursionMs = 5.0f + 0.15f;
 
-        // Program header (section 6). The three header-state bitmaps are full-width renders of the
-        // whole header band (wordmark included) - ProgramHeader only ever blits the "program
-        // cluster" sub-rect below (PROGRAM caption through the OUT window), leaving the wordmark to
-        // WordmarkComponent so the two never double-paint the same pixels - same split as
-        // Gatecrasher's own ProgramHeader/WordmarkComponent. This crop rect is a generous bounding
-        // box around section 6's coordinate table, not a pixel-measured exact crop - safe because
-        // the surrounding fascia is pixel-identical to the static panel background in every
-        // direction, so a slightly loose crop still blends seamlessly.
-        constexpr float headerAssetSrcScale = 3.0f; // shipped @3x
-        constexpr float headerCropX = 800.0f, headerCropY = 8.0f, headerCropW = 590.0f, headerCropH = 65.0f;
-
-        constexpr float programWindowX = 832.0f, programWindowY = 34.0f, programWindowW = 307.0f, programWindowH = 27.0f;
-        constexpr float programTagCellX = 833.0f, programTagCellY = 35.0f, programTagCellW = 43.0f, programTagCellH = 25.0f;
-        constexpr float programNameCellX = 876.0f, programNameCellY = 35.0f, programNameCellW = 262.0f, programNameCellH = 25.0f;
-
-        constexpr float saveButtonX = 1145.0f, saveButtonY = 34.0f, saveButtonW = 41.0f, saveButtonH = 27.0f;
-        constexpr float deleteButtonX = 1192.0f, deleteButtonY = 34.0f, deleteButtonW = 51.0f, deleteButtonH = 27.0f;
-
-        constexpr float inWindowX = 1261.0f, inWindowY = 34.0f, inWindowW = 54.0f, inWindowH = 27.0f;
-        constexpr float outWindowX = 1323.0f, outWindowY = 34.0f, outWindowW = 54.0f, outWindowH = 27.0f;
-
-        constexpr int maxProgramNameLength = 22; // mirrors ProgramManager::maxProgramNameLength
-
-        // Wordmark, section 8 - owned separately from ProgramHeader (see headerCrop comment above).
-        constexpr float wordmarkX = 25.0f, wordmarkY = 30.0f, wordmarkW = 308.0f, wordmarkH = 31.0f;
-
-        // ---- Static chrome (PanelChrome) ----------------------------------------------------
-        // Model lines, section 8: "right of the wordmark at x 351 ... Barlow Condensed 600, 11px,
-        // .24em, 4px apart", over the wordmark's own 31px block.
-        constexpr float modelLineX = 351.0f;
-        constexpr float modelLine1CentreY = 38.0f;
-        constexpr float modelLine2CentreY = 53.0f;
-
-        // Blue stripe caption, section 4: centred in the top stripe (x 25, y 94, 232 x 24).
-        constexpr float stripeCaptionCentreX = 141.0f, stripeCaptionCentreY = 106.0f;
-
-        // Group panel titles sit in each box's title row, over the plate's own hairline rule.
-        // Section 7 gives the boxes' rects and a 9/14/14 padding convention; the title baseline is
-        // measured off the dressed render, which puts the text centre 19px below the box top.
-        constexpr float groupTitleCentreBelowTop = 19.0f;
-        constexpr float groupTitleInsetX = 14.0f;      // left inset for title-only boxes
-        constexpr float groupTitleInsetXWithLed = 24.0f; // MOD ENGINE I/II clear their O8 LED
-
-        // The IN / OUT captions above their windows.
-        constexpr float headerCaptionCentreY = 22.0f;
-
-        // Below this the IN/OUT readouts show -INF rather than a number: the plugin's own noise
-        // floor (BBD clock noise is always running) sits well above it, so anything lower is
-        // silence, and "-100.0" overflows the 54px window anyway.
-        constexpr float meterFloorDb = -60.0f;
-
-        // Footer status line, right-aligned in the footer band (y 602, h 29).
-        constexpr float footerRight = 1377.0f, footerCentreY = 616.0f;
+        // Footer status line, right-aligned in the footer band. It carries live engine state
+        // ("... ENGAGED ..." / "... BYPASS ..."), which is why it is drawn rather than baked.
+        constexpr float footerRight = 1258.0f, footerCentreY = 761.0f;
     }
 
     // Angle (degrees, clockwise from 12 o'clock) for a normalised 0..1 value across the knob arc.
@@ -347,40 +345,10 @@ namespace Chorus60Theme
         return centre + directionForAngleDegrees(angleDegrees) * radius;
     }
 
-    // The paged MOD ENGINE box's Ø8 title-row LED (see Layout::groupLedPadX/Y's comment for how
-    // these were derived). One LED now rather than two: section 7a specifies it lights whenever
-    // *any* engine is engaged, since the box represents whichever single configuration is active
-    // rather than one engine each.
-    inline juce::Rectangle<float> modEngineLedRect() noexcept
+    /** The rect of one group box below its heading rule - the region the OFF state multiplies. */
+    inline juce::Rectangle<float> groupDimRect(float x, float y, float w, float h) noexcept
     {
-        using namespace Layout;
-        return { modEngineGroupX + groupLedPadX - groupLedD * 0.5f,
-                 modEngineGroupY + groupLedPadY - groupLedD * 0.5f,
-                 groupLedD, groupLedD };
-    }
-
-    // Number of ticks (inclusive of both arc endpoints) whose even spacing across the full 270
-    // sweep comes closest to targetSpacingDegrees, landing exactly on -135 and +135.
-    inline int tickCountForSpacing(float targetSpacingDegrees) noexcept
-    {
-        const float sweep = Layout::knobArcEndDegrees - Layout::knobArcStartDegrees;
-        const int intervals = juce::jmax(1, (int) std::round(sweep / targetSpacingDegrees));
-        return intervals + 1;
-    }
-
-    // CSS-style angled linear gradient (0deg = to top, 90deg = to right, clockwise), matching the
-    // spec's "160deg" gradient notation for the engine buttons exactly rather than approximating
-    // with a plain vertical gradient.
-    inline juce::ColourGradient angledGradient(juce::Rectangle<float> bounds, juce::Colour start,
-                                                 juce::Colour end, float cssAngleDegrees)
-    {
-        const float a = juce::degreesToRadians(cssAngleDegrees);
-        const juce::Point<float> dir(std::sin(a), -std::cos(a));
-        const float halfLength = 0.5f * (std::abs(bounds.getWidth() * dir.x) + std::abs(bounds.getHeight() * dir.y));
-        const auto centre = bounds.getCentre();
-        const auto p0 = centre - dir * halfLength;
-        const auto p1 = centre + dir * halfLength;
-        return juce::ColourGradient(start, p0.x, p0.y, end, p1.x, p1.y, false);
+        return {x, y + Layout::groupHeadingRuleOffset, w, h - Layout::groupHeadingRuleOffset};
     }
 
     inline float trackedTextWidth(const juce::String& text, const juce::Font& font, float trackingPx)
@@ -396,8 +364,7 @@ namespace Chorus60Theme
     }
 
     // juce::Font has no absolute-pixel letter-spacing, so this draws glyph-by-glyph to reproduce
-    // the spec's tracking values (e.g. ".18-.28em" on labels) - same technique as
-    // GatecrasherTheme::drawTrackedText.
+    // the spec's tracking values - same technique as GatecrasherTheme::drawTrackedText.
     inline void drawTrackedText(juce::Graphics& g, const juce::String& text, const juce::Font& font,
                                  float trackingPx, juce::Rectangle<float> area,
                                  juce::Justification justification, juce::Colour colour)
@@ -422,9 +389,10 @@ namespace Chorus60Theme
         }
     }
 
-    // Barlow Condensed SemiBold (600, labels) / Bold (700, group/lamp text), Share Tech Mono
-    // Regular (numeric/LED readouts), Librestile Extended Bold (wordmark only) - section 2. Loaded
-    // once per process via function-local statics, same caching pattern as GatecrasherTheme.h.
+    // Barlow Condensed SemiBold (600 - control labels, captions, scope status) and Bold (700 - group
+    // headings, engine button letters), Share Tech Mono Regular (everything inside a display) -
+    // section 3. Librestile is gone with the wordmark, which the plate bakes now. Loaded once per
+    // process via function-local statics, same caching pattern as GatecrasherTheme.h.
     inline juce::Typeface::Ptr barlowSemiBoldTypeface()
     {
         static const juce::Typeface::Ptr typeface =
@@ -446,13 +414,6 @@ namespace Chorus60Theme
                                                       (size_t) BinaryData::ShareTechMonoRegular_ttfSize);
         return typeface;
     }
-    inline juce::Typeface::Ptr librestileExtBoldTypeface()
-    {
-        static const juce::Typeface::Ptr typeface =
-            juce::Typeface::createSystemTypefaceFor(BinaryData::LibrestileExtBold_ttf,
-                                                      (size_t) BinaryData::LibrestileExtBold_ttfSize);
-        return typeface;
-    }
 
     inline juce::Font labelFont(float heightPx)
     {
@@ -466,13 +427,12 @@ namespace Chorus60Theme
     {
         return juce::Font(juce::FontOptions(heightPx).withTypeface(shareTechMonoTypeface()));
     }
+
     // The spec quotes every type size as CSS px, but a juce::Font's height parameter is
     // ascent+descent - for a given typeface a fixed multiple of the CSS em size, not equal to it.
     // Passing a spec size straight to labelFont() therefore renders noticeably small. These convert,
-    // calibrating the ratio once off a reference string whose rendered width was measured directly
-    // from the dressed reference render (the baked "DECORRELATION" knob label, 13 glyphs of
-    // section 7's 10px / .18em, spanning 79.4px in canvas units) - so one real measurement scales
-    // every size on the panel. Same approach, and same underlying trap, as Gatecrasher's.
+    // calibrating the ratio once off a reference string measured directly from the artwork, so one
+    // real measurement scales every size on the panel. Same trap as Gatecrasher's.
     inline float fontHeightForTrackedWidth(const juce::Font& probeFont, float probeHeight,
                                             const juce::String& text, float trackingPx, float targetWidthPx)
     {
@@ -497,29 +457,25 @@ namespace Chorus60Theme
         return cssPx * ratio;
     }
 
-    inline juce::Font monoFontBold(float heightPx)
+    inline float monoFontHeightForCssPx(float cssPx)
     {
-        return juce::Font(juce::FontOptions(heightPx).withTypeface(shareTechMonoTypeface())).boldened();
-    }
-    inline juce::Font wordmarkFont(float heightPx)
-    {
-        return juce::Font(juce::FontOptions(heightPx).withTypeface(librestileExtBoldTypeface()));
+        // Share Tech Mono's own ratio, calibrated the same way: section 5 states 9.6 px of advance
+        // per character at 15 CSS px with .10em tracking, so the glyph advance alone is 8.1 px.
+        static const float ratio = [&]
+        {
+            constexpr float probeHeight = 40.0f, refCssPx = 15.0f;
+            const float refWidth = 8.1f * 10.0f + trackingPxForEm(0.10f, refCssPx) * 9.0f;
+            return fontHeightForTrackedWidth(monoFont(probeHeight), probeHeight, "0000000000",
+                                              trackingPxForEm(0.10f, refCssPx), refWidth)
+                 / refCssPx;
+        }();
+        return cssPx * ratio;
     }
 
-    // Binary-data-backed images, decoded once per process via function-local statics (avoids
-    // repeated PNG decode on every repaint/instantiation - the knob filmstrips in particular are
-    // 128x16384 sheets). Centralised here rather than in each component, same rationale as
-    // GatecrasherTheme.h's own equivalent block.
-    // The background plate (spec preamble): the full static fascia with NO controls and no text -
-    // panel material and frame, header chrome with empty PROGRAM / IN / OUT wells, the blue stripes
-    // and blank CHORUS strip, section divider, empty scope well, and the empty group boxes with
-    // their heading rules. Every glyph and every control is drawn on top of it.
+    // Binary-data-backed images, decoded once per process via function-local statics - the knob
+    // filmstrips in particular are tall sheets and must not be re-decoded per repaint.
     //
-    // This replaced chorus60-panel-bypass@2x.png, a fully dressed render that carried baked copies
-    // of the knobs (pointers included), all the labels and all the value readouts. Compositing live
-    // elements over that meant each one fought a frozen copy of itself - the same class of bug that
-    // had to be unpicked across the whole of Gatecrasher's GUI before it got its own bare chassis.
-    // The dressed renders stay in design/assets/ as pixel-matching acceptance targets.
+    // The background plate carries all the static furniture, glyphs included (handoff section 1).
     inline const juce::Image& panelBackgroundImage()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
@@ -527,24 +483,56 @@ namespace Chorus60Theme
         return image;
     }
 
-    inline const juce::Image& knobLargeFilmstrip()
+    inline const juce::Image& knobModFilmstrip()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::knob_large_128px_128f_png, (size_t) BinaryData::knob_large_128px_128f_pngSize);
+            BinaryData::knob_mod_84px_128f_png, (size_t) BinaryData::knob_mod_84px_128f_pngSize);
         return image;
     }
 
-    inline const juce::Image& knobSmallFilmstrip()
+    inline const juce::Image& knobGlobalFilmstrip()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::knob_small_128px_128f_png, (size_t) BinaryData::knob_small_128px_128f_pngSize);
+            BinaryData::knob_global_68px_128f_png, (size_t) BinaryData::knob_global_68px_128f_pngSize);
         return image;
     }
 
-    // Chorus-60-specific value-text formatting, matching the exact display conventions baked into
-    // the reference renders (design/assets/chorus60-panel*@2x.png) rather than Gatecrasher's own
-    // popup-only formatter: Hz -> 2 decimals ("0.45 Hz"), % -> 0 decimals with a space before the
-    // sign ("38 %"), ms -> 1 decimal ("5.6 ms"), dB -> 1 decimal, explicitly signed ("+0.0 dB").
+    inline const juce::Image& engineButtonImage(int index) // 0 = II, 1 = I, 2 = OFF
+    {
+        static const juce::Image images[3] = {
+            juce::ImageFileFormat::loadFrom(BinaryData::buttonii2x_png, (size_t) BinaryData::buttonii2x_pngSize),
+            juce::ImageFileFormat::loadFrom(BinaryData::buttoni2x_png, (size_t) BinaryData::buttoni2x_pngSize),
+            juce::ImageFileFormat::loadFrom(BinaryData::buttonoff2x_png, (size_t) BinaryData::buttonoff2x_pngSize)};
+        return images[juce::jlimit(0, 2, index)];
+    }
+
+    inline const juce::Image& lampImage(bool lit)
+    {
+        static const juce::Image on = juce::ImageFileFormat::loadFrom(
+            BinaryData::lampon2x_png, (size_t) BinaryData::lampon2x_pngSize);
+        static const juce::Image off = juce::ImageFileFormat::loadFrom(
+            BinaryData::lampoff2x_png, (size_t) BinaryData::lampoff2x_pngSize);
+        return lit ? on : off;
+    }
+
+    inline const juce::Image& switchTrackImage()
+    {
+        static const juce::Image image = juce::ImageFileFormat::loadFrom(
+            BinaryData::switchtrack2x_png, (size_t) BinaryData::switchtrack2x_pngSize);
+        return image;
+    }
+
+    inline const juce::Image& switchThumbImage()
+    {
+        static const juce::Image image = juce::ImageFileFormat::loadFrom(
+            BinaryData::switchthumb2x_png, (size_t) BinaryData::switchthumb2x_pngSize);
+        return image;
+    }
+
+    // Value-text formatting for the LCD's parameter readout - the only live numeric display on the
+    // panel (section 5). Hz -> 2 decimals ("0.45 Hz"), % -> whole numbers ("38 %"), ms -> 1 decimal
+    // ("6.4 ms"), dB -> 1 decimal explicitly signed ("+0.0 dB"), and the IMAGE switch through its
+    // own MONO/STEREO strings.
     inline juce::String formatParameterValue(const juce::RangedAudioParameter& param, double value)
     {
         const auto label = param.getLabel();

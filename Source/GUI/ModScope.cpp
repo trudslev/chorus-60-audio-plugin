@@ -33,14 +33,14 @@ void ModScope::timerCallback()
     const float inputDb = processorRef.getInputMeterDb();
     const float inputNorm = juce::jlimit(0.0f, 1.0f, (inputDb + 60.0f) / 60.0f);
     const float noise01 = noiseRaw != nullptr ? juce::jlimit(0.0f, 1.0f, noiseRaw->load(std::memory_order_relaxed) * 0.01f) : 0.0f;
-    const float baseHalfPx = scopeH * 0.20f * inputNorm * (0.35f + 0.65f * noise01);
+    const float baseHalfPx = scopeWellH * 0.20f * inputNorm * (0.35f + 0.65f * noise01);
     const float jitter = 0.6f + 0.4f * random.nextFloat();
 
     history[(size_t) writeIndex] = { traceMs, baseHalfPx * jitter };
     writeIndex = (writeIndex + 1) % historySize;
 
-    const float pixelsPerFrame = scopeW / (scopeHistorySeconds * scopeFps);
-    const float gridSpacing = scopeW / (float) scopeNumDivisions;
+    const float pixelsPerFrame = scopeWellW / (scopeHistorySeconds * scopeFps);
+    const float gridSpacing = scopeWellW / (float) scopeNumDivisions;
     gridScrollPhase = std::fmod(gridScrollPhase + pixelsPerFrame, gridSpacing);
 
     repaint();
@@ -54,41 +54,43 @@ void ModScope::paint(juce::Graphics& g)
     // Same resolver the audio thread uses, so the trace can never disagree with what is being
     // heard about which configuration is engaged.
     const auto active = processorRef.resolveActiveConfiguration();
-    const bool engaged = active.engaged;
 
-    // --- Caption row: "DELAY MODULATION" + right-aligned state/depth/division readouts (section 5) ---
-    const juce::Rectangle<float> captionRect(captionRowX, captionRowY, captionRowW, captionRowH);
-    drawTrackedText(g, "DELAY MODULATION", labelFontBold(11.0f), 11.0f * 0.28f, captionRect,
-                     juce::Justification::centredLeft, engaged ? Colour::engravedHeadingText : Colour::captionTertiary);
-
+    // --- Caption row -----------------------------------------------------------------------
+    //
+    // "DELAY MODULATION" is NOT drawn here. Handoff section 1.1 lists it as baked into the plate:
+    // it never changes its characters or its colour, so it is silkscreen like every other static
+    // heading. Drawing it as well double-printed it at a one-pixel offset, which is precisely the
+    // failure the manifest exists to prevent.
+    //
+    // Only the status row is live, and section 1.2 gives it exactly two fields: the engine state and
+    // the time division. The "DEPTH n%" that used to sit between them is gone with the standing
+    // readouts - section 4 of the spec is explicit that the LCD is now the only numeric display on
+    // the panel.
     using Configuration = Chorus60AudioProcessor::Configuration;
     const juce::String stateText = active.which == Configuration::both ? "ENGINE I + II"
                                   : active.which == Configuration::one ? "ENGINE I"
                                   : active.which == Configuration::two ? "ENGINE II"
                                   : "ENGINE BYPASS";
 
-    // The engaged configuration's own depth, not a sum. Summing two engines' depths was the old
-    // architecture's reading of I+II and no longer describes anything real - I+II has one depth.
-    const juce::String depthText =
-        "DEPTH " + juce::String((int) std::round(engaged ? active.depthPercent : 0.0f)) + "%";
     const juce::String divText = "250 ms / DIV";
 
-    const auto readoutFont = monoFont(11.0f);
-    g.setFont(readoutFont);
-    g.setColour(Colour::captionTertiary);
+    // Section 3: Share Tech Mono 11 px, .06em, in the caption grey.
+    const auto readoutFont = monoFont(monoFontHeightForCssPx(11.0f));
+    const float readoutTracking = trackingPxForEm(0.06f, 11.0f);
 
-    float cursorRight = captionRowX + captionRowW;
+    float cursorRight = scopeBlockX + scopeBlockW;
     const float readoutGap = 26.0f;
-    for (const auto& text : { divText, depthText, stateText })
+    for (const auto& text : { divText, stateText })
     {
-        const float w = juce::GlyphArrangement::getStringWidth(readoutFont, text);
-        const juce::Rectangle<float> r(cursorRight - w, captionRowY, w, captionRowH);
-        g.drawText(text, r, juce::Justification::centredLeft, false);
+        const float w = trackedTextWidth(text, readoutFont, readoutTracking);
+        const juce::Rectangle<float> r(cursorRight - w, scopeBlockY, w, scopeCaptionRowH);
+        drawTrackedText(g, text, readoutFont, readoutTracking, r, juce::Justification::left,
+                         Colour::captionTertiary);
         cursorRight = r.getX() - readoutGap;
     }
 
     // --- Scope rect (section 5: "same construction as Gatecrasher's envelope scope") ---
-    const juce::Rectangle<float> outerRect(scopeX, scopeY, scopeW, scopeH);
+    const juce::Rectangle<float> outerRect(scopeWellX, scopeWellY, scopeWellW, scopeWellH);
     const auto innerRect = outerRect.reduced(scopeInnerInset);
 
     juce::ColourGradient bgGradient(Colour::scopeBgTop, innerRect.getCentreX(), innerRect.getY(),
@@ -101,8 +103,8 @@ void ModScope::paint(juce::Graphics& g)
     g.saveState();
     g.reduceClipRegion(innerRect.getSmallestIntegerContainer());
 
-    const float pixelsPerFrame = scopeW / (scopeHistorySeconds * scopeFps);
-    const float gridSpacing = scopeW / (float) scopeNumDivisions;
+    const float pixelsPerFrame = scopeWellW / (scopeHistorySeconds * scopeFps);
+    const float gridSpacing = scopeWellW / (float) scopeNumDivisions;
 
     // Scrolling vertical grid, moving in lockstep with the trace's own scroll (section 5: "8
     // vertical divisions scroll with the signal").

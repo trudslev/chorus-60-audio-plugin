@@ -25,22 +25,43 @@ FetchContent_Declare(JUCE
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(JUCE)
 
-# Runtime GUI assets only - the two alternate panel-state screenshots
-# (chorus60-panel@2x.png / -both-engines@2x.png), the hardware reference photo, and the
-# gatecrasher-panel-reference.png are pixel-matching/authority targets for
-# design/CHORUS60-GUI-SPEC.md, not loaded at runtime, so they're deliberately excluded here -
-# chorus60-panel-bypass@2x.png (both engines off) is the one used as the live static background.
-# LibrestileExtBold is embedded despite the spec allowing either baking or live drawing (section 8)
-# because the wordmark treatment here is flat/clean, not distressed, so drawing it live from the
-# embedded font is the simpler equally-valid choice - no PNG needed. Barlow Condensed SemiBold
-# (600, labels) / Bold (700, group/lamp text) and Share Tech Mono Regular (numeric/LED readouts)
-# match Gatecrasher's exact treatment (design/CLAUDE.md: "same as Gatecrasher").
+# Runtime GUI assets only.
+#
+# Revision 2 inverted the plate's role. It used to be bare material with every glyph drawn in code;
+# it now BAKES the printed scales, every tick ring, every numeral and unit, the static labels, the
+# wordmark and the group headings - see design/CHORUS60-BUILD-HANDOFF.md section 1, which is the
+# asset contract. Only nine things are drawn at runtime, and the code that used to draw the rest is
+# deleted rather than adapted: drawing a baked string again double-prints it at a one-pixel offset.
+#
+# The four chorus60-page-*@2x renders are full composites - plate plus every runtime element - and
+# are pixel-matching acceptance targets, never runtime assets or a source to slice. Same for the
+# hardware photo and gatecrasher-panel-reference.png.
+#
+# LibrestileExtBold is gone: the wordmark is baked now, so nothing draws it live. It stays in
+# design/assets/ so the plate can be re-exported.
+#
+# Knob filmstrips: the @1x strips, deliberately, not the @2x sheets. The @2x sheets need Ø168/Ø136,
+# which is above the Ø128 masters they were made from, so they ship as upsampled placeholders -
+# handoff section 4 says so and says to use the @1x strips until someone with the original
+# 3D/vector knob source can render them properly. KnobFilmstripComponent takes the sheet geometry as
+# data (frame size + column count), so the real sheets drop in with no code change. Tracked as a
+# release blocker in prompts/PROMPTS.md.
+#
+# Fonts: Barlow Condensed SemiBold (600 - control labels, captions, scope status) and Bold (700 -
+# group headings, engine button letters) per spec section 3, plus Share Tech Mono Regular for
+# everything inside a display (LCD name, parameter readout, IN/OUT, footer).
 juce_add_binary_data(Chorus60BinaryData
     SOURCES
         design/assets/chorus60-background-plate@2x.png
-        design/assets/knob_large_128px_128f.png
-        design/assets/knob_small_128px_128f.png
-        design/assets/LibrestileExtBold.ttf
+        design/assets/knob_mod_84px_128f.png
+        design/assets/knob_global_68px_128f.png
+        design/assets/controls/button-i@2x.png
+        design/assets/controls/button-ii@2x.png
+        design/assets/controls/button-off@2x.png
+        design/assets/controls/lamp-on@2x.png
+        design/assets/controls/lamp-off@2x.png
+        design/assets/controls/switch-track@2x.png
+        design/assets/controls/switch-thumb@2x.png
         design/assets/BarlowCondensed-SemiBold.ttf
         design/assets/BarlowCondensed-Bold.ttf
         design/assets/ShareTechMono-Regular.ttf)
@@ -98,12 +119,11 @@ target_sources(Chorus60 PRIVATE
     Source/GUI/Chorus60LookAndFeel.cpp
     Source/GUI/Chorus60PanelBackground.cpp
     Source/GUI/KnobFilmstripComponent.cpp
-    Source/GUI/MonoStereoSwitch.cpp
+    Source/GUI/ImageSwitch.cpp
+    Source/GUI/DimmableGroup.cpp
     Source/GUI/ModScope.cpp
     Source/GUI/EngineButtonComponent.cpp
     Source/GUI/ProgramHeader.cpp
-    Source/GUI/WordmarkComponent.cpp
-    Source/GUI/PanelChrome.cpp
     Source/GUI/Chorus60EditorContent.cpp)
 
 target_compile_definitions(Chorus60 PUBLIC

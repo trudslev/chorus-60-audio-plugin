@@ -94,5 +94,5 @@ private:
     // path), so it needs no synchronisation of its own.
     std::vector<float> cleanSnapshot;
 
-    static constexpr int maxProgramNameLength = 22;
+    static constexpr int maxProgramNameLength = 24;   // spec section 5; mirrored by Layout::maxProgramNameLength
 };

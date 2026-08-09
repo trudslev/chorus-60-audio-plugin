@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../PluginProcessor.h"
+#include "Chorus60MenuLookAndFeel.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
 // The program section (CHORUS60-GUI-SPEC.md section 6): "Contract is identical to Gatecrasher
@@ -27,6 +28,17 @@ public:
 
     void paint(juce::Graphics&) override;
     bool hitTest(int x, int y) override;
+
+    /** Section 5's parameter readout: while a control is being moved the name cell shows
+        `NAME: VALUE UNIT` in #FFD9A0, reverting to the program name 900 ms after the gesture ends.
+
+        **The CALLER guards on the control's own drag state.** A SliderAttachment also fires when a
+        Program is applied and on every host automation step, and without that guard the display
+        latches onto whichever parameter was written last and flickers for the length of a song.
+        Naming mode wins over both - the glass belongs to the name field until it commits or
+        cancels. */
+    void showParameter(const juce::RangedAudioParameter& param);
+    void releaseParameter();
     void mouseDown(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
     void mouseMove(const juce::MouseEvent&) override;
@@ -68,6 +80,14 @@ private:
 
     HeaderButton pressedButton = HeaderButton::none;
 
-    juce::Rectangle<float> saveButtonRect, deleteButtonRect, headerClusterRect;
+    // Section 5's live parameter readout. Empty = showing the program name.
+    juce::String liveReadout;
+    juce::uint32 readoutRevertAtMs = 0;
+
+    // Dresses the dropdown as an extension of the PROGRAM glass. Owned here so it outlives every
+    // menu this component opens.
+    Chorus60MenuLookAndFeel menuLookAndFeel;
+
+    juce::Rectangle<float> saveButtonRect, deleteButtonRect, headerClusterRect, programWindowRect;
     juce::Rectangle<float> tagCellRect, nameCellRect, inWindowRect, outWindowRect;
 };

@@ -9,11 +9,11 @@ namespace
     struct RoleStyle
     {
         juce::Rectangle<float> faceRect;
-        juce::Colour top, bottom;
-        float highlightAlpha;
-        juce::Rectangle<float> ledRect; // empty for OFF (no LED)
+        int spriteIndex;                    // engineButtonImage(): 0 = II, 1 = I, 2 = OFF
+        juce::Point<float> lampCentre;      // (0,0) for OFF - the hardware has no lamp there
+        bool hasLamp;
         const char* label;
-        float labelFontPx;
+        float labelCssPx;
         float labelTrackingEm;
     };
 
@@ -23,80 +23,39 @@ namespace
         switch (role)
         {
             case EngineButtonRole::engineII:
-                return { {buttonIIX, buttonIIY, buttonW, buttonH}, Colour::buttonIITop, Colour::buttonIIBottom,
-                         0.40f, {ledIIX, ledIIY, ledD, ledD}, "II", 22.0f, 0.06f };
+                return { {buttonX, buttonIIY, buttonW, buttonH}, 0,
+                         {lampIICentreX, lampIICentreY}, true, "II", 22.0f, 0.06f };
             case EngineButtonRole::engineI:
-                return { {buttonIX, buttonIY, buttonW, buttonH}, Colour::buttonITop, Colour::buttonIBottom,
-                         0.50f, {ledIX, ledIY, ledD, ledD}, "I", 22.0f, 0.06f };
+                return { {buttonX, buttonIY, buttonW, buttonH}, 1,
+                         {lampICentreX, lampICentreY}, true, "I", 22.0f, 0.06f };
             case EngineButtonRole::off:
             default:
-                return { {buttonOffX, buttonOffY, buttonW, buttonH}, Colour::buttonOffTop, Colour::buttonOffBottom,
-                         0.85f, {}, "OFF", 18.0f, 0.14f };
+                return { {buttonX, buttonOffY, buttonW, buttonH}, 2,
+                         {}, false, "OFF", 18.0f, 0.14f };
         }
     }
 
-    // Shared by both EngineButtonComponent's own Ø15 LEDs and EngineLedIndicator's Ø8 group-panel
-    // echo - same gradients/glow either way (section 4), just a different radius.
-    void drawEngineLed(juce::Graphics& g, juce::Rectangle<float> bounds, bool lit)
+    // Section 3 of the handoff: the seating shadow is deliberately NOT baked into the button
+    // sprites, because a baked shadow fights the plate's own material. Drawn here instead, to the
+    // spec's `0 7px 13px -7px rgba(0,0,0,.95)`.
+    void drawSeatingShadow(juce::Graphics& g, juce::Rectangle<float> rect)
     {
-        const auto centre = bounds.getCentre();
-        const float r = bounds.getWidth() * 0.5f;
-
-        if (lit)
-        {
-            // Glow halo: "0 0 12px 3px rgba(255,43,28,.55) and 0 0 30px 8px rgba(255,43,28,.22)".
-            const float glowR = r + 22.0f;
-            juce::ColourGradient glow(Colour::chorusAccent.withAlpha(0.55f), centre.x, centre.y,
-                                       Colour::chorusAccent.withAlpha(0.0f), centre.x + glowR, centre.y, true);
-            glow.addColour(0.25, Colour::chorusAccent.withAlpha(0.35f));
-            glow.addColour(0.55, Colour::chorusAccent.withAlpha(0.18f));
-            glow.addColour(0.8, Colour::chorusAccent.withAlpha(0.06f));
-            g.setGradientFill(glow);
-            g.fillEllipse(centre.x - glowR, centre.y - glowR, glowR * 2.0f, glowR * 2.0f);
-
-            // Lit radial: #FF2B1C -> #B0140C @70% -> #6D0B06.
-            juce::ColourGradient bulb(Colour::ledLitCore, centre.x, centre.y,
-                                       Colour::ledLitEdge, centre.x + r, centre.y + r, true);
-            bulb.addColour(0.7, Colour::ledLitMid);
-            g.setGradientFill(bulb);
-            g.fillEllipse(bounds);
-        }
-        else
-        {
-            g.setColour(Colour::ledUnlit);
-            g.fillEllipse(bounds);
-            g.setColour(juce::Colours::white.withAlpha(0.14f));
-            g.drawEllipse(bounds.reduced(1.0f), 1.2f);
-        }
+        juce::Path p;
+        p.addRoundedRectangle(rect.reduced(7.0f).translated(0.0f, 7.0f), 5.0f);
+        juce::DropShadow(juce::Colours::black.withAlpha(0.95f), 13, {}).drawForPath(g, p);
     }
 
-    void drawButtonFace(juce::Graphics& g, juce::Rectangle<float> rect, juce::Colour top, juce::Colour bottom,
-                         float highlightAlpha)
+    void drawLampSprite(juce::Graphics& g, juce::Point<float> centre, bool lit)
     {
-        juce::Path roundedPath;
-        roundedPath.addRoundedRectangle(rect, Layout::buttonCornerRadius);
-
-        // Drop shadow, section 4: "0 7px 13px -7px rgba(0,0,0,.95)".
-        juce::DropShadow shadow(juce::Colours::black.withAlpha(0.55f), 9, {0, 5});
-        shadow.drawForPath(g, roundedPath);
-
-        g.setGradientFill(angledGradient(rect, top, bottom, 160.0f));
-        g.fillPath(roundedPath);
-
-        g.saveState();
-        g.reduceClipRegion(roundedPath);
-
-        // Inner bottom shade, section 4: "0 -7px 12px -4px rgba(0,0,0,.35-.50)".
-        juce::ColourGradient innerShade(juce::Colours::transparentBlack, rect.getCentreX(), rect.getBottom() - 26.0f,
-                                         juce::Colours::black.withAlpha(0.42f), rect.getCentreX(), rect.getBottom(), false);
-        g.setGradientFill(innerShade);
-        g.fillRect(rect);
-
-        // Top inner highlight, section 4: 1px line just inside the top edge, alpha varies per role.
-        g.setColour(juce::Colours::white.withAlpha(highlightAlpha));
-        g.drawLine(rect.getX() + 3.0f, rect.getY() + 1.5f, rect.getRight() - 3.0f, rect.getY() + 1.5f, 1.0f);
-
-        g.restoreState();
+        // 96 x 96 sprite with the glow baked into its transparent margin, so it is placed by its
+        // CENTRE - the visible bulb is only 15 px of it. Registering it by top-left would put the
+        // bulb 40 px down and right of where the panel prints it.
+        const float half = Layout::lampSpriteD * 0.5f;
+        g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+        g.drawImage(lampImage(lit),
+                     (int) std::round(centre.x - half), (int) std::round(centre.y - half),
+                     (int) Layout::lampSpriteD, (int) Layout::lampSpriteD,
+                     0, 0, lampImage(lit).getWidth(), lampImage(lit).getHeight());
     }
 }
 
@@ -106,18 +65,18 @@ EngineButtonComponent::EngineButtonComponent(Chorus60AudioProcessor& processor, 
     setInterceptsMouseClicks(true, false);
 
     // The engine engages on the way DOWN, not on release - that's how the real JN-80's latching
-    // switches behave: the LED is already lit by the time the cap bottoms out. Waiting for mouse-up
+    // switches behave: the lamp is already lit by the time the cap bottoms out. Waiting for mouse-up
     // (JUCE's default) puts the state change after the travel, which reads as lag on a control whose
     // whole character is that it's instant.
     setTriggeredOnMouseDown(true);
 
     if (role != EngineButtonRole::off)
     {
-        // Section 4: "State is latching, not momentary." Without this the button never changes its
-        // own toggle state on a click, so the ButtonAttachment bound to engine1/engine2 has nothing
-        // to observe and the parameter is never written - i.e. the engines simply cannot be switched
-        // on from the panel. OFF is deliberately excluded: it IS momentary, and clears both engines
-        // through its onClick below rather than carrying a state of its own.
+        // Latching, not momentary. Without this the button never changes its own toggle state on a
+        // click, so the ButtonAttachment bound to engine1/engine2 has nothing to observe and the
+        // parameter is never written - i.e. the engines simply cannot be switched on from the panel.
+        // OFF is deliberately excluded: it IS momentary, and clears both engines through its onClick
+        // below rather than carrying a state of its own.
         setClickingTogglesState(true);
     }
 
@@ -164,14 +123,14 @@ void EngineButtonComponent::timerCallback()
     using namespace Chorus60Theme::Layout;
 
     // Time-based linear ease so the 3px travel completes in exactly pressAnimMs regardless of
-    // frame-rate jitter (section 4: "translate down 3px for 110ms, then release").
+    // frame-rate jitter (section 4: "translates the button +3 px in y for 110 ms").
     const float target = isDown() ? Chorus60Theme::Layout::pressOffsetPx : 0.0f;
     const float maxStep = Chorus60Theme::Layout::pressOffsetPx / (pressAnimMs / (1000.0f / 60.0f));
 
-    if (pressOffsetPx < target)
-        pressOffsetPx = juce::jmin(target, pressOffsetPx + maxStep);
-    else if (pressOffsetPx > target)
-        pressOffsetPx = juce::jmax(target, pressOffsetPx - maxStep);
+    if (pressOffset < target)
+        pressOffset = juce::jmin(target, pressOffset + maxStep);
+    else if (pressOffset > target)
+        pressOffset = juce::jmax(target, pressOffset - maxStep);
 
     // Continuous repaint (rather than only on change) also keeps the OFF button's derived
     // label-brightness state fresh, since that's re-evaluated from the raw parameters every
@@ -185,51 +144,87 @@ void EngineButtonComponent::paintButton(juce::Graphics& g, bool, bool)
 
     const auto style = styleFor(role);
 
-    // Only the button's own face travels on a press. The LED and the roman legend sit outside it -
-    // section 4 puts the LEDs at x 167 and the labels 27px right of those, while the buttons end at
-    // x 147 - so they're panel furniture the button is pressed *next to*, not printed on. Sinking
-    // them with it made the whole assembly look like one flexing sheet.
+    // Section 3: the button faces are state-independent - there is no lit/unlit pair, because on the
+    // JN-80 they are plain moulded plastic that never illuminates. The LAMP beside each one carries
+    // the state, which is why lamp-on/lamp-off ship as a pair and the buttons do not.
+    //
+    // Only the face travels on a press. The lamp and the roman legend sit outside it - the buttons
+    // end at x 158 and the lamps are centred at 182.5 - so they are panel furniture the button is
+    // pressed *next to*, not printed on. Sinking them with it made the whole assembly look like one
+    // flexing sheet.
     {
         juce::Graphics::ScopedSaveState pressedFace(g);
-        g.addTransform(juce::AffineTransform::translation(0.0f, pressOffsetPx));
-        drawButtonFace(g, style.faceRect, style.top, style.bottom, style.highlightAlpha);
+        g.addTransform(juce::AffineTransform::translation(0.0f, pressOffset));
+
+        const auto& sprite = engineButtonImage(style.spriteIndex);
+        drawSeatingShadow(g, style.faceRect);
+        g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+        g.drawImage(sprite,
+                     (int) style.faceRect.getX(), (int) style.faceRect.getY(),
+                     (int) style.faceRect.getWidth(), (int) style.faceRect.getHeight(),
+                     0, 0, sprite.getWidth(), sprite.getHeight());
     }
 
-    bool labelBright;
+    // The letters are drawn rather than baked because their colour follows engagement, and section 9
+    // is explicit that this is the ONE per-element colour change in the whole OFF state - a state
+    // readout the live panel already has, not a dimming effect. In bypass nothing is engaged, so I
+    // and II read #A5ADB2 and OFF reads #E6EBEE.
+    bool engaged;
     juce::Rectangle<float> labelRect;
-    juce::Colour dimColour;
 
     if (role == EngineButtonRole::off)
     {
         const bool engine1On = engine1Raw != nullptr && engine1Raw->load(std::memory_order_relaxed) > 0.5f;
         const bool engine2On = engine2Raw != nullptr && engine2Raw->load(std::memory_order_relaxed) > 0.5f;
-        labelBright = !(engine1On || engine2On);
-        labelRect = { Layout::engineLabelX, style.faceRect.getCentreY() - 15.0f, Layout::engineLabelW, 30.0f };
-        dimColour = Colour::captionTertiary;
+        engaged = !(engine1On || engine2On);
+        labelRect = { Layout::engineLetterX, style.faceRect.getCentreY() - 16.0f, Layout::engineLetterW, 32.0f };
     }
     else
     {
-        const bool lit = getToggleState();
-        drawEngineLed(g, style.ledRect, lit);
-        labelBright = lit;
-        labelRect = { Layout::engineLabelX, style.ledRect.getCentreY() - 15.0f, Layout::engineLabelW, 30.0f };
-        dimColour = Colour::controlLabelText;
+        engaged = getToggleState();
+        drawLampSprite(g, style.lampCentre, engaged);
+        labelRect = { Layout::engineLetterX, style.lampCentre.y - 16.0f, Layout::engineLetterW, 32.0f };
     }
 
-    const auto labelColour = labelBright ? Colour::engravedHeadingText : dimColour;
-    drawTrackedText(g, style.label, labelFontBold(style.labelFontPx), style.labelFontPx * style.labelTrackingEm,
-                     labelRect, juce::Justification::centredLeft, labelColour);
+    drawTrackedText(g, style.label, labelFontBold(labelFontHeightForCssPx(style.labelCssPx)),
+                     trackingPxForEm(style.labelTrackingEm, style.labelCssPx), labelRect,
+                     juce::Justification::centredLeft,
+                     engaged ? Colour::engravedHeadingText : Colour::controlLabelText);
 }
 
 EngineLedIndicator::EngineLedIndicator(juce::Rectangle<float> ledBoundsAbsolute)
     : juce::Button({}), ledBounds(ledBoundsAbsolute)
 {
-    // Purely passive/decorative - never intercepts clicks, so it never steals a click meant for
-    // whatever's beneath it. Its toggle state is driven entirely by its own ButtonAttachment.
+    // Purely passive - never intercepts clicks, so it never steals one meant for whatever is
+    // beneath it. Its toggle state is driven entirely by its own ButtonAttachment.
     setInterceptsMouseClicks(false, false);
 }
 
 void EngineLedIndicator::paintButton(juce::Graphics& g, bool, bool)
 {
-    drawEngineLed(g, ledBounds, getToggleState());
+    using namespace Chorus60Theme;
+
+    // The MOD ENGINE box's own Ø8 heading-row indicator, at (308.5, 268.5) measured off
+    // chorus60-page-i@2x.png. It sits ABOVE the heading rule, so it never dims with the OFF state -
+    // it simply goes dark, which is why the unlit case is drawn flat rather than at reduced alpha.
+    if (getToggleState())
+    {
+        const auto centre = ledBounds.getCentre();
+        const float r = ledBounds.getWidth() * 0.5f;
+        const float glowR = r + 9.0f;
+
+        juce::ColourGradient glow(Colour::chorusAccent.withAlpha(0.50f), centre.x, centre.y,
+                                   Colour::chorusAccent.withAlpha(0.0f), centre.x + glowR, centre.y, true);
+        glow.addColour(0.45, Colour::chorusAccent.withAlpha(0.22f));
+        g.setGradientFill(glow);
+        g.fillEllipse(centre.x - glowR, centre.y - glowR, glowR * 2.0f, glowR * 2.0f);
+
+        g.setColour(Colour::chorusAccent);
+        g.fillEllipse(ledBounds);
+    }
+    else
+    {
+        g.setColour(juce::Colour(0xFF3A1512));
+        g.fillEllipse(ledBounds);
+    }
 }

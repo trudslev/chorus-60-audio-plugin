@@ -21,10 +21,13 @@ public:
 
         beginTest("Every program's fields are within Parameters.h's declared ranges");
         {
-            // Rate I and II share the slow 0.05-8Hz range; I+II has its own wider 0.05-16Hz one
-            // because the bank specifies 9.75, 11 and 14Hz there. Checking them against the same
-            // ceiling would either reject valid I+II data or silently permit an out-of-range I/II
-            // value, so they are asserted separately and deliberately.
+            // All three configurations share one 0.05-16Hz Rate range now. They used to differ -
+            // I and II were capped at 8Hz - which meant the panel's single printed 0.05-16 scale
+            // could not have been read against the I and II pages at all. What distinguishes the
+            // three is the values the factory bank stores, not what their controls can reach.
+            //
+            // maxRateHz is still a parameter rather than a constant so that a future divergence
+            // has to be spelled out at each call site instead of appearing silently.
             const auto checkConfiguration = [this] (const FactoryConfiguration& c,
                                                     float maxRateHz,
                                                     const juce::String& where)
@@ -38,8 +41,8 @@ public:
 
             for (const auto& p : kFactoryPrograms)
             {
-                checkConfiguration(p.configI, 8.0f, juce::String(p.name) + " I");
-                checkConfiguration(p.configII, 8.0f, juce::String(p.name) + " II");
+                checkConfiguration(p.configI, 16.0f, juce::String(p.name) + " I");
+                checkConfiguration(p.configII, 16.0f, juce::String(p.name) + " II");
                 checkConfiguration(p.configBoth, 16.0f, juce::String(p.name) + " I+II");
 
                 expect(p.driftPercent >= 0.0f && p.driftPercent <= 100.0f, p.name);

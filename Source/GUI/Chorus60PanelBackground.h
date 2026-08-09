@@ -2,19 +2,23 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// The flat static background: design/assets/chorus60-panel-bypass@2x.png (both engine LEDs dark,
-// OFF label bright, scope at drift/noise floor), drawn once across the full 1400x632 reference
-// canvas. Chassis gradient/grain, the button column's base art (faces + blue stripes), group
-// panels, footer stamp, and every static label are all baked into this single bitmap - see
-// design/CLAUDE.md's "GUI approach" and chorus-60/CLAUDE.md's GUI section. Every other GUI
-// component in this plugin is layered on top of this one, either painting over a specific region
-// (ProgramHeader, EngineButtonComponent, the group-panel LEDs) or adding something the bitmap can't
-// show at all (the knobs, the scope, the wordmark).
+// The panel plate: design/assets/chorus60-background-plate@2x.png, 2564 x 1554, drawn across the
+// full 1282 x 777 canvas (1280 x 775 of panel material plus the 1 px outer frame the export
+// includes).
 //
-// The other two reference renders (chorus60-panel@2x.png, chorus60-panel-both-engines@2x.png) and
-// gatecrasher-panel-reference.png/jn80-chorus-reference.jpeg are pixel-matching/authority targets
-// for an implementer to check against, not runtime assets - deliberately excluded from
-// juce_add_binary_data in CMakeLists.txt.
+// Since revision 2 the plate is NOT bare. It bakes every static string on the fascia - the printed
+// scales, every tick ring, numeral and unit, the wordmark, the group headings, the global control
+// labels, the switch's printed STEREO/MONO positions and the PROGRAM/IN/OUT captions - along with
+// the empty wells for the scope, the LCD and the two meters. design/CHORUS60-BUILD-HANDOFF.md
+// section 1 is the manifest, and it cuts both ways: redrawing one of those strings double-prints
+// it, and baking a runtime one freezes it.
+//
+// The three DimmableGroup regions draw their OWN crop of this same plate rather than letting this
+// component show through, because the OFF state has to multiply the plate along with the controls
+// on top of it. Everything outside those three rects is this component's.
+//
+// The four chorus60-page-*@2x renders are full composites - plate plus every runtime element - and
+// are pixel-matching acceptance targets, never runtime assets and never a source to slice.
 class Chorus60PanelBackground final : public juce::Component
 {
 public:

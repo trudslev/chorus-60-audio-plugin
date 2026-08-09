@@ -35,7 +35,9 @@ struct FactoryConfiguration
     float depthPercent;
     float delayCentreMs;
     float decorrelationPercent;
-    bool  mono;
+    // The IMAGE switch's stored position. The control is IMAGE (spec section 7.2); MONO and STEREO
+    // are its values, and true means MONO - so this field is named for both halves of that.
+    bool  imageMono;
 };
 
 struct FactoryProgram

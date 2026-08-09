@@ -1,410 +1,388 @@
 # CHORUS-60 CH-60 — GUI Implementation Spec
 
-Panel: **1400 × 632 px** at 1× (fixed aspect, 2.22:1 — the same ratio as Gatecrasher's 960 × 434,
-per BRAND.md's fixed-aspect-canvas rule). Reference renders in `assets/`.
+**Revision 2 — density, printed scales, LCD, contrast, OFF state.**
+Everything in the identity is unchanged: dark synth-panel fascia, blue CHORUS stripe, three coloured
+engine buttons, silkscreen wordmark, delay-modulation scope, red accent. This revision changes
+*density and legibility only*.
 
-**Background plate:** `assets/chorus60-background-plate@2x.png` (2804 × 1268, draw at 1400 × 632)
-is the full static fascia with **no controls and no text over top** — panel material and frame, header
-chrome with empty PROGRAM / IN / OUT wells, blue stripes and the blank `CHORUS` strip, section divider,
-empty scope well, and the empty group boxes with their heading rules. Every glyph on the panel is drawn
-by the host, not baked in: the wordmark and model lines, all captions, section headings, knob labels,
-button legends (I / II / OFF) and the footer status line — plus the three chorus buttons, all six LEDs,
-the nine knob filmstrips and value readouts, the scope trace and annotations, PROGRAM text +
-SAVE/DELETE, and the IN/OUT numbers. Text positions are unchanged from the plate's geometry (label
-boxes are reserved at their measured heights), so §§2–8 coordinates apply as written. Blit the plate
-once as the editor background. Re-render from `Chorus-60 Background Plate.dc.html` if the fascia changes.
-It carries the paged MOD ENGINE box and the CHARACTER / OUTPUT boxes — there is no BBD LINE box.
+Panel: **1280 × 775 px** at 1× (1282 × 777 including the 1 px outer border, which is what the
+exported plate measures). Down from 1400 × 632 — narrower and taller, so nine knobs and four buttons
+sit at instrument density rather than diagram density.
 
-**Product icon:** `assets/icon/` — dark plate at 1024 / 512 / 256 / 128 / 64 / 32 / 16 px plus
-`chorus60-icon-light-512.png` for light hosts and print. Mark is the Librestile `60` in `#EEF2F4` with a
-`#FF2B1C` ghost copy offset down-right (the chorus double), over the panel chassis gradient and a
-`#2F6DB8` → `#1F5798` stripe. Proportions: glyph cap size 41.4% of tile, ghost offset 5.1% x / 3.1% y,
-corner radius 20.3%, stripe inset 20.3% and 1.6% tall at 15.2% up from the bottom. The stripe is
-dropped at 48px and below, the inner hairline frame below 128px, and the ghost stays fully opaque
-below 128px (it is 90% at larger sizes). Re-render from `Chorus-60 Icon.dc.html`.
+**Asset contract:** `CHORUS60-BUILD-HANDOFF.md` states what is baked into the background plate and
+what the build draws at runtime. Read it before wiring anything up — as of this revision the plate
+**does** carry glyphs (printed scales, static labels), which was not true of the previous plate.
 
-All coordinates below are panel-local, origin = top-left of the 1400 × 632 panel.
-Suite sibling: Gatecrasher GR-85 — where a component exists in both plugins the Gatecrasher spec
-governs its construction and this document only states what differs.
+Renders:
+
+| File | State |
+|---|---|
+| `assets/chorus60-background-plate@1x.png` | 1282 × 777 — plate only, no knob sprites, no lamps, no LCD text |
+| `assets/chorus60-background-plate@2x.png` | 2564 × 1554 — same, @2x |
+| `assets/chorus60-page-i@2x.png` | Engine I engaged |
+| `assets/chorus60-page-ii@2x.png` | Engine II engaged |
+| `assets/chorus60-page-i-plus-ii@2x.png` | Both engaged |
+| `assets/chorus60-page-off@2x.png` | **OFF / bypass — new treatment** |
+
+Product icon: **unchanged.** `Chorus-60 Icon.dc.html` and the 16–1024 icon ladder in
+`assets/icon/` are not affected by this revision and must not be regenerated.
 
 ---
 
-## 1. Palette
+## 1. What changed in this revision
 
-| Role | Value |
-|---|---|
-| Chassis (vertical gradient, top→bottom) | `#141618` → `#0E1012` @35% → `#0A0C0D` |
-| Header band | `#191C1E` → `#101214`, bottom border `#000000` + 1px `rgba(255,255,255,.05)` highlight below |
-| Body field | `#0E1012` → `#0A0C0D` |
-| Group panel | `#131517` → `#0C0E10`, 1px `#000` border, 1px `rgba(255,255,255,.05)` inner top highlight |
-| Footer band | `#131517` → `#0C0E10` |
-| Engraved heading text | `#E6EBEE` |
-| Control label text | `#8A9196` |
-| Value text | `#C6CED3` |
-| Caption / tertiary | `#7B8287` |
-| Inactive label | `#5F666B` |
-| Footer text | `#5A6165` |
-| LED window bg | `#07090A`, border `#363C41`, inset shadow `rgba(0,0,0,.9)` |
-| LED window text | `#DFE6EA`, glow `rgba(200,220,230,.25)` |
-| Section divider | 1px `rgba(0,0,0,.9)` (fades at ends) + 1px `rgba(255,255,255,.06)` highlight to its right |
-| **Section stripe (structural)** | `#2F6DB8` → `#1F5798`, stripe text `#EEF2F4` |
-| Engine button II | `#E5A021` → `#C07908` (160°) |
-| Engine button I | `#EAD681` → `#D0B857` (160°) |
-| OFF button | `#EAECEC` → `#C9CDCF` (160°) |
-| **Chorus accent (ONLY colour beyond the stripes)** | `#FF2B1C` |
-| LED unlit | `#3A1512` |
+1. **Canvas 1400 × 632 → 1280 × 775.** Controls grew; spacing tightened.
+2. **Knobs enlarged.** Mod Engine Ø58 → **Ø84**; global Ø48 → **Ø68**. Filmstrips **re-rendered at
+   the new diameters** — see §6.
+3. **Printed scales added to every knob** (ticks + numerals + unit), §7.
+4. **Standing value readouts removed.** No live numbers anywhere on the fascia; the LCD is the only
+   numeric display.
+5. **LCD widened** to 376 px of name field, 352 px of glyph run — 36 characters at its font size, §5.
+6. **FACT / USER moved to the segment face** — it is display text, so it is set like display text.
+7. **Palette shifted up one step** for contrast, §2.
+7b. **IMAGE switch renamed** — the MONO/STEREO parameters become `image1`/`image2`/`imageB`, §7.2.
+7c. **Button column re-spaced** to the JN-80's even rhythm; buttons 120 → **132**, §4.
+8. **OFF state**: 0.42 → **0.50** opacity, wind-to-zero **removed**, `SETTINGS RETAINED` caption
+   **removed**, §9.
 
-**Rule: red is reserved for engine state.** The two engine LEDs, the DELAY MODULATION lamp and the
-scope trace are the only red elements on the panel. The blue stripes are structural framing from the
-hardware, not an accent — they appear twice, above and below the button column, and nowhere else.
+---
 
-## 2. Typography
+## 2. Palette
 
-- Labels / headings: **Barlow Condensed** (600 for labels, 700 for group/lamp text) — same as Gatecrasher.
-- Numeric readouts, LED windows, scope annotations: **Share Tech Mono** — same as Gatecrasher.
-- Wordmark: **Librestile Extended Bold** (`assets/LibrestileExtBold.ttf`, free for commercial use;
-  ship in BinaryData) — see §8.
-- Sizes: wordmark 34px · model line 11px / .24em · section headings 10px / .28em · scope lamp label
-  11px / .28em · control labels 10px / .18em · values 11px · LED program 13px / .10em · tag cell
-  9px / .12em · captions 9px / .24em.
+Measured against the group panel field `#131517` unless stated.
 
-## 3. Layout
+| Role | Hex | Contrast | Notes |
+|---|---|---|---|
+| Heading / engaged label | `#E6EBEE` | 12.9 : 1 | Wordmark, `DELAY MODULATION`, engaged button letters |
+| **Control label / printed scale numeral** | `#A5ADB2` | **8.04 : 1** | Functional text — knob names, tick numerals, `STEREO`/`MONO`, inactive button letters, `BBD CHORUS PROCESSOR` |
+| **Caption / tertiary** | `#8A9196` | **5.73 : 1** | Units under the scale, `PROGRAM`/`IN`/`OUT` captions, `MODEL CH-60 · STEREO`, scope status text, box titles when bypassed, footer |
+| Scope annotations (`DLY MOD`, `+ MAX`, `- MAX`) | `#9BA3A8` | 5.6 : 1 on the scope well (`#06080A`–`#0B0F11`) | Drawn opaque — **no alpha**. The old `rgba(160,178,186,.55)` measured 3.11 : 1 and is gone |
+| LCD text (program name, FACT/USER, IN/OUT) | `#DFE6EA` | 14.6 : 1 on `#07090A` | + `text-shadow: 0 0 8px rgba(200,220,230,.25)` |
+| LCD parameter readout | `#FFD9A0` | 11.7 : 1 on `#07090A` | Only while a control is moving |
+| Accent (scope trace, engine lamps) | `#FF2B1C` | — | Red, unchanged |
+| Blue stripe | `#2F6DB8` → `#1F5798` | — | Unchanged hue |
+| Panel field | `#141618` → `#0E1012` → `#0A0C0D` | — | Unchanged |
+| Group box | `#131517` → `#0C0E10`, 1 px `#000` border, 1 px `rgba(255,255,255,.05)` inset top | — | Unchanged |
+
+Retired values, for the build's find-and-replace: `#8A9196` as a *label* colour → `#A5ADB2`;
+`#7B8287` → `#8A9196`; `#5F666B` → `#8A9196`; `#5A6165` → `#8A9196`; `#C6CED3` (value readouts) →
+deleted with the readouts.
+
+Rule of thumb: **everything shifted up one step.** The old label grey is the new flavour grey.
+
+## 3. Typography
+
+- Labels / headings: **Barlow Condensed** — 600 for labels and captions, 700 for group headings and
+  button letters.
+- Display: **Share Tech Mono** — the segment face. Everything *inside a display* is set in it:
+  program name, `FACT` / `USER`, IN/OUT meters, the parameter readout, and the printed scale
+  numerals (which read as engraved display text, matching Gatecrasher).
+
+| Role | Face | Size | Tracking |
+|---|---|---|---|
+| Wordmark | Librestile Extended Bold | 34 px | .02em |
+| Section heading (`DELAY MODULATION`) | Barlow Condensed 700 | 11 px | .28em |
+| Group heading (`MOD ENGINE I`, `CHARACTER`, `OUTPUT`) | Barlow Condensed 600 | 11 px | .28em |
+| **Control label** (`DELAY CENTER I`) | Barlow Condensed 600 | **12 px** | .18em |
+| **Printed scale numeral** | Share Tech Mono | **12 px** | 0 |
+| **Scale unit** (`Hz`, `%`, `ms`, `dB`) | Barlow Condensed 600 | **11 px** | .16em |
+| Caption (`PROGRAM`, `IN`, `OUT`) | Barlow Condensed 600 | 9 px | .24em |
+| LCD program name / `FACT` / `USER` | Share Tech Mono | **15 px** | .10em |
+| IN / OUT meters | Share Tech Mono | 13 px | .06em |
+| Scope status (`ENGINE I`, `250 ms / DIV`) | Share Tech Mono | 11 px | .06em |
+| Blue stripe (`CHORUS`) | Barlow Condensed 700 | **26 px** | .34em |
+| Button letters `I` / `II` | Barlow Condensed 700 | 22 px | .06em |
+| Button letter `OFF` | Barlow Condensed 700 | 18 px | .14em |
+| Footer | Share Tech Mono | 10 px | .10em |
+
+Minimum type size anywhere on the panel: 9 px, and only for the three all-caps captions.
+
+## 4. Layout
+
+Origin is the inside of the panel border. Panel content area 1280 × 775.
 
 | Region | x | y | w | h |
 |---|---|---|---|---|
-| Header band | 1 | 1 | 1400 | 75 |
-| Body | 1 | 76 | 1400 | 526 |
-| Footer band | 1 | 602 | 1400 | 29 |
-| Button column | 25 | 94 | 232 | 488 |
-| Section divider | 279 | 94 | 1 | 488 |
-| Control column | 302 | 94 | 1075 | 488 |
+| Header band | 0 | 0 | 1280 | 78 |
+| Body | 0 | 78 | 1280 | 669 |
+| Footer band | 0 | 747 | 1280 | 28 |
+| Button column | 22 | 96 | **220** | 629 |
+| — blue stripe (top) | 22 | 96 | 220 | **46** |
+| — blue bar (bottom) | 22 | 701 | 220 | **24** |
+| Vertical rule | 263 | 96 | 1 | 629 |
+| Scope block (caption row + well) | 285 | 96 | 973 | 140 |
+| — scope well | 285 | 116 | 975 | 120 |
+| MOD ENGINE box | 285 | 252 | 973 | 240 |
+| CHARACTER box | 285 | 508 | 567 | 218 |
+| OUTPUT box | 868 | 508 | 390 | 218 |
 
-Body padding: 18 top / 24 sides / 23 bottom. Control column stacks with 16px gaps:
-scope caption row (h 21) → scope (h 124) → **paged MOD ENGINE box** (h 160) → lower row (h 149).
-Footer band starts at y 605.
+Body padding 18 / 22 / 22; column gap 21 either side of the rule; 16 px between stacked blocks;
+16 px between CHARACTER and OUTPUT. Group boxes: 1 px `#000` border, 8 / 16–18 / 12 padding,
+heading row separated by a 1 px `rgba(0,0,0,.6)` rule with a `rgba(255,255,255,.05)` highlight under it.
 
-## 4. Button column — the hardware chorus section
+**Engine buttons** — **132 × 132**, 5 px radius, at x 26:
 
-Straight from `assets/jn80-chorus-reference.jpeg`, expanded to fill the column.
+| Button | y | Fill |
+|---|---|---|
+| II | 183 | `linear-gradient(160deg,#E5A021,#C07908)` |
+| I | 356 | `linear-gradient(160deg,#EAD681,#D0B857)` |
+| OFF | 528 | `linear-gradient(160deg,#EAECEC,#C9CDCF)` |
 
-| Element | x | y | w | h |
+Lamp: 15 px circle, 16 px to the right of the button, then 12 px to the letter. Pressed state
+translates the button +3 px in y for 110 ms.
+
+**Column spacing follows the JN-80.** On the hardware the four vertical gaps — stripe-to-first-button,
+the two gaps between buttons, and last-button-to-bottom-bar — are all roughly equal, at about 0.3 ×
+the button height; the column reads as a packed block of switches, not three buttons floating in a
+field. The panel reproduces that: buttons are sized so all four gaps come out at **41 px** against a
+132 px button (0.31 ×), filling the column edge to edge. An earlier draft centred a 120 px stack,
+which left the top and bottom gaps at 2.3 × the inter-button gap and made the column read far
+sparser than the rest of the panel. **Do not centre the stack — distribute it.**
+
+## 5. Program LCD
+
+| | |
+|---|---|
+| Window | **435 × 28 at x 571, y 34** — one inset well holding the bank cell and the name field |
+| Bank cell | 59 px wide at x 572, right-hand 1 px `#2A3035` divider |
+| **Name field** | **376 px at x 631**, 12 px padding each side → **352 px of glyph run** |
+| Face / size | Share Tech Mono 15 px, .10em tracking → **9.6 px per character** |
+| **Character budget** | **36 characters** at 15 px |
+| Well | `#07090A`, 1 px `#363C41`, `0 2px 6px rgba(0,0,0,.9)` inset |
+
+`FACT` / `USER` is set in **the same face, size, tracking and colour as the program name** — it is
+inside the display, so it is display text. It is no longer dimmed relative to the name.
+
+Three contents, one field:
+
+1. **Program** (idle) — `07 WIDE ENSEMBLE`, centred, `#DFE6EA`.
+2. **Parameter readout** (while any control is moving) — left-aligned, `#FFD9A0`, format
+   `NAME: VALUE UNIT`, e.g. `DECORRELATION I+II: 100 %` (25 characters — 240 px, comfortably inside
+   the 352 px field with 112 px to spare). Held for 900 ms after release, then the program name
+   returns. This is the panel's *only* live numeric display.
+3. **Name entry** (after SAVE) — left-aligned typed text, 24-character limit, blinking block caret.
+
+## 6. Knob assets — **CHANGED, re-render required**
+
+| Sheet | Diameter | Frames | Sheet size | Used by |
 |---|---|---|---|---|
-| Top stripe (contains `CHORUS`) | 25 | 94 | 232 | 24 |
-| Button II | 31 | 144 | 116 | 116 |
-| LED II | 167 | 195 | 15 | 15 |
-| Button I | 31 | 286 | 116 | 116 |
-| LED I | 167 | 337 | 15 | 15 |
-| Button OFF | 31 | 428 | 116 | 116 |
-| Bottom stripe | 25 | 570 | 232 | 12 |
+| `assets/knob_mod_84px_128f.png` | **84 px** (was 58) | 128 | 84 × 10752 | Rate, Depth, Delay Center, Decorrelation |
+| `assets/knob_global_68px_128f.png` | **68 px** (was 48) | 128 | 68 × 8704 | Drift, Saturation, Noise, Mix, Output Trim |
 
-- Stripe caption `CHORUS`: Barlow Condensed 700, 13px, .40em tracking, `#EEF2F4`, centred with
-  `text-indent:.40em` so the trailing letter-space doesn't push it optically left.
-- Buttons: 5px radius, gradient per §1 at 160°, 1px top inner highlight
-  (`rgba(255,255,255,.40)` II / `.50` I / `.85` OFF), inner bottom shade
-  `0 -7px 12px -4px rgba(0,0,0,.35–.50)`, drop shadow `0 7px 13px -7px rgba(0,0,0,.95)`.
-  On press: translate down 3px for 110ms, then release. State is latching, not momentary.
-- Roman labels sit 27px right of each LED: Barlow Condensed 700, 22px, .06em; `#E6EBEE` when that
-  engine is engaged, `#8A9196` when not. `OFF` is 18px / .14em, `#E6EBEE` when nothing is
-  engaged and `#7B8287` when an engine is on.
-- LEDs (Ø15): unlit `#3A1512` with inset `rgba(255,255,255,.14)`; lit radial
-  `#FF2B1C` → `#B0140C` @70% → `#6D0B06` with glow `0 0 12px 3px rgba(255,43,28,.55)` and
-  `0 0 30px 8px rgba(255,43,28,.22)`. Same lamp component as Gatecrasher's GATE OPEN lamp.
-- Logic: `engine1` and `engine2` are independent latches. OFF clears both. Both engaged is the
-  legitimate "I+II" hardware trick and must be reachable.
+Both sheets are **re-rendered at the new diameter** from the Ø128 masters — resampled once at build
+time, not scaled at draw time. The old `knob_large_128px_128f.png` / `knob_small_128px_128f.png`
+masters remain in `assets/` as the source of truth for future re-renders; the Ø58 / Ø48 usages are
+retired.
 
-## 5. Delay-modulation scope — the centrepiece
+Frame *n* (0…127) = `background-position: 0 −(n × diameter)px`. Frame 0 = −135°, frame 127 = +135°.
+The knurl ring that used to sit around each knob is **removed** — the printed scale replaces it.
 
-Caption row (y 94, h 21): `DELAY MODULATION` at x 302 (Barlow Condensed 700, 11px, .28em;
-`#E6EBEE` engaged / `#7B8287` bypassed). There is **no lamp in this row** — per BRAND.md a panel
-carries exactly one live-state indicator, and on this plugin that indicator is the engine LED pair in
-the button column (§4). Right-aligned, three Share Tech Mono 11px `#7B8287` readouts spaced 26px:
-`ENGINE I` / `ENGINE II` / `ENGINE I + II` / `ENGINE BYPASS`, `DEPTH nn%` (sum of the
-engaged engines' depth), and the division label `250 ms / DIV`.
+## 7. Printed scales
 
-Scope rect: **x 302, y 115, w 1077, h 124**. 1px `#0A0C0D` border, bg vertical `#06080A` → `#0B0F11`,
-inset shadow `0 2px 7px rgba(0,0,0,.85)`. Same construction as Gatecrasher's envelope scope.
+Every knob carries a printed scale: five ticks, five numerals, one unit. This is **functional text
+at 7 : 1** (`#A5ADB2`), and it is the only at-rest value reference on the panel.
 
-- **Window**: 2.0 s of history, scrolling right-to-left at 60fps. 8 vertical divisions scroll with
-  the signal (hence `250 ms / DIV`); 6 horizontals are static. Grid `rgba(150,180,190,.10)`,
-  centre line `rgba(150,180,190,.22)`.
-- **Trace**: 3px `#FF2B1C`, glow pass underneath at 7px `rgba(255,43,28,.45)` with a 20px shadow
-  in `rgba(255,43,28,.80)`, then the core pass with a 10px shadow. Mitre joins. A 4px filled dot
-  `rgba(255,43,28,.90)` sits at the right edge on the current sample.
-  Unlike Gatecrasher's gate envelope this waveform is genuinely curved — do **not** flatten or
-  quantise it, and do not smooth it either: it is the modulator, sampled.
-- **Geometry**: amplitude 0.34 × h; vertical centre offset by `0.10 × h × ((delayCenter − 8) / 6)`
-  so raising Delay Center visibly moves the whole trace down the well.
-- **Signal**: sum of the engaged engines. Engine I `depth1/100 · sin(2π·rate1·t)`; engine II the
-  same with a +1.1 rad phase offset; plus drift `drift/100 · 0.14 · sin(2π·0.11·t + 2.3)`; plus
-  clock noise `noise/100 · 0.045 · mean(sin(811.7t), sin(1531.3t))`. In the plugin, feed the scope
-  the **real modulator output** — this formula is the mockup's stand-in and defines the look, not
-  the DSP.
-  With both engines off the trace does not go dead flat: it settles onto the drift/noise floor.
-- **Dry input underlay**: behind the trace, 1px vertical strokes at `rgba(178,190,197,.22)` every
-  5px, amplitude `0.20 × h × env × (0.35 + 0.65·noise)` about the trace's centre line — the input
-  signal the modulation is acting on, so the display reads as a diagnostic instrument. Grey, never
-  red, and always behind the trace.
-- Annotations in Share Tech Mono 9px `rgba(160,178,186,.55)`: `DLY MOD` top-left,
-  `+ MAX` / `- MAX` right-aligned top and bottom.
+Geometry, in the knob cell's own coordinates:
 
-## 6. Program section (header, right side)
+| | Mod Engine cell | Global cell |
+|---|---|---|
+| Cell | 176 × 164 | 158 × 144 |
+| Knob centre | (88, 82) | (79, 72) |
+| Knob | Ø84 | Ø68 |
+| Tick | 2 × 9 px, centred at r = 47 (spans r 42.5 → **51.5**) | 2 × 9 px, centred at r = 38 (spans r 33.5 → **42.5**) |
+| Numeral | **6 px of clear air past the tick's outer end** — radius computed per label, see below | same rule, tick outer end r = 42.5 |
+| Unit | centred, row at y 148 | centred, row at y 128 |
+| Control label | below the cell, 6 px gap | below the cell, 6 px gap |
 
-Contract is **identical to Gatecrasher §6** — same window construction, same button states, same
-name-entry flow. Only the coordinates and the dark surround differ.
+Ticks are drawn **at the labelled values, not at even angles**, and rotated to point at the knob
+centre.
 
-| Element | x | y | w | h |
-|---|---|---|---|---|
-| `PROGRAM` caption | 832 | 17 | — | 11 |
-| Program window (outer) | 832 | 34 | 307 | 27 |
-| &nbsp;&nbsp;FACT / USER tag cell | 833 | 35 | 43 | 25 |
-| &nbsp;&nbsp;Name cell | 876 | 35 | 262 | 25 |
-| SAVE / STORE button | 1145 | 34 | 41 | 27 |
-| DELETE / CANCEL button | 1192 | 34 | 51 | 27 |
-| IN window | 1261 | 34 | 54 | 27 |
-| OUT window | 1323 | 34 | 54 | 27 |
-
-- Tag cell: Share Tech Mono 9px / .12em — `FACT` in `#6F797F`, `USER` in `#CFD7DC`. Read-only.
-- Name cell: Share Tech Mono 13px / .10em `#DFE6EA`, centred, showing `NN NAME` (two-digit
-  program number, space, name). Left-aligns in name-entry mode.
-- SAVE / DELETE: stamped-steel utility buttons, Gatecrasher's exact treatment — enabled
-  `#DBE0E3` → `#AAB1B6` / border `#6D7478` / label `#22272B`; disabled `#C2C8CC` → `#A8AFB3`
-  / border `#8D9498` / label `#8B9297` at .55 opacity. Labels Barlow Condensed 600, 9px, .12em
-  tracking + matching text-indent. They are the only light-steel elements on this panel and that is
-  intentional — the utility surface is shared across the suite.
-- IN / OUT: LED windows, Share Tech Mono 13px, signed dBFS to one decimal. Numeric only — no bar
-  graph on this plugin. Update at ~6 Hz. `OUT = IN + trim` (+~1.1 dB of chorus makeup when engaged).
-- Behaviour: factory program → tag `FACT`, SAVE enabled, DELETE disabled. User program → tag
-  `USER`, both enabled, DELETE reverts to the factory program. SAVE → name-entry: caption becomes
-  `NAME PROGRAM`, tag switches to `USER`, name cell clears and left-aligns with a blinking block
-  caret (`█`, 1s steps, 50% duty), buttons relabel `STORE` / `CANCEL`, typing is uppercased and
-  capped at 22 chars, Enter stores, Esc cancels, empty name falls back to `NEW PROGRAM`.
-  Reference renders: `assets/header-factory-program@3x.png`, `assets/header-user-program@3x.png`,
-  `assets/header-name-entry@3x.png`.
-
-## 7. Knobs
-
-Rotation range for every knob: **−135° → +135°** (270° sweep), pointer at 12 o'clock = centre —
-same as Gatecrasher, same two filmstrips.
-
-| Control | cx | cy | Ø | Filmstrip |
-|---|---|---|---|---|
-| RATE I | 454 | 328 | 58 | large |
-| DEPTH I | 680 | 328 | 58 | large |
-| RATE II | 999 | 328 | 58 | large |
-| DEPTH II | 1226 | 328 | 58 | large |
-| DELAY CENTER | 385 | 495 | 42 | small |
-| DECORRELATION | 521 | 495 | 42 | small |
-| DRIFT | 703 | 495 | 42 | small |
-| SATURATION | 839 | 495 | 42 | small |
-| NOISE | 976 | 495 | 42 | small |
-| MIX | 1158 | 495 | 42 | small |
-| OUTPUT TRIM | 1294 | 495 | 42 | small |
-
-Knob size communicates importance (BRAND.md): the four modulation knobs — the plugin's character
-controls — are the large strip at Ø58; every shared/tone-shaping control is the small strip at Ø42.
-
-Filmstrips: `assets/knob_large_128px_128f.png` and `assets/knob_small_128px_128f.png`,
-128 × 16384, 128 frames, frame 0 = −135°, frame 127 = +135°, linear. Frames are square with
-transparent margin and a baked cast shadow — draw into the knob's full bounding box, not the circle.
-
-```cpp
-const int frame = juce::jlimit(0, 127, (int) std::round(sliderPos * 127.0f));
-g.drawImage(strip,
-            bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
-            0, frame * 128, 128, 128);
-```
-
-Use `Graphics::setImageResamplingQuality (highResamplingQuality)`.
-
-Tick ring: drawn in code, **not** part of the filmstrip. 1px radial ticks in `rgba(120,132,140,.55)`
-from r+3 to r+9, every 15° on the large knobs / 20° on the small ones, spanning the 270° sweep only —
-no ticks across the bottom 90°.
-
-Label stack beneath each knob: name (Barlow Condensed 600, 10px, .18em, `#8A9196`) then value
-(Share Tech Mono 11px, `#C6CED3`), 9px gaps.
-
-Interaction: `Slider::RotaryVerticalDrag`, full range over 180px of travel, Shift = 0.25× fine,
-double-click resets to default (`setDoubleClickReturnValue`).
-
-Group panels (1px `#000`, gradient per §1, 9/14/14 padding, title row over a hairline rule):
-
-| Group | x | y | w | h | Title row |
-|---|---|---|---|---|---|
-| MOD ENGINE (paged) | 302 | 255 | 1075 | 160 | Ø8 LED (any engine engaged) + page title + right-hand page note |
-| CHARACTER | 302 | 431 | 628 | 149 | title only |
-| OUTPUT | 946 | 431 | 431 | 149 | title only |
-
-There is **no BBD LINE box** — those parameters live inside the paged MOD ENGINE box (§7a).
-CHARACTER knobs (Ø48) at x 403 / 592 / 780, OUTPUT at x 1045 / 1230, all y 476.
-Group padding 8 top / 18 sides / 12 bottom; title rule 7px below the title baseline row.
-
-Knobs are distributed `space-evenly` inside each group.
-
-## 7a. The paged MOD ENGINE box
-
-**The physical I / II / OFF buttons are the pager.** There is no tab strip, no page arrows and no
-separate navigation control anywhere on the panel — pressing the same buttons that engage the chorus
-is what changes this box.
-
-| Buttons | Page | Title | Parameters (slot 1 → 4, then switch) |
-|---|---|---|---|
-| I only | `I` | `MOD ENGINE I` | RATE I · DEPTH I · DELAY CENTER I · DECORRELATION I · MONO/STEREO I (**Stereo**) |
-| II only | `II` | `MOD ENGINE II` | RATE II · DEPTH II · DELAY CENTER II · DECORRELATION II · MONO/STEREO II (**Stereo**) |
-| I + II | `I+II` | `MOD ENGINE I+II` | RATE I+II · DEPTH I+II · DELAY CENTER I+II · DECORRELATION I+II · MONO/STEREO I+II (**Mono**) |
-| neither | last page held | last page's title | last page's labels, powered down |
-
-All three pages carry the **same four knobs plus the switch** — the control set never changes shape,
-only its values and suffixes. On `I+II` the mode defaults to Mono, which makes DECORRELATION
-inaudible, but the knob stays live and adjustable: it becomes meaningful the moment that page is
-switched to Stereo. Do not grey it out or disable it.
-
-Each page is a complete, independent parameter set with its own stored values; returning to a page
-restores what it had.
-
-**Fixed geometry — nothing reflows between pages.** Box 302, 255, 1075 × 160 in every state.
-Knob wells (Ø58) at x 360 / 585 / 811 / 1036, switch at x 1273 (34 × 58), all y 300. Label row
-baseline y 367 (min-height 12), value readout y 381 (min-height 14).
-
-**Page transitions are animated, and the motion is the primary signal.** On every page change —
-`I→II`, `II→I+II`, `I+II→OFF`, and back — each of the four slots slews from its current rotation to
-its new target rather than snapping. Implementation: per-slot normalised position, exponentially
-smoothed toward the target with a **time-based** coefficient (`1 − 0.002^(dt/380ms)`, i.e. ~380ms to
-settle) so travel time is independent of frame rate. A slot being dragged bypasses the slew and
-tracks the pointer 1:1. The title text change is secondary reinforcement, not the cue.
-
-**OFF powers down the whole panel, and nothing is hidden.** MOD ENGINE, CHARACTER and OUTPUT all
-fade together to opacity 0.42 / `grayscale(1) brightness(.50)` over 340ms, their group titles drop to
-`#5F666B`, and **every knob on the panel** — the four engine slots and all five Character/Output
-knobs — slews to minimum on the same 380ms curve. Layout is untouched: labels, readouts and box
-geometry stay exactly where they are, and the last page's labels and stored readouts remain legible.
-The MOD ENGINE header note reads `BYPASS · SETTINGS RETAINED`. All knobs and the switch are
-non-interactive while powered down (cursor `default`, drags rejected). Engine-slot travel is driven
-per-slot; Character/Output travel is driven by one shared 0→1 power factor multiplying each knob's
-normalised value, so the whole panel winds down together.
-
-**MONO/STEREO switch** — vertical two-position toggle, 34 × 58 track (r17, `#0A0C0D`→`#141719`,
-inset `0 2px 6px rgba(0,0,0,.85)`), Ø26 thumb (`#E4E8EA`→`#A9B0B5`) at 4px inset, travelling 24px:
-top = STEREO, bottom = MONO. Thumb transition 260ms `cubic-bezier(.3,1.5,.5,1)`. Readout below
-prints `STEREO` / `MONO` in the value style. **No sprite exists for this control yet** — either cut a
-2-frame filmstrip or implement it code-drawn from the values above.
-
-Header note (Share Tech Mono 10px, .08em, `#5F666B`, right-aligned in the title row):
-`ENGINE I ENGAGED` / `ENGINE II ENGAGED` / `BOTH ENGAGED · MONO BBD PAIR` / `BYPASS · SETTINGS RETAINED`.
-
-State renders: `assets/chorus60-page-i@2x.png`, `chorus60-page-ii@2x.png`,
-`chorus60-page-i-plus-ii@2x.png`, `chorus60-page-off@2x.png`.
-
-## 8. Wordmark
-
-Nameplate metaphor (BRAND.md requires a distinct one per plugin): **silkscreened synth-panel legend** —
-ink laid flat on the fascia by a screen printer, the way a Juno's or JN-80's section names are. Not
-TapeRot's Dymo tape, not Gatecrasher's spray stencil, and explicitly **not distressed**: the JN-80-era
-panel it comes from is clean and precise.
-
-Set `CHORUS-60` live in Librestile Extended Bold, 34px at 1×, .02em tracking, `#E6EBEE`, at x 25,
-y 30 (block 308 × 31), with `0 1px 0 rgba(0,0,0,.9)` engraving shadow plus a 1px
-`rgba(230,235,238,.5)` ink bloom — the faint spread of screen-printed ink, and the only texture the
-wordmark gets. No spray, no speckle, no per-letter rotation, no halo. Ship the TTF in BinaryData and
-draw it as text; baking to PNG is fine, but the treatment must stay flat.
-
-Model line, right of the wordmark at x 351: `BBD CHORUS PROCESSOR` (`#8A9196`) over
-`MODEL CH-60 · STEREO` (`#5F666B`), Barlow Condensed 600, 11px, .24em, 4px apart.
-
-## 9. Parameters
-
-| ID | Name | Range | Default | Skew / notes |
-|---|---|---|---|---|
-| `engine1` | Engine I | off / on | on | latch — yellow button + LED I |
-| `engine2` | Engine II | off / on | off | latch — orange button + LED II |
-| `rate1` | Rate I | 0.05 → 8 Hz | 0.45 | log (skew ≈ .35) — page `I` |
-| `depth1` | Depth I | 0 → 100 % | 38 | linear — page `I` |
-| `center1` | Delay Center I | 2 → 14 ms | 5.6 | linear — page `I` |
-| `decorr1` | Decorrelation I | 0 → 100 % | 52 | linear — page `I` |
-| `mono1` | Mono/Stereo I | stereo / mono | **stereo** | page `I` switch |
-| `rate2` | Rate II | 0.05 → 8 Hz | 2.90 | log (skew ≈ .35) — page `II` |
-| `depth2` | Depth II | 0 → 100 % | 64 | linear — page `II` |
-| `center2` | Delay Center II | 2 → 14 ms | 4.2 | linear — page `II` |
-| `decorr2` | Decorrelation II | 0 → 100 % | 66 | linear — page `II` |
-| `mono2` | Mono/Stereo II | stereo / mono | **stereo** | page `II` switch |
-| `rateB` | Rate I+II | 0.05 → 8 Hz | 1.20 | log (skew ≈ .35) — page `I+II` |
-| `depthB` | Depth I+II | 0 → 100 % | 52 | linear — page `I+II` |
-| `centerB` | Delay Center I+II | 2 → 14 ms | 6.4 | linear — page `I+II` |
-| `decorrB` | Decorrelation I+II | 0 → 100 % | 44 | linear — page `I+II`; live but inaudible while MONO |
-| `monoB` | Mono/Stereo I+II | stereo / mono | **mono** | page `I+II` switch |
-| `drift` | Drift | 0 → 100 % | 22 | linear — slow clock wander, visible in the trace |
-| `saturation` | Saturation | 0 → 100 % | 30 | linear — BBD stage drive |
-| `noise` | Noise | 0 → 100 % | 14 | linear — clock noise, visible in the trace |
-| `mix` | Mix | 0 → 100 % | 50 | linear |
-| `trim` | Output Trim | −12 → +12 dB | 0 | linear, signed display |
-
-Both engines running simultaneously is the classic Juno "I+II" state — allow it; it selects the
-`I+II` page and its own parameter set, and the scope follows that page's rate and depth.
-Each page's values persist independently across page changes and across bypass.
-
-Factory programs: Wide Ensemble, Juno I, Juno II, Juno I+II, Slow Swell, Vibrato, Dimension,
-Shimmer Pad, Clock Noise, Warped Tape, Deep Detune, String Machine, Bright Doubler, Mono Verify,
-Cold Chorus, Dark Ensemble.
-Default program on load: `07 WIDE ENSEMBLE` (factory).
-
-## 10. Suggested structure
+**Numerals are placed by their nearest glyph edge, not by their box centre.** A single ray radius for
+every mark looks wrong: on the Rate knob it puts `0.05` almost touching its tick while `8` floats
+twenty pixels clear, because a four-character label reaches much further along a diagonal ray than a
+one-character label does along a horizontal one. Each numeral is instead positioned so its nearest
+edge clears the tick's outer end by a constant **6 px**:
 
 ```
-Source/
-  PluginProcessor.{h,cpp}       // APVTS, BBD line, dual mod engines, drift/noise, meters
-  PluginEditor.{h,cpp}          // 1180x714 root, aspect-locked scaling
-  ui/PanelLookAndFeel.{h,cpp}   // filmstrip knobs, tick rings, fonts, colour IDs
-  ui/ChorusButtonColumn.{h,cpp} // blue stripes, three square buttons, engine LEDs
-  ui/ModScope.{h,cpp}           // scrolling grid, annotations, glow+core red trace, 60 fps
-  ui/ProgramDisplay.{h,cpp}     // LCD window, tag cell, SAVE/DELETE, name entry  (port from Gatecrasher)
-  ui/LevelReadout.{h,cpp}       // IN / OUT LED windows                            (port from Gatecrasher)
-  ui/KnobGroup.{h,cpp}          // titled panel + N labelled knobs
-  dsp/BBDLine.{h,cpp}           // 1024-stage BBD, clock noise, saturation
-  dsp/ModEngine.{h,cpp}         // rate/depth/phase, drift
+edge  = min( (len × 7.2) / 2 / |sin θ| ,  14 / 2 / |cos θ| )   // ray exit of the label box
+r     = r_tick_outer + 6 + edge
+centre = ( cx + r·sin θ , cy − r·cos θ )
 ```
 
-Anything in `ProgramDisplay`, `LevelReadout` and the knob LookAndFeel should be lifted from the
-Gatecrasher project rather than rewritten — the two plugins are meant to be recognisably the same
-instrument family, with only the fascia, the accent placement and the control set differing.
+7.2 px is the Share Tech Mono advance at 12 px; 14 px is the line box. The resulting radii on Rate
+run 61 – 70 px, and every numeral reads at the same distance from its tick. Angle for a mark at sweep fraction *p*: `θ = −135° + 270° · p`.
 
-## 11. What matters most
+### 7.1 Marks and tick angles
 
-1. The scope is the product. Real modulator signal, real red glow, moves the instant a knob moves.
-2. The button column must read as the hardware photo — colour, size, blue stripes, LED position.
-3. Red appears nowhere except the LEDs, the lamp and the trace. Blue appears only in the two stripes.
-4. Sharp corners everywhere except the three buttons, the knobs and the LEDs.
-5. The panel must feel unbolted from a synth, not racked — no ears, no screws, near-black material.
+| Knob | Unit | Marks | Sweep fraction | Tick angle |
+|---|---|---|---|---|
+| **Rate** | Hz | 0.05 / 0.5 / 2 / 8 / 16 | 0 · .287 · .479 · .784 · 1 | **−135.0° · −57.5° · −5.7° · +76.7° · +135.0°** |
+| **Depth** | % | 0 / 25 / 50 / 75 / 100 | 0 · .25 · .5 · .75 · 1 | −135° · −67.5° · 0° · +67.5° · +135° |
+| **Delay Center** | ms | 2 / 5 / 8 / 11 / 14 | 0 · .25 · .5 · .75 · 1 | −135° · −67.5° · 0° · +67.5° · +135° |
+| **Decorrelation** | % | 0 / 25 / 50 / 75 / 100 | 0 · .25 · .5 · .75 · 1 | −135° · −67.5° · 0° · +67.5° · +135° |
+| **Drift / Saturation / Noise / Mix** | % | 0 / 25 / 50 / 75 / 100 | 0 · .25 · .5 · .75 · 1 | −135° · −67.5° · 0° · +67.5° · +135° |
+| **Output Trim** | dB | −12 / −6 / 0 / +6 / +12 | 0 · .25 · .5 · .75 · 1 | −135° · −67.5° · 0° · +67.5° · +135° |
 
-## 12. BRAND.md compliance notes
+Rate is power-law skewed, so its numerals are visibly irregular — that is correct and is how skewed
+hardware prints.
 
-Checked against `BRAND.md` (Neon Foundry shared DNA). Where this panel deviates, it is deliberate
-and recorded here — do not "fix" these in implementation.
+**Implement the taper as a single power law: skew 0.35 over 0.05 – 16 Hz** (a JUCE
+`NormalisableRange` skew factor of 0.35, or any equivalent). That reproduces the five printed anchors
+to within 0.09° across the sweep — about a twentieth of a pixel at the tick radius — so the printed
+scale and the parameter agree by construction. **No lookup table and no piecewise interpolation are
+required.** (The reference implementation interpolates piecewise between the anchors; that is an
+artefact of the prototype, not a requirement.) The anchors the skew must land on:
 
-**Followed**
-- Fixed-aspect canvas at the reference ratio: 1400 × 632 = 2.22:1, matching Gatecrasher's
-  960 × 434 = 2.21:1.
-- One live-state indicator system, one accent colour: the engine LEDs and the scope trace, both
-  `#FF2B1C`, used nowhere else. The redundant lamp that previously sat in the scope caption row was
-  removed for exactly this reason.
-- Shared component grammar: same filmstrip knobs and tick-ring construction as Gatecrasher, knob size
-  by importance, real oscilloscope readout with grid, `250 ms / DIV` division label and a subtle grey
-  input underlay behind the trace.
-- Hardware voice: `BBD CHORUS PROCESSOR` / `MODEL CH-60 · STEREO`, `BBD 1024 STAGE` footer
-  stamp, `v1.0` corner version, real ms/Hz/%/dB values under every knob, numeric IN/OUT in dB.
-- **Programs**, never "presets" — UI label, tag cell, factory bank and this document all say Program.
-- Distinct nameplate metaphor (§8) and a fascia material chosen for the plugin's era rather than
-  matched to a sibling.
-- No umbrella brand name on the panel.
+```
+0.05 Hz @ 0%   0.5 Hz @ 28.7%   2 Hz @ 47.9%   8 Hz @ 78.4%   16 Hz @ 100%
+```
 
-**Deliberate deviations**
-1. **Two LEDs, not one.** BRAND.md asks for a single dedicated lamp. The hardware this plugin models
-   has one LED per chorus engine, and which engine is running is the discrete state worth reporting.
-   They are treated as one indicator *system* in one accent colour, and no third lamp exists on the
-   panel.
-2. **Three non-neutral button faces.** The orange II / tan I / white OFF buttons are the hardware's
-   own colours and the whole point of the button column; they are switch caps, not decoration, and
-   they carry no accent red.
-3. **The blue section stripes.** Structural framing lifted from the hardware panel, used exactly
-   twice — above and below the button column — to bound that section. They are not an accent and
-   never appear elsewhere. If a future audit wants strict single-colour discipline, this is the one
-   item to revisit; the design intent is that they read as printed panel graphics, like the coloured
-   section bands on the real instrument.
+Units print **in the scale area** (small, caption grey, under the knob, above the control name) and
+are never appended to the control name.
+
+### 7.2 IMAGE switch
+
+The MONO/STEREO toggle occupies a 132 × 164 cell in the same row: 34 × 68 track at y 48, 26 px thumb,
+thumb travel 34 px. `STEREO` and `MONO` are printed **at the thumb centres** — label rows at y 58 and
+y 92, giving centres of y 65 and y 99, exactly where the thumb sits in each position. Both are
+right-aligned in a 44 px box at 12 px Share Tech Mono in `#A5ADB2` — the switch's printed scale, held
+to the same rule as the knob ticks: **the print sits at the position it names.**
+
+**The control is called IMAGE, and the parameter must be renamed to match.** The switch's two values
+are MONO and STEREO, but those are its *positions*, printed beside the thumb — the same way
+Gatecrasher's KEY SOURCE switch prints INTERNAL / SIDECHAIN. The control's name is what it does to
+the signal. The build must therefore rename the parameters `mono1` / `mono2` / `monoB` →
+**`image1` / `image2` / `imageB`**, with display names `IMAGE I` / `IMAGE II` / `IMAGE I+II` and
+value strings `MONO` / `STEREO`, so the host's generic parameter list and the fascia agree.
+
+**Only the control's name changes. The switch positions stay printed STEREO and MONO** — they are the
+values, and they keep the wording the host reports. The rename is the name field alone:
+`mono1 → image1`, display `MONO/STEREO I → IMAGE I`.
+
+Panel and host must not be shipped divergent. If the rename is refused, the panel label reverts to
+`MONO/STEREO I` and everything else — the printed positions, the geometry, the LCD readout format —
+stays as specified. Label below: `IMAGE I` /
+`IMAGE II` / `IMAGE I+II`.
+
+## 8. Knob positions
+
+Mod Engine row: four 176 px cells + the 132 px switch cell, 20 px gaps, centred in the box
+(row width 916 px, first cell at x 314). Knob centres at **y 376**, x **402 · 598 · 794 · 990**;
+switch cell at x 1098, centre x 1164.
+
+CHARACTER: three 158 px cells, 22 px gaps, centred (first cell x 310). Knob centres at **y 620**,
+x **389 · 569 · 749**.
+OUTPUT: two 158 px cells, 22 px gaps, centred (first cell x 894). Knob centres at **y 620**,
+x **973 · 1153**.
+
+All rows are centred in their box, so these x values are derived — if the button column width ever
+changes again, re-derive them rather than transcribing.
+
+Drag: vertical, full range over 200 px, ×0.25 with Shift, double-click resets to default.
+Mod Engine drags are normalised — they move the *sweep fraction*, so Rate drags evenly in
+perceived pitch rather than in Hz.
+
+## 9. OFF / bypass state — **CHANGED**
+
+Pressing OFF (or releasing both engine buttons) puts the panel in bypass:
+
+- The three control groups — MOD ENGINE, CHARACTER and OUTPUT, from each box's heading rule down —
+  are multiplied by **0.50**. The header band, the scope, the button column and the footer are **not**
+  dimmed: the engine buttons keep their full saturation, because on the hardware they are moulded
+  plastic that never changes, and the LCD and meters stay legible. The fade is a **multiply, not an
+  alpha blend toward the background colour**. The model is a lamp being switched off: multiplying by
+  0.50 scales every pixel toward black and preserves the relative contrast inside the group, so the
+  panel reads as *darker*. Blending toward the panel field instead washes the group toward a single
+  flat grey and reads as fog laid over the fascia — wrong physics, wrong feel. (In CSS these coincide
+  only because the backdrop is near-black; on any other backdrop the build must multiply.) Up from 0.42. 0.70 was tried and read as almost no
+  change at all on a fascia this dark; 0.50 is an unmistakable power-down. The label grey lands near
+  3.7 : 1 while bypassed, below the 4.5 floor the live panel holds. This is deliberate: nothing is
+  adjustable in bypass and the panel is not meant to be read in this state — the printed values are
+  there to be recognised, not consulted. Desaturating the fascia instead of dimming it was tried and
+  rejected.
+- **Pointers do not move.** The wind-to-zero animation is deleted. Real hardware doesn't move its
+  knobs on bypass; the lamps just go out. Rotating pointers to zero depicted values that weren't
+  current, which is why the panel used to have to print `SETTINGS RETAINED` to correct the
+  impression.
+- **`BYPASS · SETTINGS RETAINED` → `BYPASS`.** With the pointers no longer lying, the reassurance is
+  unnecessary.
+- Engine lamps swap to the `lamp-off` sprite. **This is the only sprite swap.**
+- The engine button letters follow engagement, not bypass: engaged `#E6EBEE`, not engaged `#A5ADB2`.
+  In bypass none is engaged, so `I` and `II` read `#A5ADB2` and `OFF` reads `#E6EBEE`. This is a state
+  readout that already exists on the live panel — it is **not** a dimming effect, and it is the only
+  per-element colour change in the OFF state.
+- **No other element changes colour.** Group headings, control labels, printed scales and units are
+  baked into the plate and cannot restyle; the multiply is what dims them. Earlier drafts of this
+  section also dropped the headings to `#8A9196` — that instruction is withdrawn, and applying both
+  would leave those elements darker than their neighbours.
+- Scope keeps drawing the residual drift/noise floor.
+- Scope status reads `ENGINE BYPASS`; footer reads `BBD 1024 STAGE · BYPASS · v1.0`.
+- No colour filter, no grayscale, **no reflow**. Layout is identical to the live state.
+- Pointer interaction is disabled on all knobs and the switch; the LCD, SAVE/DELETE and the engine
+  buttons stay live.
+
+Reference render: `assets/chorus60-page-off@2x.png`.
+
+## 10. The paged MOD ENGINE box
+
+Unchanged from revision 1, restated for completeness. **The physical I / II / OFF buttons are the
+pager** — there is no tab strip and no page arrows.
+
+| I | II | Page | Heading | Status |
+|---|---|---|---|---|
+| on | off | `I` | `MOD ENGINE I` | `ENGINE I ENGAGED` |
+| off | on | `II` | `MOD ENGINE II` | `ENGINE II ENGAGED` |
+| on | on | `I+II` | `MOD ENGINE I+II` | `BOTH ENGAGED · MONO BBD PAIR` |
+| off | off | last page held | last page's heading | `BYPASS` |
+
+Each page owns a full parameter set — Rate, Depth, Delay Center, Decorrelation, Image. Slot order is
+fixed, so a page change slews each pointer from its old value to the new one over **380 ms**, using a
+frame-rate-independent slew `k = 1 − 0.002^(dt/380ms)` on a single shared rAF loop per instance
+(generation-guarded at `globalThis` level). A drag bypasses the slew and tracks 1 : 1.
+Decorrelation is always live and adjustable, including on I+II where it is inaudible under MONO and
+becomes meaningful when the Image switch is thrown to STEREO.
+
+## 11. Parameters
+
+| ID | Name | Range | Default (I / II / I+II) | Skew |
+|---|---|---|---|---|
+| `rate` | Rate | 0.05 – 16 Hz | 0.45 / 2.90 / 1.20 | **Power-law, anchors in §7.1** |
+| `depth` | Depth | 0 – 100 % | 38 / 64 / 52 | linear |
+| `center` | Delay Center | 2 – 14 ms | 5.6 / 4.2 / 6.4 | linear |
+| `decorr` | Decorrelation | 0 – 100 % | 52 / 66 / 44 | linear |
+| `image1` / `image2` / `imageB` | Image | `MONO` / `STEREO` | STEREO / STEREO / **MONO** | switch — renamed from `mono1`/`mono2`/`monoB`, see §7.2 |
+| `drift` | Drift | 0 – 100 % | 22 | linear, global |
+| `sat` | Saturation | 0 – 100 % | 30 | linear, global |
+| `noise` | Noise | 0 – 100 % | 14 | linear, global |
+| `mix` | Mix | 0 – 100 % | 50 | linear, global |
+| `trim` | Output Trim | −12 – +12 dB | 0 | linear, global |
+
+Rate's range was **0.05 – 8 Hz** in revision 1 and is now **0.05 – 16 Hz**, to match the printed
+scale.
+
+Default program on load: **factory index 0**. `07 WIDE ENSEMBLE` appears throughout this document and
+in the renders purely as an example LCD string — it is not a bank entry and does not set the default.
+Wherever a program name is shown here, read it as illustrative.
+
+## 12. Unchanged
+
+The build should keep all of the following exactly as delivered — none of it is affected by this
+revision and none of it needs regenerating:
+
+- **Product icon** — `assets/icon/` ladder (16 · 32 · 64 · 128 · 256 · 512 · 1024 + light-plate 512)
+  and `Chorus-60 Icon.dc.html`.
+- **Knob masters** — `knob_large_128px_128f.png`, `knob_small_128px_128f.png` (Ø128, the source the
+  Ø84 / Ø68 sheets are rendered from).
+- **Wordmark face** — `assets/LibrestileExtBold.ttf`.
+- **Reference photography** — `jn80-chorus-reference.jpeg`, `gatecrasher-panel-reference.png`.
+- **Header state renders** — `header-factory-program@3x.png`, `header-user-program@3x.png`,
+  `header-name-entry@3x.png`.
+
+- Product icon and the full 16–1024 ladder in `assets/icon/`.
+- Wordmark: Librestile Extended Bold, silkscreen treatment, `text-shadow: 0 1px 0 rgba(0,0,0,.9),
+  0 0 1px rgba(230,235,238,.5)`.
+- Scope construction: 8 × 6 grid, 250 ms/div, scrolling 2 s window, three-pass red trace
+  (glow / halo / core), BBD noise floor behind it, playhead dot at the right edge.
+- Program section contract (SAVE / STORE / DELETE / CANCEL, factory-vs-user states, name entry).
+- Blue stripe hue and its two-band placement above and below the button column.
+- Fonts, group-box construction, footer contents.

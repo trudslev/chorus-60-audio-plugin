@@ -33,21 +33,21 @@ namespace ParamIDs
     constexpr auto depth1 = "depth1";
     constexpr auto center1 = "center1";
     constexpr auto decorr1 = "decorr1";
-    constexpr auto mono1 = "mono1";
+    constexpr auto image1 = "image1";
 
     // Configuration II
     constexpr auto rate2 = "rate2";
     constexpr auto depth2 = "depth2";
     constexpr auto center2 = "center2";
     constexpr auto decorr2 = "decorr2";
-    constexpr auto mono2 = "mono2";
+    constexpr auto image2 = "image2";
 
     // Configuration I+II
     constexpr auto rateB = "rateB";
     constexpr auto depthB = "depthB";
     constexpr auto centerB = "centerB";
     constexpr auto decorrB = "decorrB";
-    constexpr auto monoB = "monoB";
+    constexpr auto imageB = "imageB";
 
     // Global / character
     constexpr auto drift = "drift";
@@ -66,27 +66,49 @@ namespace LegacyMigration
     // parameters and are gone, replaced by per-configuration center1/center2/centerB and
     // decorr1/decorr2/decorrB; the Mono/Stereo switches are new; and rate1/rate2 widened from
     // 0.2-2 Hz to 0.05-8 Hz, which changes what any stored *normalised* value means. A v1 state
-    // therefore cannot be read as if it were v2. No release has ever shipped v1, so this is a clean
-    // break rather than a migration - but the version is recorded so that a genuine migration can
-    // be written later if one is ever needed.
+    // therefore cannot be read as if it were v2.
+    //
+    // Version 3: the revision-2 panel. `mono1`/`mono2`/`monoB` are renamed `image1`/`image2`/
+    // `imageB` (spec section 7.2 - the control is IMAGE, MONO and STEREO are its positions), and
+    // rate1/rate2 widen from 0.05-8 Hz to 0.05-16 Hz to match rateB and the one printed scale the
+    // plate now carries for all three pages. A v2 state read as v3 would silently lose all three
+    // switches to their defaults and place both slow Rates at the wrong rotation.
+    //
+    // No release has ever shipped any of these, so each bump is a clean break rather than a
+    // migration - but the version is recorded so a genuine migration can be written later if one is
+    // ever needed.
     constexpr auto stateSchemaVersionAttribute = "chorus60StateSchemaVersion";
-    constexpr int currentStateSchemaVersion = 2;
+    constexpr int currentStateSchemaVersion = 3;
 }
 
 namespace Chorus60Ranges
 {
-    // Rate I and II cover the hardware's two slow chorus configurations. The skew keeps the
-    // musically dense low end off the very start of the knob's travel.
-    inline juce::NormalisableRange<float> rateSlow()
-    {
-        return juce::NormalisableRange<float>(0.05f, 8.0f, 0.0f, 0.35f);
-    }
-
-    // Rate I+II deliberately reaches further than I and II. The factory bank specifies 9.75 Hz,
-    // 11 Hz and 14 Hz here, all beyond the 8 Hz that suits the slow configurations; sharing one
-    // range would clamp every one of them to 8 Hz and erase exactly the fast, near-vibrato
+    // ONE Rate range for all three configurations. What distinguishes I, II and I+II is the values
+    // the factory Programs store, not what their controls can reach - a player who wants I running
+    // at 12 Hz should be able to have it.
+    //
+    // Resolved upward rather than by narrowing I+II: the bank specifies 9.75, 11 and 14 Hz there,
+    // and a shared 8 Hz ceiling would clamp every one of them and erase the fast, near-vibrato
     // character that distinguishes I+II from a sum of I and II.
-    inline juce::NormalisableRange<float> rateFast()
+    //
+    // The skew is what makes the pointer agree with the printed scale, and it is exact rather than
+    // approximate. JUCE's convertTo0to1 is ((v-start)/(end-start))^skew, so 0.35 over 0.05-16 puts
+    // the spec's five marks (section 7.1) at:
+    //
+    //     0.05 Hz -> -135.00 deg      spec -135.0
+    //     0.5  Hz ->  -57.55          spec  -57.5
+    //     2    Hz ->   -5.61          spec   -5.7
+    //     8    Hz ->  +76.61          spec  +76.7
+    //     16   Hz -> +135.00          spec +135.0
+    //
+    // Worst disagreement 0.09 degrees - a twentieth of a pixel at the r=47 tick radius, and well
+    // inside the 128-frame filmstrip's own +/-1.06 degree quantisation. Section 7.1 calls the taper
+    // "piecewise log interpolation through those five anchors"; it is this same curve, so there is
+    // no lookup table to build. Verified by measuring the baked ticks off the plate.
+    //
+    // Because all three now share it, no numeral on the panel is page-dependent, which is the
+    // reason the scales could be baked into the plate at all.
+    inline juce::NormalisableRange<float> rate()
     {
         return juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.35f);
     }
@@ -115,7 +137,9 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
 
     // The switch reads MONO / STEREO on the panel rather than on/off, and a host's generic
     // parameter list should say the same thing rather than "On"/"Off".
-    const auto monoAttrs = juce::AudioParameterBoolAttributes()
+    // The control is IMAGE; MONO and STEREO are its two positions, printed beside the thumb and
+    // reported to the host as the values (spec section 7.2). true = MONO.
+    const auto imageAttrs = juce::AudioParameterBoolAttributes()
                                .withStringFromValueFunction([] (bool v, int) {
                                    return v ? juce::String("MONO") : juce::String("STEREO");
                                });
@@ -131,7 +155,7 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
     // ---- Configuration I -------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::rate1, 1}, "Rate I",
-        Chorus60Ranges::rateSlow(), 0.45f, hzAttrs));
+        Chorus60Ranges::rate(), 0.45f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::depth1, 1}, "Depth I",
@@ -146,12 +170,12 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
         Chorus60Ranges::percent(), 52.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::mono1, 1}, "Mono/Stereo I", false, monoAttrs));
+        juce::ParameterID{ParamIDs::image1, 1}, "Image I", false, imageAttrs));
 
     // ---- Configuration II ------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::rate2, 1}, "Rate II",
-        Chorus60Ranges::rateSlow(), 2.90f, hzAttrs));
+        Chorus60Ranges::rate(), 2.90f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::depth2, 1}, "Depth II",
@@ -166,12 +190,12 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
         Chorus60Ranges::percent(), 66.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::mono2, 1}, "Mono/Stereo II", false, monoAttrs));
+        juce::ParameterID{ParamIDs::image2, 1}, "Image II", false, imageAttrs));
 
     // ---- Configuration I+II ----------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::rateB, 1}, "Rate I+II",
-        Chorus60Ranges::rateFast(), 1.20f, hzAttrs));
+        Chorus60Ranges::rate(), 1.20f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::depthB, 1}, "Depth I+II",
@@ -191,7 +215,7 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
     // The one configuration that defaults to Mono, matching the real circuit, which applies no
     // phase inversion in this mode.
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::monoB, 1}, "Mono/Stereo I+II", true, monoAttrs));
+        juce::ParameterID{ParamIDs::imageB, 1}, "Image I+II", true, imageAttrs));
 
     // ---- Global ----------------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(

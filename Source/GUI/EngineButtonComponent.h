@@ -3,11 +3,14 @@
 #include "../PluginProcessor.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
-// The hardware chorus section's three square buttons (CHORUS60-GUI-SPEC.md section 4) - no
-// Gatecrasher equivalent exists, styled directly against design/assets/jn80-chorus-reference.jpeg
-// per design/CLAUDE.md. One class covers all three roles via a constructor mode flag rather than
-// three separate classes, since they share the same face/press-animation construction and differ
-// only in colour, LED presence, and label text/latch-vs-derived state.
+// The hardware chorus section's three square buttons (spec section 4), 132 x 132 at x 26. One class
+// covers all three roles via a constructor mode flag rather than three separate classes, since they
+// share the same sprite/press-animation construction and differ only in which sprite, whether a lamp
+// sits beside them, and label text/latch-vs-derived state.
+//
+// Faces are SPRITES and are state-independent: on the JN-80 the buttons are plain moulded plastic
+// that never illuminates, so there is no lit/unlit pair. The lamp beside each one carries the state.
+// The letters are still drawn in code, because their colour follows engagement.
 //
 // Subclasses juce::Button (not plain Component) so the engineI/engineII instances can bind to the
 // engine1/engine2 bool APVTS parameters via a standard
@@ -40,15 +43,15 @@ private:
 
     // 3px-down/110ms press animation (section 4), eased by timerCallback toward
     // Button::isDown()'s current state - continuous even when idle so it also drives the OFF
-    // label's live brightness poll above (see .cpp).
-    float pressOffsetPx = 0.0f;
+    // label's live brightness poll above (see .cpp). Named pressOffset, not pressOffsetPx, so it
+    // doesn't shadow Layout::pressOffsetPx, which is the constant it eases toward.
+    float pressOffset = 0.0f;
 };
 
-// The MOD ENGINE I/II group panels' own small Ø8 title-row LED (section 7's group table: "Ø8 LED
-// (engine I state) + title") - the same live indicator system as the button column's Ø15 LEDs,
-// just echoed at the group panel. Implemented as a second, non-interactive juce::Button so it can
-// be driven by its own ButtonAttachment bound to the same engine1/engine2 parameter - no separate
-// timer needed, same instant-repaint-on-change mechanism as the main buttons' own LEDs.
+// The MOD ENGINE box's own Ø8 heading-row indicator, lit whenever any engine is engaged. Measured
+// at (308.5, 268.5) off chorus60-page-i@2x.png, where it is lit, against page-off, where it is dark.
+// Implemented as a second, non-interactive juce::Button so it can be driven by its own
+// ButtonAttachment - no separate timer, same instant-repaint-on-change mechanism as the buttons.
 class EngineLedIndicator final : public juce::Button
 {
 public:

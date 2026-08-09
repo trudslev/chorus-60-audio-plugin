@@ -60,10 +60,12 @@ Input (dry tap) ──┬──────────────────�
                    └──────────────────────────────────────────────────────► OutputMixStage.process → Output
 ```
 
-The BBD delay line runs continuously off the (unmodulated) dry input; each engine reads its own
-independently-modulated tap from the same shared buffer and the two are summed - "two genuinely
-independent engines running and summing, not a third blended preset" per
-`design/BBD-TECHNICAL-NOTES.md`. Engine LFO phase keeps advancing even while that engine is
+**The diagram above is one engine, not two.** `PluginProcessor` owns a single `ModulationEngine`
+("Singular, deliberately." - `PluginProcessor.h`), and I / II / I+II are three *configurations* of it,
+each with its own full parameter set, exactly one of which is resolved per block by
+`resolveActiveConfiguration()`. An earlier draft of this file described two engines summing two taps,
+which the `BBD-TECHNICAL-NOTES-ADDENDUM.md` rework superseded. Delay Center and Decorrelation are
+per-configuration too (`center1/2/B`, `decorr1/2/B`), not single global values. Engine LFO phase keeps advancing even while that engine is
 disengaged, so re-engaging it never phase-jumps. Drift is a single slow-moving value recomputed
 once per block (not per-sample - it retargets on a ~0.6s cycle, far slower than the audio rate) and
 added into both engines' tap-position calculations before `BBDDelayLine` is read - it has to
@@ -85,12 +87,25 @@ in `processBlock` - don't call `getRawParameterValue` per-block, and don't add a
 adding both the layout entry and the cached pointer. New parameters are appended below the existing
 list in `Parameters.h`, never inserted above, to keep saved programs' parameter IDs stable.
 
-**Note on ranges/defaults**: `design/CHORUS60-GUI-SPEC.md` section 9's parameter table uses
-different values than `Parameters.h` actually implements (e.g. its Rate range is 0.05-8Hz vs.
-`Parameters.h`'s 0.2-2Hz) - this was a deliberate, explicit resolution during planning: the values
-actually in `Parameters.h` are authoritative, chosen because they're the ones grounded in
-`BBD-TECHNICAL-NOTES.md`'s real-hardware LFO rate ranges. The GUI's knob scaling/display is built
-against `Parameters.h`, not the spec's table - don't "fix" the code to match the spec's numbers.
+**Rate: one range, one skew, and the skew is load-bearing.** All three configurations use
+`Chorus60Ranges::rate()` - **0.05-16 Hz, skew 0.35**. They used to differ, with I and II capped at
+8 Hz, which could not survive revision 2: the plate prints ONE 0.05-16 legend that whichever page is
+showing reads against, so a narrower range on I or II put its pointer at the wrong printed numeral
+for every value. What distinguishes the three configurations is the values the factory bank stores,
+not what their controls can reach.
+
+The skew is not a taste setting. JUCE's `convertTo0to1` is `((v-start)/(end-start))^skew`, and 0.35
+over 0.05-16 puts spec section 7.1's five printed marks at -135.00 / -57.55 / -5.61 / +76.61 /
++135.00 degrees against the spec's -135.0 / -57.5 / -5.7 / +76.7 / +135.0 - worst disagreement 0.09
+degrees, a twentieth of a pixel at the tick radius, and verified by measuring the baked ticks off the
+plate. Section 7.1 describes the taper as "piecewise log interpolation through those five anchors";
+it is this same curve, so **there is no lookup table to build**. `ParametersStateTests` asserts the
+range, the skew and all three marks, so changing any of them fails a test rather than silently
+mis-aligning the panel.
+
+**The IMAGE switch**: `image1`/`image2`/`imageB`, display names `IMAGE I`/`II`/`I+II`, values still
+`MONO`/`STEREO` (true = MONO). The control is IMAGE; MONO and STEREO are its printed positions, the
+same way Gatecrasher's KEY SOURCE prints INTERNAL/SIDECHAIN. Renamed from `mono*` in schema 3.
 
 Every stored parameter snapshot is called a **Program**, never a "Preset" - in the UI label, the
 parameter/method naming (`ProgramManager`, `FactoryProgram`, `.chorus60program`), and any docs -
@@ -113,48 +128,93 @@ musically correct under ANY engine combination, not just the one it was authored
 latches are front-panel controls a player hits mid-performance, so every program carries real,
 considered Rate/Depth values for BOTH engines even when only one ships engaged - engaging an idle
 engine must never produce silence, a stale value from the previous program, or a combination nobody
-chose. The shared/character parameters (Delay Center, Decorrelation, Drift, Saturation, Noise, Mix,
-Output Trim) are single values per program and apply unchanged across every combination; only the
-per-engine Rate/Depth pairs need to stand alone, since only they are switched in and out.
+chose. The genuinely global parameters (Drift, Saturation, Noise, Mix, Output Trim) apply unchanged
+across every combination; every configuration
+carries its own complete set, so switching pages never inherits a value from the page before it.
 
 The LCD numbers the bank 1-based (`01 EIGHTY-TWO`), continuing past the factory entries for user
 programs - the code's own indices remain 0-based.
 
 ### GUI (`Source/GUI/`)
 
-Asset-based for the *sculpted* elements - the chassis and the knobs - matching Gatecrasher's own
-approach and for the same stated reason: pre-rendered bitmap sculpting reads as more authentically
-"real 80s/90s hardware" than modern vector rendering. Everything flat is drawn in code.
+Asset-based for the *sculpted* elements - the plate, the knobs, the buttons, the lamps and the switch
+- matching Gatecrasher's approach and for the same reason: pre-rendered bitmap sculpting reads as more
+authentically "real 80s/90s hardware" than modern vector rendering. Everything flat is drawn in code.
 
-The background is `design/assets/chorus60-background-plate@2x.png`: the bare fascia - panel material
-and frame, header chrome with empty PROGRAM / IN / OUT wells, the blue stripes and blank CHORUS
-strip, section divider, empty scope well, and the empty group boxes with their heading rules. Per
-the spec's preamble, "every glyph on the panel is drawn by the host, not baked in". On top of it:
-`PanelChrome` (the static silkscreened layer - model lines, stripe caption, group titles, knob name
-labels, IN/OUT captions, footer status line), then the live pieces: the 11 knobs (bitmap filmstrips -
-literally the same two filmstrip files Gatecrasher ships, shared across both plugins' design assets)
-with their live value labels, the engine buttons and all six LEDs, the delay-modulation
-oscilloscope, the program LCD's dynamic text, and the IN/OUT meter readouts.
+**Revision 2 inverted what "flat" covers.** The plate used to be bare material with every glyph drawn
+in code. It now BAKES the printed scales, every tick ring, numeral and unit, the wordmark, the model
+line, the group headings, the five global knob labels, the switch's printed STEREO/MONO positions and
+the PROGRAM/IN/OUT captions - plus empty wells for the scope, the LCD and the two meters.
+`design/CHORUS60-BUILD-HANDOFF.md` section 1 is the asset contract and it cuts both ways: **redrawing
+a baked string double-prints it at a one-pixel offset; baking a runtime one freezes it.**
 
-This replaced `chorus60-panel-bypass@2x.png`, a fully dressed render, as the background. Compositing
-live elements over that meant each one sat on a baked copy of itself - knob filmstrips over baked
-knobs whose frozen pointers showed through, live readouts over stale numbers. Gatecrasher hit the
-same wall across its whole GUI and needed a bare chassis to get out of it; the dressed renders stay
-in `design/assets/` as pixel-matching acceptance targets. Type sizes are quoted by the spec as CSS
-px, which is **not** a `juce::Font` height (that's ascent+descent) - use
-`Chorus60Theme::labelFontHeightForCssPx` rather than passing spec numbers straight to `labelFont()`.
+Only these are drawn at runtime:
 
-Several components are ported directly from Gatecrasher rather than rewritten, per `design/CLAUDE.md`'s explicit instruction:
-`ProgramHeader` (identical contract, Gatecrasher's own words), `KnobFilmstripComponent`, and the
-theme/LookAndFeel's caching patterns. `EngineButtonComponent` (the I/II/OFF hardware buttons) is
-new - there's no Gatecrasher equivalent - styled directly against
-`design/assets/jn80-chorus-reference.jpeg`, the real hardware photo.
+| Element | Where |
+|---|---|
+| Knob sprites | `KnobFilmstripComponent` |
+| Engine button faces, lamps, IMAGE switch | `EngineButtonComponent`, `ImageSwitch` |
+| Scope trace, grid, annotations, status row | `ModScope` |
+| LCD: tag, program name, parameter readout, caret, chevron | `ProgramHeader` |
+| IN / OUT numerals, SAVE / DELETE | `ProgramHeader` |
+| MOD ENGINE heading + status note, footer | `Chorus60EditorContent::paintOverChildren` |
+| The five page-suffixed slot labels | `ModSlotLabels` |
 
-`design/CHORUS60-GUI-SPEC.md` is the authoritative pixel spec - read it before touching any GUI
-code, including its section 12, which documents and explicitly accepts two deliberate departures
-from `BRAND.md`'s literal component grammar (the button colors, the structural blue stripes) - don't
-"correct" those. `design/CLAUDE.md` is Claude Design's handoff note summarizing the same. Both were
-written before implementation began and are meant to be implemented as-is, not redesigned.
+`PanelChrome` and `WordmarkComponent` are **deleted**, not adapted - everything they drew is
+silkscreen now. So is `KnobValueLabel`, the standing value under every knob, and the drag-time popup:
+revision 2 removed all standing readouts, and the LCD is the only numeric display on the panel. The
+knob tick ring went the same way: revision 1 drew it at even angular spacing, and the plate now prints
+every tick at its *labelled* value, which on the skewed Rate knob is not evenly spaced. **There is no
+mark table in the code** - the plate is the single source of truth for where a mark sits.
+
+**Coordinates are inside-border.** The exported plate is 1282 x 777 including a 1 px frame, and both
+design documents measure from the first pixel of panel material inside it. `PluginEditor` draws the
+plate at full canvas size and places `Chorus60EditorContent` at (1, 1) sized 1280 x 775, so every
+`Layout` constant is a literal spec value with no arithmetic hanging off it.
+
+**The OFF state is a multiply, and the composition order is what makes it one.** Section 9 dims the
+three group boxes - MOD ENGINE, CHARACTER, OUTPUT, each from its heading rule down - by 0.50; the
+header, scope, button column and footer stay at full brightness. `DimmableGroup` implements it: an
+opaque black rect painted *outside* the fade, and above it a child holding that group's own crop of
+the plate plus its controls, carrying `setAlpha(k)`. JUCE flattens that subtree once, so over black
+the result is exactly `k*src`. Read that class's comment before touching it - `setAlpha` on a child
+sitting over the already-painted plate blends toward the plate instead, which is the treatment
+section 9 explicitly rejects, and per-element opacity breaks wherever two elements overlap. Verified
+by measurement: median ratio 0.500 inside the three boxes and 1.000 everywhere else, matching
+`chorus60-page-off@2x.png`.
+
+Two traps that cost time here:
+
+- `setInterceptsMouseClicks(false, false)` on a container **blocks its children too**. The second
+  argument is `allowClicksOnChildComponents`; with it false every knob inside a DimmableGroup went
+  dead while still repainting perfectly.
+- Type sizes are quoted by the spec as CSS px, which is **not** a `juce::Font` height (that is
+  ascent+descent). Use `labelFontHeightForCssPx` / `monoFontHeightForCssPx`; passing a spec number
+  straight to `labelFont()` renders visibly small. Letter-spacing is absolute pixels JUCE has no
+  setting for - `drawTrackedText` draws glyph-by-glyph, and the LCD's 9.6 px-per-character budget
+  only holds with the .10em tracking applied.
+
+**Program section.** `ProgramHeader` spans the content area and narrows its `hitTest` to the program
+window plus SAVE/DELETE. Clicking anywhere in the *window* opens the dropdown, dressed by
+`Chorus60MenuLookAndFeel` (ported from TapeRot, retinted to this LCD, red accent pip) at the window's
+own width. The name cell shows `NN NAME`, plus a trailing ` *` while the loaded Program is edited,
+and a chevron affordance at the right - drawn, not baked, because it is hidden during name entry and
+during a parameter readout. While a control is dragged the cell shows `NAME: VALUE UNIT` in `#FFD9A0`,
+centred, reverting 900 ms after release. **The caller guards that on the control's own drag state**
+(`Chorus60EditorContent::attachReadout`): a `SliderAttachment` also fires when a Program is applied
+and on every host automation step, and without the guard the display latches onto whichever parameter
+was written last and flickers for the length of a song.
+
+`engine1`/`engine2` are excluded from the modified-since-load check in `ProgramManager`. They are
+stored in a Program, but they are the panel's pager and its bypass, hit mid-performance - counting a
+press as an edit meant merely bypassing the plugin lit SAVE and claimed unsaved work.
+
+`design/CHORUS60-GUI-SPEC.md` is the authoritative pixel spec, `design/CHORUS60-BUILD-HANDOFF.md` the
+asset contract, and `design/CHORUS60-HANDOFF-README.md` carries deltas not yet folded into the spec
+(the LCD chevron is one). Read them before touching GUI code - and **measure the plate rather than
+trusting a coordinate**: the spec's section 5 puts the LCD window at x 571, the plate has it at 593,
+and the two numbers the character budget rests on (a 59 px bank cell, a 352 px glyph run) are the ones
+both agree on.
 
 ### Build system
 
@@ -175,16 +235,27 @@ Unlike Gatecrasher, CHORUS-60 has no sidechain input bus - `BusesProperties` is 
 
 ## Status
 
-- **DSP**: every stage has real, functioning processing - no stubs, all grounded directly in
-  `design/BBD-TECHNICAL-NOTES.md`'s description of the real circuit. Exact filter cutoffs and
+- **DSP**: every stage has real, functioning processing - no stubs, all grounded in
+  `design/BBD-TECHNICAL-NOTES.md`'s description of the real circuit. Filter cutoffs and
   character-parameter ranges are a first, technically-reasoned pass rather than a tuned one - see
-  `BUILDING.md`'s DSP tuning note. Build, load, listen, adjust.
-- **GUI**: implemented against the approved spec using the bare-background-plate approach above,
-  with `ProgramHeader`/`KnobFilmstripComponent`/theme caching ported directly from Gatecrasher per
-  `design/CLAUDE.md`'s explicit instruction.
-- **Program bank**: 9 curated programs, `01 EIGHTY-TWO` default. Values are structurally verified
-  (ranges, and the both-engines invariant) but the bank has not had a by-ear pass - in particular
-  whether engaging the *idle* engine on each program sounds intentional.
-- **Program paradigm matches Gatecrasher exactly**: click the LCD for the program menu; SAVE is
-  disabled until a parameter actually differs from the loaded program, DELETE is disabled for
-  factory programs, and Save always creates a new user program rather than overwriting.
+  `BUILDING.md`'s DSP tuning note. Build, load, listen, adjust. `auval` and
+  `pluginval --strictness-level 8` both pass on AU and VST3.
+- **GUI**: conformant to revision 2 and verified against it. The composite was captured from the
+  Standalone and every region the build paints over the plate accounted for against the handoff's
+  section 1.2 list - no double-prints, nothing straying onto baked furniture. The OFF state was
+  measured rather than eyeballed (0.500 in the three boxes, 1.000 elsewhere, pointers unmoved), and
+  the Rate pointer lands on its printed ticks to 0.20 degrees at minimum and 0.00 at maximum.
+- **One release blocker**, tracked in `prompts/PROMPTS.md`: the @2x knob filmstrips are upsampled
+  placeholders. They need Ø168 / Ø136 rendered from the original knob source, which is not in this
+  project. The @1x strips ship meanwhile and are final; `Chorus60Theme::FilmstripSheet` carries the
+  sheet geometry as data so the real sheets drop in without a code change.
+- **Schema 3 is a hard break.** Session restore and the user-Program load path both discard state
+  whose schema attribute is not current, so any `.chorus60program` written before this revision will
+  no longer load - the `image*` rename and the Rate widening make a v2 file unreadable as v3. Nothing
+  has shipped, so this is deliberate, but an existing user Program has to be re-saved.
+- **Program bank**: 9 curated programs, `01 EIGHTY-TWO` default (spec section 11 confirms factory
+  index 0; the `07 WIDE ENSEMBLE` that appears throughout the spec is an illustrative LCD string, not
+  a bank entry). Values are structurally verified - ranges, the both-engines invariant, and a
+  per-Program round trip asserting every stored value survives its parameter's mapping unchanged -
+  but the bank has not had a by-ear pass.
+- **Decay and Density** are intentionally automation-only parameters with no panel control.

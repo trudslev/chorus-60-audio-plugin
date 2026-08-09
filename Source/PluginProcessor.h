@@ -68,6 +68,8 @@ public:
         float depthPercent = 0.0f;
         float centreMs = 0.0f;
         float decorrelationPercent = 0.0f;
+        // The IMAGE switch's resolved value: true collapses the modulation to mono. Named for the
+        // value rather than the control, because that is what the DSP below acts on.
         bool mono = false;
         bool engaged = false; // false when neither latch is on - the panel's OFF/bypass state
     };
@@ -85,7 +87,7 @@ private:
         std::atomic<float>* depth = nullptr;
         std::atomic<float>* centre = nullptr;
         std::atomic<float>* decorrelation = nullptr;
-        std::atomic<float>* mono = nullptr;
+        std::atomic<float>* image = nullptr;
     };
 
     std::atomic<float>* engine1Param = nullptr;

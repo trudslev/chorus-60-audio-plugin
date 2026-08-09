@@ -24,7 +24,13 @@ ProgramHeader::ProgramHeader(Chorus60AudioProcessor& processor) : processorRef(p
 
     saveButtonRect = {saveButtonX, saveButtonY, saveButtonW, saveButtonH};
     deleteButtonRect = {deleteButtonX, deleteButtonY, deleteButtonW, deleteButtonH};
-    headerClusterRect = {headerCropX, headerCropY, headerCropW, headerCropH};
+    // The cluster hitTest claims: the program window plus both buttons. Derived from section 5's
+    // own rects rather than from a bitmap crop - the header-state PNGs that crop existed for were
+    // abandoned (see paint), and a rect kept in step with nothing was free to drift.
+    programWindowRect = {programWindowX, programWindowY, programWindowW, programWindowH};
+    headerClusterRect = programWindowRect
+                            .getUnion({saveButtonX, saveButtonY, saveButtonW, saveButtonH})
+                            .getUnion({deleteButtonX, deleteButtonY, deleteButtonW, deleteButtonH});
     tagCellRect = {programTagCellX, programTagCellY, programTagCellW, programTagCellH};
     nameCellRect = {programNameCellX, programNameCellY, programNameCellW, programNameCellH};
     inWindowRect = {inWindowX, inWindowY, inWindowW, inWindowH};
@@ -51,12 +57,54 @@ bool ProgramHeader::hitTest(int x, int y)
 
 void ProgramHeader::timerCallback()
 {
+    // The live readout reverts on its own clock rather than a second timer (section 5: held 900 ms
+    // after release, then the program name returns).
+    if (readoutRevertAtMs != 0 && juce::Time::getMillisecondCounter() >= readoutRevertAtMs)
+    {
+        readoutRevertAtMs = 0;
+        liveReadout.clear();
+    }
+
     refreshDisplayFromProcessor();
 
     // Unlike Gatecrasher's own ProgramHeader (which only repaints on a program change or naming
     // caret blink), this one repaints unconditionally every tick - the IN/OUT meters need
     // continuous redraw regardless of whether the current program changed.
     repaint();
+}
+
+void ProgramHeader::showParameter(const juce::RangedAudioParameter& param)
+{
+    using namespace Chorus60Theme;
+
+    if (namingMode)
+        return;   // the glass belongs to the name field until it commits or cancels
+
+    // Straight through the parameter's own name and Chorus60Theme's formatter, so the LCD and the
+    // host never disagree about what a control reads. Section 5's examples set the shape:
+    // "DELAY CENTER I+II: 6.4 ms", "RATE I: 0.45 Hz", "IMAGE I: STEREO".
+    const auto name = param.getName(Layout::lcdCharacterBudget).toUpperCase();
+    const auto value = formatParameterValue(param, param.convertFrom0to1(param.getValue()));
+
+    // The NAME is capitalised, the value is not. Section 5's examples set that split -
+    // "DELAY CENTER I+II: 6.4 ms" and "RATE I: 0.45 Hz" keep their units as written, and the
+    // IMAGE switch's MONO/STEREO already arrive upper-case from its own stringFromValue.
+    const auto text = name + ": " + value;
+    if (text != liveReadout)
+    {
+        liveReadout = text;
+        repaint(nameCellRect.getSmallestIntegerContainer());
+    }
+    readoutRevertAtMs = 0;
+}
+
+void ProgramHeader::releaseParameter()
+{
+    using namespace Chorus60Theme;
+
+    if (liveReadout.isNotEmpty())
+        readoutRevertAtMs = juce::Time::getMillisecondCounter()
+                                + (juce::uint32) Layout::lcdReadoutHoldMs;
 }
 
 void ProgramHeader::refreshDisplayFromProcessor()
@@ -80,7 +128,9 @@ void ProgramHeader::refreshDisplayFromProcessor()
 // typed into, so clicking it must not replace the half-typed name with a program list.
 bool ProgramHeader::isProgramMenuAvailableAt(juce::Point<float> position) const
 {
-    return ! namingMode && nameCellRect.contains(position);
+    // Anywhere in the window, not just the name cell: the chevron is a static affordance marking
+    // the window as a selector, not a button of its own.
+    return ! namingMode && programWindowRect.contains(position);
 }
 
 void ProgramHeader::showProgramMenu()
@@ -91,6 +141,7 @@ void ProgramHeader::showProgramMenu()
     // Item IDs are index + 1 because PopupMenu reserves 0 for "dismissed without choosing" - which
     // also happens to match the 1-based bank numbering the LCD shows.
     juce::PopupMenu menu;
+    menu.setLookAndFeel(&menuLookAndFeel);
     bool hasUserPrograms = false;
 
     menu.addSectionHeader("Factory");
@@ -113,9 +164,14 @@ void ProgramHeader::showProgramMenu()
                               true, i == currentIndex);
     }
 
+    // Anchored to, and at least as wide as, the whole program window. localAreaToGlobal keeps this
+    // right on a scaled or moved editor.
+    const auto glassOnScreen = localAreaToGlobal(programWindowRect.getSmallestIntegerContainer());
+
     menu.showMenuAsync(juce::PopupMenu::Options()
                            .withTargetComponent(this)
-                           .withTargetScreenArea(localAreaToGlobal(nameCellRect.getSmallestIntegerContainer())),
+                           .withTargetScreenArea(glassOnScreen)
+                           .withMinimumWidth(glassOnScreen.getWidth()),
                        [safeThis = juce::Component::SafePointer<ProgramHeader>(this)](int result)
                        {
                            if (safeThis == nullptr || result == 0)
@@ -206,6 +262,9 @@ void ProgramHeader::mouseUp(const juce::MouseEvent& e)
 
 void ProgramHeader::enterNamingMode()
 {
+    liveReadout.clear();
+    readoutRevertAtMs = 0;
+
     namingMode = true;
     typedName.clear();
     grabKeyboardFocus();
@@ -299,51 +358,83 @@ void ProgramHeader::paint(juce::Graphics& g)
     g.fillRect(inWindowRect.reduced(1.0f));
     g.fillRect(outWindowRect.reduced(1.0f));
 
-    const bool showUserTag = namingMode || !displayedIsFactory;
-    g.setColour(showUserTag ? Colour::tagUser : Colour::tagFactory);
-    g.setFont(monoFont(9.0f));
-    g.drawText(showUserTag ? "USER" : "FACT", tagCellRect, juce::Justification::centred, false);
+    // Section 5: FACT / USER is set in the SAME face, size, tracking and colour as the program
+    // name. It sits inside a display, so it is display text - it is no longer dimmed relative to
+    // the name the way revision 1 had it.
+    const auto lcdFont = monoFont(monoFontHeightForCssPx(Layout::lcdCssPx));
+    const float lcdTracking = trackingPxForEm(Layout::lcdTrackingEm, Layout::lcdCssPx);
 
-    g.setColour(Colour::headerName);
-    g.setFont(monoFont(13.0f));
+    const bool showUserTag = namingMode || !displayedIsFactory;
+    drawTrackedText(g, showUserTag ? "USER" : "FACT", lcdFont, lcdTracking, tagCellRect,
+                     juce::Justification::centred, Colour::ledWindowText);
+
     if (namingMode)
     {
-        // Left-aligned, cleared, with a blinking block caret (1s period, 50% duty - section 6).
+        // Left-aligned, cleared, with a blinking block caret (1s period, 50% duty).
         const bool caretOn = (juce::Time::getMillisecondCounter() % 1000) < 500;
         const juce::String text = typedName + (caretOn ? juce::String(juce::CharPointer_UTF8("\xe2\x96\x88"))
                                                          : juce::String());
-        g.drawText(text, nameCellRect.reduced(6.0f, 0.0f), juce::Justification::centredLeft, false);
+        drawTrackedText(g, text, lcdFont, lcdTracking, nameCellRect.reduced(12.0f, 0.0f),
+                         juce::Justification::left, Colour::ledWindowText);
+    }
+    else if (liveReadout.isNotEmpty())
+    {
+        // Section 5's second content: the parameter readout in #FFD9A0 while a control is being
+        // moved. This is the panel's ONLY live numeric display - the standing per-knob readouts
+        // revision 1 had under every knob are gone.
+        //
+        // CENTRED, where section 5 says left-aligned. Deliberate: the readout replaces the program
+        // name in the same cell, and centring both means the text stays put as it swaps instead of
+        // jumping to the left margin and back on every gesture. Only name ENTRY is left-aligned,
+        // where it has to be, because a caret has to sit after the last character typed.
+        drawTrackedText(g, liveReadout, lcdFont, lcdTracking, nameCellRect,
+                         juce::Justification::centred, Colour::lcdParameterReadout);
     }
     else
     {
-        // "NN NAME" - two-digit program number, space, name (section 6). The number is 1-based, so
-        // the first factory program reads "01 EIGHTY-TWO" rather than "00": it's a bank position a
-        // player reads off the panel and counts from one, not the zero-based index the code uses.
-        // User programs continue the same run past the factory bank (10, 11, ...).
+        // "NN NAME" - two-digit program number, space, name. The number is 1-based, so the first
+        // factory program reads "01 EIGHTY-TWO" rather than "00": it's a bank position a player
+        // reads off the panel and counts from one, not the zero-based index the code uses. User
+        // programs continue the same run past the factory bank (10, 11, ...).
         const juce::String indexText = juce::String(displayedProgramIndex + 1).paddedLeft('0', 2);
-        g.drawText(indexText + " " + displayedProgramName, nameCellRect, juce::Justification::centred, false);
 
-        // Small chevron marking the cell as a menu trigger. Dimmed and tucked into the right edge so
-        // it reads as an affordance rather than competing with the program name; the name stays
-        // centred in the full cell, and the widest name this bank can show still ends clear of it.
-        const float chevronW = 7.0f, chevronH = 4.0f;
-        const float chevronRight = nameCellRect.getRight() - 8.0f;
-        const float chevronTop = nameCellRect.getCentreY() - chevronH * 0.5f;
+        // A trailing " *" while the loaded Program has been edited, matching TapeRot and
+        // Gatecrasher. It clears on store, on delete and on loading another Program - all three of
+        // which reset displayedIsModified through refreshDisplayFromProcessor, so nothing extra is
+        // needed here. Worst case is 27 characters of "NN " + a 24-char name plus 2 for the marker,
+        // which is 29 of the field's 36.
+        const juce::String shown = indexText + " " + displayedProgramName
+                                 + (displayedIsModified ? " *" : "");
+
+        // Centred in the field less its right padding, so the name stays clear of the chevron.
+        drawTrackedText(g, shown, lcdFont, lcdTracking,
+                         nameCellRect.withTrimmedRight(Layout::lcdNameRightPadding),
+                         juce::Justification::centred, Colour::ledWindowText);
+
+        // The chevron. Square caps and a bare two-segment path rather than a closed shape - it is a
+        // stroke mark, not an arrowhead.
+        const float right = nameCellRect.getRight() - Layout::lcdChevronInsetRight;
+        const float left = right - Layout::lcdChevronW;
+        const float top = nameCellRect.getCentreY() - Layout::lcdChevronH * 0.5f;
 
         juce::Path chevron;
-        chevron.startNewSubPath(chevronRight - chevronW, chevronTop);
-        chevron.lineTo(chevronRight - chevronW * 0.5f, chevronTop + chevronH);
-        chevron.lineTo(chevronRight, chevronTop);
+        chevron.startNewSubPath(left, top);
+        chevron.lineTo((left + right) * 0.5f, top + Layout::lcdChevronH);
+        chevron.lineTo(right, top);
 
-        g.setColour(Colour::ledWindowText.withAlpha(0.55f));
-        g.strokePath(chevron, juce::PathStrokeType(1.0f));
+        g.setColour(Colour::ledWindowText.withAlpha(Layout::lcdChevronAlpha));
+        g.strokePath(chevron, juce::PathStrokeType(Layout::lcdChevronStroke,
+                                                    juce::PathStrokeType::mitered,
+                                                    juce::PathStrokeType::square));
     }
 
     // IN / OUT LED windows: signed dBFS to one decimal, numeric only (section 6).
-    g.setColour(Colour::ledWindowText);
-    g.setFont(monoFont(13.0f));
-    g.drawText(formatMeterDb(processorRef.getInputMeterDb()), inWindowRect, juce::Justification::centred, false);
-    g.drawText(formatMeterDb(processorRef.getOutputMeterDb()), outWindowRect, juce::Justification::centred, false);
+    const auto meterFont = monoFont(monoFontHeightForCssPx(13.0f));
+    const float meterTracking = trackingPxForEm(0.06f, 13.0f);
+    drawTrackedText(g, formatMeterDb(processorRef.getInputMeterDb()), meterFont, meterTracking,
+                     inWindowRect, juce::Justification::centred, Colour::ledWindowText);
+    drawTrackedText(g, formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
+                     outWindowRect, juce::Justification::centred, Colour::ledWindowText);
 
     // SAVE / DELETE (STORE / CANCEL while naming), drawn live per section 6's state table.
     auto drawButton = [&] (juce::Rectangle<float> rect, const juce::String& label, bool enabled, bool pressed)

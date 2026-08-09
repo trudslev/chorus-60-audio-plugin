@@ -20,14 +20,14 @@ a:hover { color: #fff; }
 </style>
 </helmet>
 <div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:flex-start;padding:34px 24px;background:#050506;overflow-x:auto">
-  <div style="width:1400px;flex:0 0 1400px;margin-inline:auto;background:linear-gradient(#141618,#0E1012 35%,#0A0C0D);border:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 34px 70px -24px rgba(0,0,0,1)">
+  <div id="panel" style="width:1280px;flex:0 0 1280px;margin-inline:auto;background:linear-gradient(#141618,#0E1012 35%,#0A0C0D);border:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 34px 70px -24px rgba(0,0,0,1)">
 
-    <div style="display:flex;align-items:flex-end;gap:0;padding:16px 24px 14px;border-bottom:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.05);background:linear-gradient(#191C1E,#101214)">
+    <div style="display:flex;align-items:flex-end;gap:0;padding:16px 22px 14px;border-bottom:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.05);background:linear-gradient(#191C1E,#101214)">
       <div style="display:flex;align-items:flex-end;gap:18px;flex-shrink:0;white-space:nowrap">
         <div style="font-family:'Librestile Extended','Barlow Condensed',sans-serif;font-weight:700;font-size:34px;line-height:.9;letter-spacing:.02em;color:#E6EBEE;text-shadow:0 1px 0 rgba(0,0,0,.9), 0 0 1px rgba(230,235,238,.5)">CHORUS-60</div>
         <div style="display:flex;flex-direction:column;gap:4px;padding-bottom:3px">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#8A9196">BBD CHORUS PROCESSOR</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#5F666B">MODEL CH-60 · STEREO</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#A5ADB2">BBD CHORUS PROCESSOR</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.24em;color:#8A9196">MODEL CH-60 · STEREO</div>
         </div>
       </div>
 
@@ -35,115 +35,142 @@ a:hover { color: #fff; }
 
       <div style="display:flex;align-items:flex-end;gap:6px;flex-shrink:0">
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#7B8287">{{ programCaption }}</div>
-          <div style="display:flex;align-items:stretch;height:25px;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset">
-            <div style="display:flex;align-items:center;padding:0 9px;border-right:1px solid #2A3035;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:.12em;color:{{ tagFg }}">{{ bankTag }}</div>
-            <div style="min-width:238px;display:flex;align-items:center;justify-content:{{ nameAlign }};padding:0 12px;gap:1px;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.1em;color:#DFE6EA;text-shadow:0 0 8px rgba(200,220,230,.25)">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#8A9196">{{ programCaption }}</div>
+          <div style="display:flex;align-items:stretch;height:28px;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset">
+            <div style="display:flex;align-items:center;padding:0 10px;border-right:1px solid #2A3035;font-family:'Share Tech Mono',monospace;font-size:15px;letter-spacing:.1em;color:{{ lcdFg }};text-shadow:0 0 8px rgba(200,220,230,.25)">{{ bankTag }}</div>
+            <div style="position:relative;width:352px;display:flex;align-items:center;justify-content:{{ nameAlign }};padding:0 26px 0 12px;gap:1px;font-family:'Share Tech Mono',monospace;font-size:15px;letter-spacing:.1em;color:{{ lcdFg }};text-shadow:0 0 8px rgba(200,220,230,.25);white-space:nowrap;overflow:hidden">
               <span>{{ programText }}</span>
               <sc-if value="{{ naming }}" hint-placeholder-val="{{ false }}"><span style="animation:caretBlink 1s steps(1,end) infinite">█</span></sc-if>
+              <sc-if value="{{ showChevron }}" hint-placeholder-val="{{ true }}">
+                <svg width="11" height="7" viewBox="0 0 11 7" fill="none" style="position:absolute;right:10px;top:50%;margin-top:-3px;opacity:.75">
+                  <path d="M1 1L5.5 5.5L10 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"></path>
+                </svg>
+              </sc-if>
             </div>
           </div>
         </div>
-        <div onPointerDown="{{ onPrimary }}" style="height:25px;display:flex;align-items:center;padding:0 9px;background:linear-gradient(#DBE0E3,#AAB1B6);border:1px solid #6D7478;box-shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 1px 2px rgba(0,0,0,.35);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.12em;text-indent:.12em;color:#22272B;cursor:pointer">{{ primaryLabel }}</div>
-        <div onPointerDown="{{ onSecondary }}" style="height:25px;display:flex;align-items:center;padding:0 9px;background:{{ secondaryBg }};border:1px solid {{ secondaryBorder }};box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.3);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.12em;text-indent:.12em;color:{{ secondaryFg }};opacity:{{ secondaryOpacity }};cursor:{{ secondaryCursor }}">{{ secondaryLabel }}</div>
+        <div onPointerDown="{{ onPrimary }}" style="height:28px;display:flex;align-items:center;padding:0 10px;background:linear-gradient(#DBE0E3,#AAB1B6);border:1px solid #6D7478;box-shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 1px 2px rgba(0,0,0,.35);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.12em;text-indent:.12em;color:#22272B;cursor:pointer">{{ primaryLabel }}</div>
+        <div onPointerDown="{{ onSecondary }}" style="height:28px;display:flex;align-items:center;padding:0 10px;background:{{ secondaryBg }};border:1px solid {{ secondaryBorder }};box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 1px 2px rgba(0,0,0,.3);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.12em;text-indent:.12em;color:{{ secondaryFg }};opacity:{{ secondaryOpacity }};cursor:{{ secondaryCursor }}">{{ secondaryLabel }}</div>
       </div>
 
-      <div style="display:flex;gap:8px;padding-left:18px;flex-shrink:0;white-space:nowrap">
+      <div style="display:flex;gap:8px;padding-left:16px;flex-shrink:0;white-space:nowrap">
         <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#7B8287">IN</div>
-          <div style="width:52px;height:25px;display:flex;align-items:center;justify-content:center;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.06em;color:#DFE6EA;text-shadow:0 0 8px rgba(200,220,230,.25)">{{ inDb }}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#8A9196">IN</div>
+          <div style="width:54px;height:28px;display:flex;align-items:center;justify-content:center;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.06em;color:#DFE6EA;text-shadow:0 0 8px rgba(200,220,230,.25)">{{ inDb }}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#7B8287">OUT</div>
-          <div style="width:52px;height:25px;display:flex;align-items:center;justify-content:center;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.06em;color:#DFE6EA;text-shadow:0 0 8px rgba(200,220,230,.25)">{{ outDb }}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:9px;letter-spacing:.24em;color:#8A9196">OUT</div>
+          <div style="width:54px;height:28px;display:flex;align-items:center;justify-content:center;background:#07090A;border:1px solid #363C41;box-shadow:0 2px 6px rgba(0,0,0,.9) inset;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.06em;color:#DFE6EA;text-shadow:0 0 8px rgba(200,220,230,.25)">{{ outDb }}</div>
         </div>
       </div>
     </div>
 
-    <div style="display:flex;align-items:stretch;gap:0;padding:18px 24px 20px;background:linear-gradient(#0E1012,#0A0C0D)">
+    <div style="display:flex;align-items:stretch;gap:0;padding:18px 22px 22px;background:linear-gradient(#0E1012,#0A0C0D)">
 
-      <div style="flex:0 0 232px;display:flex;flex-direction:column">
-        <div style="height:24px;background:linear-gradient(#2F6DB8,#1F5798);display:flex;align-items:center;justify-content:center">
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.4em;color:#EEF2F4;text-indent:.4em">CHORUS</span>
+      <div style="flex:0 0 220px;display:flex;flex-direction:column">
+        <div style="height:46px;background:linear-gradient(#2F6DB8,#1F5798);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;letter-spacing:.34em;color:#EEF2F4;text-indent:.34em">CHORUS</span>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px;padding:26px 0 26px 6px">
-          <div style="display:flex;align-items:center;gap:20px">
-            <div onPointerDown="{{ toggleII }}" style="width:116px;height:116px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#E5A021,#C07908);box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 -7px 12px -4px rgba(0,0,0,.5) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressII }}px);transition:transform .05s"></div>
-            <div style="display:flex;align-items:center;gap:14px">
-              <div style="width:15px;height:15px;border-radius:50%;background:{{ ledIIBg }};box-shadow:{{ ledIIGlow }}"></div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em;color:{{ labelIIFg }}">II</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:41px 0 41px 4px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div onPointerDown="{{ toggleII }}" style="width:132px;height:132px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#E5A021,#C07908);box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 -7px 12px -4px rgba(0,0,0,.5) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressII }}px);transition:transform .05s"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:15px;height:15px;border-radius:50%;background:{{ ledIIBg }};box-shadow:{{ ledIIGlow }};transition:background .18s, box-shadow .18s"></div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em;color:{{ labelIIFg }};transition:color .25s">II</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:20px">
-            <div onPointerDown="{{ toggleI }}" style="width:116px;height:116px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#EAD681,#D0B857);box-shadow:0 1px 1px rgba(255,255,255,.5) inset, 0 -7px 12px -4px rgba(0,0,0,.45) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressI }}px);transition:transform .05s"></div>
-            <div style="display:flex;align-items:center;gap:14px">
-              <div style="width:15px;height:15px;border-radius:50%;background:{{ ledIBg }};box-shadow:{{ ledIGlow }}"></div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em;color:{{ labelIFg }}">I</div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div onPointerDown="{{ toggleI }}" style="width:132px;height:132px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#EAD681,#D0B857);box-shadow:0 1px 1px rgba(255,255,255,.5) inset, 0 -7px 12px -4px rgba(0,0,0,.45) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressI }}px);transition:transform .05s"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:15px;height:15px;border-radius:50%;background:{{ ledIBg }};box-shadow:{{ ledIGlow }};transition:background .18s, box-shadow .18s"></div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;letter-spacing:.06em;color:{{ labelIFg }};transition:color .25s">I</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:20px">
-            <div onPointerDown="{{ pressOff }}" style="width:116px;height:116px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#EAECEC,#C9CDCF);box-shadow:0 1px 1px rgba(255,255,255,.85) inset, 0 -7px 12px -4px rgba(0,0,0,.35) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressOffY }}px);transition:transform .05s"></div>
-            <div style="display:flex;align-items:center;gap:14px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div onPointerDown="{{ pressOff }}" style="width:132px;height:132px;border-radius:5px;cursor:pointer;background:linear-gradient(160deg,#EAECEC,#C9CDCF);box-shadow:0 1px 1px rgba(255,255,255,.85) inset, 0 -7px 12px -4px rgba(0,0,0,.35) inset, 0 7px 13px -7px rgba(0,0,0,.95);transform:translateY({{ pressOffY }}px);transition:transform .05s"></div>
+            <div style="display:flex;align-items:center;gap:12px">
               <div style="width:15px;height:15px"></div>
-              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.14em;color:{{ offFg }}">OFF</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.14em;color:{{ offFg }};transition:color .25s">OFF</div>
             </div>
           </div>
         </div>
-        <div style="height:12px;background:linear-gradient(#2F6DB8,#1F5798)"></div>
+        <div style="height:24px;background:linear-gradient(#2F6DB8,#1F5798)"></div>
       </div>
 
-      <div style="flex:0 0 1px;margin:0 22px;background:linear-gradient(transparent,rgba(0,0,0,.9) 12%,rgba(0,0,0,.9) 88%,transparent);box-shadow:1px 0 0 rgba(255,255,255,.06)"></div>
+      <div style="flex:0 0 1px;margin:0 21px;background:linear-gradient(transparent,rgba(0,0,0,.9) 12%,rgba(0,0,0,.9) 88%,transparent);box-shadow:1px 0 0 rgba(255,255,255,.06)"></div>
 
       <div style="flex:1;display:flex;flex-direction:column;gap:16px;min-width:0">
 
         <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:0 2px 8px">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.28em;color:{{ modFg }}">DELAY MODULATION</div>
-            <div style="display:flex;gap:26px">
-              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.06em;color:#7B8287">{{ engineLabel }}</div>
-              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.06em;color:#7B8287">{{ spanLabel }}</div>
-              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.06em;color:#7B8287">{{ divLabel }}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0 2px 7px">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.28em;color:{{ modFg }};transition:color .25s">DELAY MODULATION</div>
+            <div style="display:flex;gap:24px">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.06em;color:#8A9196">{{ engineLabel }}</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.06em;color:#8A9196">{{ divLabel }}</div>
             </div>
           </div>
-          <canvas ref="{{ scopeRef }}" width="2150" height="244" style="display:block;width:100%;height:122px;border:1px solid #0A0C0D;box-shadow:0 2px 7px rgba(0,0,0,.85) inset"></canvas>
+          <canvas ref="{{ scopeRef }}" width="1932" height="236" style="display:block;width:100%;height:118px;border:1px solid #0A0C0D;box-shadow:0 2px 7px rgba(0,0,0,.85) inset"></canvas>
         </div>
 
-        <div style="display:flex;gap:16px">
-          <sc-for list="{{ engineGroups }}" as="g" hint-placeholder-count="2">
-            <div style="flex:1;border:1px solid #000;background:linear-gradient(#131517,#0C0E10);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;padding:9px 14px 14px">
-              <div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(255,255,255,.05)">
-                <div style="width:8px;height:8px;border-radius:50%;background:{{ g.ledBg }};box-shadow:{{ g.ledGlow }}"></div>
-                <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.28em;color:#8A9196">{{ g.title }}</div>
-              </div>
-              <div style="display:flex;justify-content:space-evenly;gap:44px;padding-top:14px">
-                <sc-for list="{{ g.knobs }}" as="k" hint-placeholder-count="2">
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:9px;width:92px">
-                    <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:relative;width:58px;height:58px;cursor:ns-resize">
-                      <div style="position:absolute;inset:-8px;border-radius:50%;background:repeating-conic-gradient(from 190deg,rgba(120,132,140,.55) 0deg .7deg,transparent .7deg 15deg);-webkit-mask:radial-gradient(circle,transparent 80%,#000 81%,#000 97%,transparent 98%);mask:radial-gradient(circle,transparent 80%,#000 81%,#000 97%,transparent 98%)"></div>
-                      <div style="position:absolute;inset:0;background-image:url('assets/knob_large_128px_128f.png');background-size:58px 7424px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
-                    </div>
-                    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.18em;color:#8A9196;text-align:center">{{ k.label }}</div>
-                    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.04em;color:#C6CED3">{{ k.display }}</div>
+        <div style="border:1px solid #000;background:linear-gradient(#131517,#0C0E10);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;padding:8px 18px 12px">
+          <div style="display:flex;align-items:center;gap:9px;padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(255,255,255,.05)">
+            <div style="width:8px;height:8px;border-radius:50%;background:{{ modLedBg }};box-shadow:{{ modLedGlow }};transition:background .18s, box-shadow .18s"></div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.28em;color:{{ modTitleFg }};transition:color .25s">{{ modTitle }}</div>
+            <div style="flex:1"></div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.08em;color:#8A9196">{{ modPageNote }}</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;justify-content:center;gap:20px;padding:12px 0 0;opacity:{{ liveOpacity }};transition:opacity .3s">
+            <sc-for list="{{ modKnobs }}" as="k" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:176px">
+                <div style="position:relative;width:176px;height:164px">
+                  <sc-for list="{{ k.ticks }}" as="t" hint-placeholder-count="5">
+                    <div style="position:absolute;left:{{ t.x }};top:{{ t.y }};width:2px;height:10px;background:#A5ADB2;transform:{{ t.rot }}"></div>
+                  </sc-for>
+                  <sc-for list="{{ k.marks }}" as="m" hint-placeholder-count="5">
+                    <div style="position:absolute;left:{{ m.x }};top:{{ m.y }};width:52px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">{{ m.t }}</div>
+                  </sc-for>
+                  <div style="position:absolute;left:0;right:0;top:148px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.16em;color:#8A9196">{{ k.unit }}</div>
+                  <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:46px;top:40px;width:84px;height:84px;cursor:{{ k.cursor }}">
+                    <div style="position:absolute;inset:0;background-image:url('assets/knob_mod_84px_128f.png');background-size:84px 10752px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
                   </div>
-                </sc-for>
+                </div>
+                <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.18em;color:#A5ADB2;text-align:center">{{ k.label }}</div>
               </div>
+            </sc-for>
+
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:132px">
+              <div style="position:relative;width:132px;height:164px">
+                <div onPointerDown="{{ swToggle }}" style="position:absolute;left:49px;top:48px;width:34px;height:68px;border-radius:17px;background:linear-gradient(#0A0C0D,#141719);box-shadow:0 0 0 1px #000, 0 2px 6px rgba(0,0,0,.85) inset;cursor:{{ swCursor }}">
+                  <div style="position:absolute;left:4px;top:4px;width:26px;height:26px;border-radius:50%;background:linear-gradient(#E4E8EA,#A9B0B5);box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 3px 6px -1px rgba(0,0,0,.85);transform:translateY({{ swThumbY }}px);transition:transform .26s cubic-bezier(.3,1.5,.5,1)"></div>
+                </div>
+                <div style="position:absolute;left:0;top:58px;width:44px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">STEREO</div>
+                <div style="position:absolute;left:0;top:92px;width:44px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">MONO</div>
+              </div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.18em;color:#A5ADB2;text-align:center">{{ swLabel }}</div>
             </div>
-          </sc-for>
+          </div>
         </div>
 
         <div style="display:flex;gap:16px">
-          <sc-for list="{{ lowerGroups }}" as="g" hint-placeholder-count="3">
-            <div style="flex:{{ g.flex }};border:1px solid #000;background:linear-gradient(#131517,#0C0E10);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;padding:9px 14px 14px">
-              <div style="padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(255,255,255,.05);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.28em;color:#8A9196">{{ g.title }}</div>
-              <div style="display:flex;justify-content:space-evenly;gap:26px;padding-top:14px">
+          <sc-for list="{{ lowerGroups }}" as="g" hint-placeholder-count="2">
+            <div style="flex:{{ g.flex }};border:1px solid #000;background:linear-gradient(#131517,#0C0E10);box-shadow:0 1px 0 rgba(255,255,255,.05) inset;padding:8px 16px 12px">
+              <div style="padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.6);box-shadow:0 1px 0 rgba(255,255,255,.05);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.28em;color:{{ lowerTitleFg }};transition:color .25s">{{ g.title }}</div>
+              <div style="display:flex;justify-content:center;gap:22px;padding-top:10px;opacity:{{ liveOpacity }};transition:opacity .3s">
                 <sc-for list="{{ g.knobs }}" as="k" hint-placeholder-count="2">
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:9px;width:84px">
-                    <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:relative;width:42px;height:42px;cursor:ns-resize">
-                      <div style="position:absolute;inset:-7px;border-radius:50%;background:repeating-conic-gradient(from 190deg,rgba(120,132,140,.5) 0deg .8deg,transparent .8deg 20deg);-webkit-mask:radial-gradient(circle,transparent 78%,#000 79%,#000 97%,transparent 98%);mask:radial-gradient(circle,transparent 78%,#000 79%,#000 97%,transparent 98%)"></div>
-                      <div style="position:absolute;inset:0;background-image:url('assets/knob_small_128px_128f.png');background-size:42px 5376px;background-repeat:no-repeat;background-position:0 {{ k.frameYSmall }}"></div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:158px">
+                    <div style="position:relative;width:158px;height:144px">
+                      <sc-for list="{{ k.ticks }}" as="t" hint-placeholder-count="5">
+                        <div style="position:absolute;left:{{ t.x }};top:{{ t.y }};width:2px;height:9px;background:#A5ADB2;transform:{{ t.rot }}"></div>
+                      </sc-for>
+                      <sc-for list="{{ k.marks }}" as="m" hint-placeholder-count="5">
+                        <div style="position:absolute;left:{{ m.x }};top:{{ m.y }};width:46px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:14px;color:#A5ADB2">{{ m.t }}</div>
+                      </sc-for>
+                      <div style="position:absolute;left:0;right:0;top:128px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:.16em;color:#8A9196">{{ k.unit }}</div>
+                      <div onPointerDown="{{ k.onDown }}" onDoubleClick="{{ k.onReset }}" style="position:absolute;left:45px;top:38px;width:68px;height:68px;cursor:{{ k.cursor }}">
+                        <div style="position:absolute;inset:0;background-image:url('assets/knob_global_68px_128f.png');background-size:68px 8704px;background-repeat:no-repeat;background-position:0 {{ k.frameY }}"></div>
+                      </div>
                     </div>
-                    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:.18em;color:#8A9196;text-align:center">{{ k.label }}</div>
-                    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.04em;color:#C6CED3">{{ k.display }}</div>
+                    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;letter-spacing:.18em;color:#A5ADB2;text-align:center">{{ k.label }}</div>
                   </div>
                 </sc-for>
               </div>
@@ -154,65 +181,187 @@ a:hover { color: #fff; }
       </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;align-items:center;padding:7px 24px 9px;border-top:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.045) inset;background:linear-gradient(#131517,#0C0E10)">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.1em;color:#5A6165">{{ footRight }}</div>
+    <div style="display:flex;justify-content:flex-end;align-items:center;height:28px;box-sizing:border-box;padding:0 22px;border-top:1px solid #000;box-shadow:0 1px 0 rgba(255,255,255,.045) inset;background:linear-gradient(#131517,#0C0E10)">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:.1em;color:#8A9196">{{ footRight }}</div>
     </div>
 
   </div>
 </div>
-
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{}">
+const LIN = [0, 0.25, 0.5, 0.75, 1];
+const PCT = ['0', '25', '50', '75', '100'];
+
 const P = {
-  rate1:  { label:'RATE I',        min:0.05, max:8,   def:0.45, unit:'Hz', dp:2 },
-  depth1: { label:'DEPTH I',       min:0,    max:100, def:38,   unit:'%',  dp:0 },
-  rate2:  { label:'RATE II',       min:0.05, max:8,   def:2.9,  unit:'Hz', dp:2 },
-  depth2: { label:'DEPTH II',      min:0,    max:100, def:64,   unit:'%',  dp:0 },
-  center: { label:'DELAY CENTER',  min:2,    max:14,  def:5.6,  unit:'ms', dp:1 },
-  decorr: { label:'DECORRELATION', min:0,    max:100, def:52,   unit:'%',  dp:0 },
-  drift:  { label:'DRIFT',         min:0,    max:100, def:22,   unit:'%',  dp:0 },
-  sat:    { label:'SATURATION',    min:0,    max:100, def:30,   unit:'%',  dp:0 },
-  noise:  { label:'NOISE',         min:0,    max:100, def:14,   unit:'%',  dp:0 },
-  mix:    { label:'MIX',           min:0,    max:100, def:50,   unit:'%',  dp:0 },
-  trim:   { label:'OUTPUT TRIM',   min:-12,  max:12,  def:0,    unit:'dB', dp:1 }
+  drift: { label:'DRIFT',       min:0,   max:100, def:22, unit:'%',  dp:0, pos:LIN, marks:PCT },
+  sat:   { label:'SATURATION',  min:0,   max:100, def:30, unit:'%',  dp:0, pos:LIN, marks:PCT },
+  noise: { label:'NOISE',       min:0,   max:100, def:14, unit:'%',  dp:0, pos:LIN, marks:PCT },
+  mix:   { label:'MIX',         min:0,   max:100, def:50, unit:'%',  dp:0, pos:LIN, marks:PCT },
+  trim:  { label:'OUTPUT TRIM', min:-12, max:12,  def:0,  unit:'dB', dp:1, pos:LIN, marks:['−12','−6','0','+6','+12'] }
+};
+
+// RATE is power-law skewed: printed marks are NOT evenly spaced across the 270° sweep
+const RATE_POS = [0, 0.287, 0.479, 0.784, 1];
+const RATE_VAL = [0.05, 0.5, 2, 8, 16];
+
+const M = {
+  rate:   { label:'RATE',          min:0.05, max:16,  unit:'Hz', dp:2, skew:true, pos:RATE_POS, marks:['0.05','0.5','2','8','16'] },
+  depth:  { label:'DEPTH',         min:0,    max:100, unit:'%',  dp:0, pos:LIN, marks:PCT },
+  center: { label:'DELAY CENTER',  min:2,    max:14,  unit:'ms', dp:1, pos:LIN, marks:['2','5','8','11','14'] },
+  decorr: { label:'DECORRELATION', min:0,    max:100, unit:'%',  dp:0, pos:LIN, marks:PCT }
+};
+const PAGE = {
+  I:  { title:'MOD ENGINE I',    suffix:' I',    slots:['rate','depth','center','decorr'], note:'ENGINE I ENGAGED' },
+  II: { title:'MOD ENGINE II',   suffix:' II',   slots:['rate','depth','center','decorr'], note:'ENGINE II ENGAGED' },
+  B:  { title:'MOD ENGINE I+II', suffix:' I+II', slots:['rate','depth','center','decorr'], note:'BOTH ENGAGED · MONO BBD PAIR' }
+};
+const DEFAULTS = {
+  I:  { rate:0.45, depth:38, center:5.6, decorr:52, image:'STEREO' },
+  II: { rate:2.90, depth:64, center:4.2, decorr:66, image:'STEREO' },
+  B:  { rate:1.20, depth:52, center:6.4, decorr:44, image:'MONO'   }
 };
 
 const FACTORY = { id: 7, name: 'WIDE ENSEMBLE' };
 const RED = '#FF2B1C';
+const SLEW_MS = 380;
+const G = (globalThis.__CH60_LOOP__ = globalThis.__CH60_LOOP__ || { gen: 0 });
+
+// piecewise log interpolation through the printed RATE anchors
+function rateVal(n) {
+  n = Math.max(0, Math.min(1, n));
+  for (let i = 1; i < RATE_POS.length; i++) {
+    if (n <= RATE_POS[i]) {
+      const f = (n - RATE_POS[i-1]) / (RATE_POS[i] - RATE_POS[i-1]);
+      return Math.exp(Math.log(RATE_VAL[i-1]) + f * (Math.log(RATE_VAL[i]) - Math.log(RATE_VAL[i-1])));
+    }
+  }
+  return 16;
+}
+function rateNorm(v) {
+  v = Math.max(0.05, Math.min(16, v));
+  for (let i = 1; i < RATE_VAL.length; i++) {
+    if (v <= RATE_VAL[i]) {
+      const f = (Math.log(v) - Math.log(RATE_VAL[i-1])) / (Math.log(RATE_VAL[i]) - Math.log(RATE_VAL[i-1]));
+      return RATE_POS[i-1] + f * (RATE_POS[i] - RATE_POS[i-1]);
+    }
+  }
+  return 1;
+}
+
+// printed scale geometry — ticks sit at the labelled values, so numerals and ticks agree
+// half-extent of a 12px Share Tech Mono label along the ray leaving the knob centre
+const ADV = 7.2, LH = 14;
+function edge(text, sx, cy) {
+  const w = text.length * ADV, ax = Math.abs(sx), ay = Math.abs(cy);
+  return Math.min(ax > 1e-6 ? (w / 2) / ax : 1e9, ay > 1e-6 ? (LH / 2) / ay : 1e9);
+}
+function ring(m, geo) {
+  const ticks = [], marks = [];
+  for (let i = 0; i < m.pos.length; i++) {
+    const a = (-135 + 270 * m.pos[i]) * Math.PI / 180, deg = -135 + 270 * m.pos[i];
+    const sx = Math.sin(a), cx = Math.cos(a);
+    ticks.push({
+      x: (geo.cx + geo.rt * sx - 1).toFixed(1) + 'px',
+      y: (geo.cy - geo.rt * cx - geo.tl / 2).toFixed(1) + 'px',
+      rot: 'rotate(' + deg.toFixed(1) + 'deg)'
+    });
+    // place each numeral by its NEAREST GLYPH EDGE, not its box centre — otherwise a one-character
+    // label floats 20px further from its tick than a four-character one
+    const rn = geo.rte + geo.gap + edge(m.marks[i], sx, cx);
+    marks.push({
+      t: m.marks[i],
+      x: (geo.cx + rn * sx - geo.nw / 2).toFixed(1) + 'px',
+      y: (geo.cy - rn * cx - 7).toFixed(1) + 'px'
+    });
+  }
+  return { ticks, marks };
+}
+const GEO_MOD = { cx: 88, cy: 82, rt: 47, tl: 9, rte: 51.5, gap: 6, nw: 52 };
+const GEO_GLB = { cx: 79, cy: 72, rt: 38, tl: 9, rte: 42.5, gap: 6, nw: 46 };
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     const vals = {};
     Object.keys(P).forEach(k => vals[k] = P[k].def);
+    const pages = {};
+    Object.keys(DEFAULTS).forEach(p => pages[p] = Object.assign({}, DEFAULTS[p]));
     this.state = {
-      engI: true, engII: false, vals,
+      engI: true, engII: false, lastPage: 'I', vals, pages,
       bank: 'FACT', programId: FACTORY.id, programName: FACTORY.name,
-      naming: false, typed: '',
-      inDb: -14.2, outDb: -12.8, pressed: null
+      naming: false, typed: '', readout: null,
+      inDb: -14.2, outDb: -12.8, pressed: null, dragSlot: null
     };
+    this.slotAnim = this.slotTargets();
     this.scopeRef = React.createRef();
     this.onKey = this.onKey.bind(this);
   }
 
+  page() {
+    const s = this.state;
+    if (s.engI && s.engII) return 'B';
+    if (s.engI) return 'I';
+    if (s.engII) return 'II';
+    return s.lastPage;
+  }
+  live() { return this.state.engI || this.state.engII; }
+  pv() { return this.state.pages[this.page()]; }
+
+  norm(id, v) {
+    if (id === 'rate') return rateNorm(v);
+    const m = M[id]; return (v - m.min) / (m.max - m.min);
+  }
+  denorm(id, n) {
+    if (id === 'rate') return rateVal(n);
+    const m = M[id]; return m.min + n * (m.max - m.min);
+  }
+  // pointers hold their values on bypass — the panel never depicts values that aren't current
+  slotTargets() {
+    const p = this.page(), pv = this.state.pages[p];
+    return PAGE[p].slots.map(id => this.norm(id, pv[id]));
+  }
+
   componentDidMount() {
     this.t0 = performance.now();
+    if (this.raf) cancelAnimationFrame(this.raf);
+    const my = ++G.gen;
+    this.lastFrame = this.t0;
     const loop = (now) => {
+      if (my !== G.gen) return;
       this.raf = requestAnimationFrame(loop);
       this.draw(now);
+      this.stepSlots(now);
       if (now - (this.lastM || 0) > 170) {
         this.lastM = now;
-        const on = this.state.engI || this.state.engII;
         const base = -14.2 + Math.sin(now / 900) * 1.6 + (Math.random() - 0.5) * 0.8;
-        this.setState({ inDb: base, outDb: base + (this.state.vals.trim || 0) + (on ? 1.1 : 0) });
+        this.setState({ inDb: base, outDb: base + (this.state.vals.trim || 0) + (this.live() ? 1.1 : 0) });
       }
     };
     this.raf = requestAnimationFrame(loop);
     window.addEventListener('keydown', this.onKey);
   }
   componentWillUnmount() {
+    G.gen++;
     cancelAnimationFrame(this.raf);
+    clearTimeout(this._rt);
     window.removeEventListener('keydown', this.onKey);
+  }
+
+  // slot rotation is slewed only across page changes; a drag tracks 1:1
+  stepSlots(now) {
+    const t = this.slotTargets();
+    const dt = Math.max(0, Math.min(64, now - (this.lastFrame || now)));
+    this.lastFrame = now;
+    const k = 1 - Math.pow(0.002, dt / SLEW_MS);
+    let moved = false;
+    for (let i = 0; i < t.length; i++) {
+      const cur = this.slotAnim[i] == null ? t[i] : this.slotAnim[i];
+      if (this.state.dragSlot === i) { if (cur !== t[i]) { this.slotAnim[i] = t[i]; moved = true; } continue; }
+      const d = t[i] - cur;
+      if (Math.abs(d) < 0.0008) { if (cur !== t[i]) { this.slotAnim[i] = t[i]; moved = true; } }
+      else { this.slotAnim[i] = cur + d * k; moved = true; }
+    }
+    if (moved) this.forceUpdate();
   }
 
   onKey(e) {
@@ -222,7 +371,7 @@ class Component extends DCLogic {
     if (e.key === 'Backspace') { e.preventDefault(); return this.setState(s => ({ typed: s.typed.slice(0, -1) })); }
     if (e.key.length === 1) {
       e.preventDefault();
-      this.setState(s => ({ typed: (s.typed + e.key).toUpperCase().slice(0, 22) }));
+      this.setState(s => ({ typed: (s.typed + e.key).toUpperCase().slice(0, 24) }));
     }
   }
   store() {
@@ -232,13 +381,24 @@ class Component extends DCLogic {
   }
   cancel() { this.setState({ naming: false, typed: '' }); }
 
+  // the LCD is the only live numeric readout on the panel
+  // grab/release bracket a drag; say() re-arms the clear itself, so the two can land in any order
+  say(text) {
+    this.setState({ readout: text });
+    if (!this._holding) this.arm();
+  }
+  grab() { this._holding = true; clearTimeout(this._rt); }
+  release() { this._holding = false; this.arm(); }
+  arm() {
+    clearTimeout(this._rt);
+    this._rt = setTimeout(() => this.setState({ readout: null }), 900);
+  }
+
   mod(t) {
-    const v = this.state.vals, s = this.state;
+    const v = this.state.vals, pv = this.pv(), live = this.live();
     let y = 0;
-    if (s.engI)  y += (v.depth1 / 100) * Math.sin(2 * Math.PI * v.rate1 * t);
-    if (s.engII) y += (v.depth2 / 100) * Math.sin(2 * Math.PI * v.rate2 * t + 1.1);
-    const on = s.engI || s.engII;
-    y += (v.drift / 100) * 0.14 * Math.sin(2 * Math.PI * 0.11 * t + 2.3) * (on ? 1 : 0.3);
+    if (live) y += (pv.depth / 100) * Math.sin(2 * Math.PI * pv.rate * t);
+    y += (v.drift / 100) * 0.14 * Math.sin(2 * Math.PI * 0.11 * t + 2.3) * (live ? 1 : 0.3);
     y += (v.noise / 100) * 0.045 * (Math.sin(t * 811.7) + Math.sin(t * 1531.3)) * 0.5;
     return y;
   }
@@ -262,7 +422,7 @@ class Component extends DCLogic {
     ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
 
     ctx.font = '18px "Share Tech Mono", monospace';
-    ctx.fillStyle = 'rgba(160,178,186,.55)';
+    ctx.fillStyle = '#9BA3A8';                    // ≥4.5:1 on the scope well
     ctx.fillText('DLY MOD', 12, 26);
     ctx.textAlign = 'right';
     ctx.fillText('+ MAX', W - 12, 26);
@@ -270,9 +430,8 @@ class Component extends DCLogic {
     ctx.textAlign = 'left';
 
     const amp = H * 0.34;
-    const cy = H / 2 + (H * 0.10) * ((this.state.vals.center - 8) / 6);
+    const cy = H / 2 + (H * 0.10) * ((this.pv().center - 8) / 6);
 
-    // dry input waveform underlay — grey, never red
     ctx.strokeStyle = 'rgba(178,190,197,.22)';
     ctx.lineWidth = 1;
     for (let px = 0; px <= W; px += 5) {
@@ -306,28 +465,67 @@ class Component extends DCLogic {
     const m = P[id], v = this.state.vals[id];
     return (id === 'trim' && v >= 0 ? '+' : '') + v.toFixed(m.dp) + ' ' + m.unit;
   }
-  frame(id) {
-    const m = P[id], n = (this.state.vals[id] - m.min) / (m.max - m.min);
-    return Math.max(0, Math.min(127, Math.round(n * 127)));
-  }
   knob(id) {
-    const m = P[id], f = this.frame(id);
+    const m = P[id], live = this.live();
+    const n = (this.state.vals[id] - m.min) / (m.max - m.min);
+    const f = Math.max(0, Math.min(127, Math.round(n * 127)));
+    const r = ring(m, GEO_GLB);
     return {
-      label: m.label, display: this.fmt(id),
-      frameY: '-' + (f * 58) + 'px',
-      frameYSmall: '-' + (f * 42) + 'px',
+      label: m.label, unit: m.unit, ticks: r.ticks, marks: r.marks,
+      frameY: '-' + (f * 68) + 'px',
+      cursor: live ? 'ns-resize' : 'default',
       onDown: (e) => {
+        if (!this.live()) return;
         e.preventDefault();
         const y0 = e.clientY, v0 = this.state.vals[id], range = m.max - m.min;
+        this.grab();
+        this.say(m.label + ': ' + this.fmt(id));
         const move = (ev) => {
-          const dv = ((y0 - ev.clientY) / 180) * range * (ev.shiftKey ? 0.25 : 1);
+          const dv = ((y0 - ev.clientY) / 200) * range * (ev.shiftKey ? 0.25 : 1);
           const nv = Math.max(m.min, Math.min(m.max, v0 + dv));
-          this.setState(s => ({ vals: Object.assign({}, s.vals, { [id]: nv }) }));
+          this.setState(s => ({ vals: Object.assign({}, s.vals, { [id]: nv }) }),
+            () => this.say(m.label + ': ' + this.fmt(id)));
         };
-        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        const up = () => { this.release(); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
         window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
       },
       onReset: () => this.setState(s => ({ vals: Object.assign({}, s.vals, { [id]: m.def }) }))
+    };
+  }
+
+  slotKnob(i) {
+    const p = this.page(), id = PAGE[p].slots[i], live = this.live();
+    const n = Math.max(0, Math.min(1, this.slotAnim[i] == null ? 0 : this.slotAnim[i]));
+    const m = M[id], r = ring(m, GEO_MOD);
+    const name = m.label + PAGE[p].suffix;
+    const say = () => {
+      const v = this.state.pages[p][id];
+      this.say(name + ': ' + v.toFixed(m.dp) + ' ' + m.unit);
+    };
+    return {
+      label: name, unit: m.unit, ticks: r.ticks, marks: r.marks,
+      frameY: '-' + (Math.round(n * 127) * 84) + 'px',
+      cursor: live ? 'ns-resize' : 'default',
+      onDown: (e) => {
+        if (!this.live()) return;
+        e.preventDefault();
+        const y0 = e.clientY, n0 = this.norm(id, this.state.pages[p][id]);
+        this.setState({ dragSlot: i });
+        this.grab();
+        say();
+        const move = (ev) => {
+          const dn = ((y0 - ev.clientY) / 200) * (ev.shiftKey ? 0.25 : 1);
+          const nv = this.denorm(id, Math.max(0, Math.min(1, n0 + dn)));
+          this.setState(s => ({ pages: Object.assign({}, s.pages, { [p]: Object.assign({}, s.pages[p], { [id]: nv }) }) }), say);
+        };
+        const up = () => {
+          this.setState({ dragSlot: null });
+          this.release();
+          window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+        };
+        window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+      },
+      onReset: () => this.setState(s => ({ pages: Object.assign({}, s.pages, { [p]: Object.assign({}, s.pages[p], { [id]: DEFAULTS[p][id] }) }) }))
     };
   }
 
@@ -343,22 +541,28 @@ class Component extends DCLogic {
     clearTimeout(this._pt);
     this._pt = setTimeout(() => this.setState({ pressed: null }), 110);
   }
+  setEngines(engI, engII) {
+    const p = engI && engII ? 'B' : engI ? 'I' : engII ? 'II' : null;
+    this.setState(s => ({ engI, engII, lastPage: p || s.lastPage }));
+  }
 
   renderVals() {
-    const s = this.state, on = s.engI || s.engII;
-    const lI = this.led(s.engI), lII = this.led(s.engII), lAny = this.led(on);
+    const s = this.state, live = this.live(), p = this.page(), pv = s.pages[p];
+    const lI = this.led(s.engI), lII = this.led(s.engII), lAny = this.led(live);
     const eng = s.engI && s.engII ? 'I + II' : s.engI ? 'I' : s.engII ? 'II' : 'BYPASS';
     const num = String(s.programId).padStart(2, '0');
     const userLoaded = s.bank === 'USER';
     const deleteEnabled = s.naming || userLoaded;
+    const showReadout = !!s.readout && !s.naming;
 
     return {
       programCaption: s.naming ? 'NAME PROGRAM' : 'PROGRAM',
       bankTag: s.naming ? 'USER' : s.bank,
-      tagFg: (s.naming || userLoaded) ? '#CFD7DC' : '#6F797F',
-      nameAlign: s.naming ? 'flex-start' : 'center',
-      programText: s.naming ? s.typed : num + ' ' + s.programName,
+      nameAlign: (s.naming || showReadout) ? 'flex-start' : 'center',
+      programText: s.naming ? s.typed : (showReadout ? s.readout : num + ' ' + s.programName),
+      lcdFg: showReadout ? '#FFD9A0' : '#DFE6EA',
       naming: s.naming,
+      showChevron: !s.naming && !showReadout,
 
       primaryLabel: s.naming ? 'STORE' : 'SAVE',
       onPrimary: () => this.state.naming ? this.store() : this.setState({ naming: true, typed: '' }),
@@ -375,38 +579,49 @@ class Component extends DCLogic {
 
       inDb: s.inDb.toFixed(1), outDb: s.outDb.toFixed(1),
 
-      toggleI: () => { this.press('I'); this.setState(st => ({ engI: !st.engI })); },
-      toggleII: () => { this.press('II'); this.setState(st => ({ engII: !st.engII })); },
-      pressOff: () => { this.press('OFF'); this.setState({ engI: false, engII: false }); },
+      toggleI: () => { this.press('I'); this.setEngines(!this.state.engI, this.state.engII); },
+      toggleII: () => { this.press('II'); this.setEngines(this.state.engI, !this.state.engII); },
+      pressOff: () => { this.press('OFF'); this.setEngines(false, false); },
       pressI: s.pressed === 'I' ? 3 : 0,
       pressII: s.pressed === 'II' ? 3 : 0,
       pressOffY: s.pressed === 'OFF' ? 3 : 0,
       ledIBg: lI.bg, ledIGlow: lI.glow, ledIIBg: lII.bg, ledIIGlow: lII.glow,
-      ledAnyBg: lAny.bg, ledAnyGlow: lAny.glow,
-      labelIFg: s.engI ? '#E6EBEE' : '#8A9196',
-      labelIIFg: s.engII ? '#E6EBEE' : '#8A9196',
-      modFg: on ? '#E6EBEE' : '#7B8287',
-      offFg: on ? '#7B8287' : '#E6EBEE',
+      labelIFg: s.engI ? '#E6EBEE' : '#A5ADB2',
+      labelIIFg: s.engII ? '#E6EBEE' : '#A5ADB2',
+      modFg: '#E6EBEE',          // baked into the plate — the OFF multiply dims it, no colour swap
+      offFg: live ? '#A5ADB2' : '#E6EBEE',
 
       scopeRef: this.scopeRef,
       divLabel: '250 ms / DIV',
-      spanLabel: 'DEPTH ' + Math.round((s.engI ? s.vals.depth1 : 0) + (s.engII ? s.vals.depth2 : 0)) + '%',
       engineLabel: 'ENGINE ' + eng,
 
-      engineGroups: [
-        { title: 'MOD ENGINE I',  ledBg: lI.bg,  ledGlow: lI.glow,  knobs: [this.knob('rate1'), this.knob('depth1')] },
-        { title: 'MOD ENGINE II', ledBg: lII.bg, ledGlow: lII.glow, knobs: [this.knob('rate2'), this.knob('depth2')] }
-      ],
+      modTitle: PAGE[p].title,
+      modTitleFg: '#A5ADB2',
+      modPageNote: live ? PAGE[p].note : 'BYPASS',
+      modLedBg: lAny.bg, modLedGlow: lAny.glow,
+      modKnobs: [this.slotKnob(0), this.slotKnob(1), this.slotKnob(2), this.slotKnob(3)],
+
+      swLabel: 'IMAGE' + PAGE[p].suffix,
+      swThumbY: pv.image === 'MONO' ? 34 : 0,
+      swCursor: live ? 'pointer' : 'default',
+      swToggle: () => {
+        if (!this.live()) return;
+        const pg = this.page();
+        const next = this.state.pages[pg].image === 'MONO' ? 'STEREO' : 'MONO';
+        this.setState(st => ({ pages: Object.assign({}, st.pages, { [pg]: Object.assign({}, st.pages[pg], { image: next }) }) }),
+          () => { this.say('IMAGE' + PAGE[pg].suffix + ': ' + next); this.release(); });
+      },
+
       lowerGroups: [
-        { title: 'BBD LINE',  flex: 2, knobs: [this.knob('center'), this.knob('decorr')] },
         { title: 'CHARACTER', flex: 3, knobs: [this.knob('drift'), this.knob('sat'), this.knob('noise')] },
         { title: 'OUTPUT',    flex: 2, knobs: [this.knob('mix'), this.knob('trim')] }
       ],
-      footRight: 'BBD 1024 STAGE · ' + (on ? 'ENGAGED' : 'BYPASS') + ' · v1.0'
+      liveOpacity: live ? 1 : 0.50,
+      lowerTitleFg: '#A5ADB2',   // baked
+      footRight: 'BBD 1024 STAGE · ' + (live ? 'ENGAGED' : 'BYPASS') + ' · v1.0'
     };
   }
 }
-
 </script>
 </body>
 </html>

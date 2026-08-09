@@ -17,21 +17,21 @@ Chorus60AudioProcessor::Chorus60AudioProcessor()
                                            const char* depthId,
                                            const char* centreId,
                                            const char* decorrId,
-                                           const char* monoId)
+                                           const char* imageId)
     {
         target.rate = apvts.getRawParameterValue(rateId);
         target.depth = apvts.getRawParameterValue(depthId);
         target.centre = apvts.getRawParameterValue(centreId);
         target.decorrelation = apvts.getRawParameterValue(decorrId);
-        target.mono = apvts.getRawParameterValue(monoId);
+        target.image = apvts.getRawParameterValue(imageId);
     };
 
     bindConfiguration(configI, ParamIDs::rate1, ParamIDs::depth1, ParamIDs::center1,
-                      ParamIDs::decorr1, ParamIDs::mono1);
+                      ParamIDs::decorr1, ParamIDs::image1);
     bindConfiguration(configII, ParamIDs::rate2, ParamIDs::depth2, ParamIDs::center2,
-                      ParamIDs::decorr2, ParamIDs::mono2);
+                      ParamIDs::decorr2, ParamIDs::image2);
     bindConfiguration(configBoth, ParamIDs::rateB, ParamIDs::depthB, ParamIDs::centerB,
-                      ParamIDs::decorrB, ParamIDs::monoB);
+                      ParamIDs::decorrB, ParamIDs::imageB);
 
     driftParam = apvts.getRawParameterValue(ParamIDs::drift);
     saturationParam = apvts.getRawParameterValue(ParamIDs::saturation);
@@ -106,7 +106,7 @@ Chorus60AudioProcessor::ActiveConfiguration Chorus60AudioProcessor::resolveActiv
     result.depthPercent = source.depth->load();
     result.centreMs = source.centre->load();
     result.decorrelationPercent = source.decorrelation->load();
-    result.mono = source.mono->load() > 0.5f;
+    result.mono = source.image->load() > 0.5f;
     return result;
 }
 

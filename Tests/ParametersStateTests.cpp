@@ -1,5 +1,6 @@
 #include "TestUtils.h"
 #include "../Source/Parameters.h"
+#include "../Source/DSP/FactoryPrograms.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 namespace
@@ -36,6 +37,61 @@ public:
 
     void runTest() override
     {
+        beginTest("Every factory Program value survives its parameter's mapping unchanged");
+        {
+            // The question the Rate widening raises: does any of the nine Programs load differently
+            // now? FactoryPrograms stores ABSOLUTE values (0.55f means 0.55 Hz), applied through
+            // AudioParameterFloat::operator=, which normalises against the parameter's own range.
+            // So a stored value is preserved exactly as long as it lies inside that range - and
+            // silently clamped if it does not.
+            //
+            // This asserts the round trip directly, per program and per field, rather than trusting
+            // that the ranges happen to be wide enough. Widening a range can never clamp something
+            // that already fitted; NARROWING one can, and this is what would catch it.
+            DummyProcessor processor;
+            juce::AudioProcessorValueTreeState apvts(processor, nullptr, "PARAMETERS",
+                                                      createChorus60ParameterLayout());
+
+            const auto roundTrips = [&] (const char* id, float value, const juce::String& where)
+            {
+                auto* p = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(id));
+                expect(p != nullptr, juce::String(id) + " must exist");
+                if (p == nullptr)
+                    return;
+
+                const auto& range = p->getNormalisableRange();
+                const float back = range.convertFrom0to1(range.convertTo0to1(value));
+                expectWithinAbsoluteError(back, value, 1.0e-3f,
+                                           where + " " + id + " does not survive its range");
+            };
+
+            const char* rateIDs[3]   = {ParamIDs::rate1, ParamIDs::rate2, ParamIDs::rateB};
+            const char* depthIDs[3]  = {ParamIDs::depth1, ParamIDs::depth2, ParamIDs::depthB};
+            const char* centreIDs[3] = {ParamIDs::center1, ParamIDs::center2, ParamIDs::centerB};
+            const char* decorrIDs[3] = {ParamIDs::decorr1, ParamIDs::decorr2, ParamIDs::decorrB};
+
+            for (const auto& program : kFactoryPrograms)
+            {
+                const FactoryConfiguration* configs[3] =
+                    {&program.configI, &program.configII, &program.configBoth};
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    const juce::String where(program.name);
+                    roundTrips(rateIDs[i],   configs[i]->rateHz, where);
+                    roundTrips(depthIDs[i],  configs[i]->depthPercent, where);
+                    roundTrips(centreIDs[i], configs[i]->delayCentreMs, where);
+                    roundTrips(decorrIDs[i], configs[i]->decorrelationPercent, where);
+                }
+
+                roundTrips(ParamIDs::drift,      program.driftPercent,      program.name);
+                roundTrips(ParamIDs::saturation, program.saturationPercent, program.name);
+                roundTrips(ParamIDs::noise,      program.noisePercent,      program.name);
+                roundTrips(ParamIDs::mix,        program.mixPercent,        program.name);
+                roundTrips(ParamIDs::trim,       program.trimDb,            program.name);
+            }
+        }
+
         beginTest("Defaults match Parameters.h's own values");
         {
             DummyProcessor proc;
@@ -58,14 +114,40 @@ public:
             // The defining asymmetry from design/BBD-TECHNICAL-NOTES-ADDENDUM.md: I and II are
             // stereo (the right channel's modulation inverted), I+II collapses to mono as the real
             // circuit does. If these ever come up equal, the correction has been undone.
-            expect(*apvts.getRawParameterValue(ParamIDs::mono1) < 0.5f, "I should default to STEREO");
-            expect(*apvts.getRawParameterValue(ParamIDs::mono2) < 0.5f, "II should default to STEREO");
-            expect(*apvts.getRawParameterValue(ParamIDs::monoB) > 0.5f, "I+II should default to MONO");
+            // The IMAGE switch: true = MONO. Section 11's defaults are STEREO / STEREO / MONO, the
+            // last one because the real circuit's I+II mode is a mono BBD pair.
+            expect(*apvts.getRawParameterValue(ParamIDs::image1) < 0.5f, "I should default to STEREO");
+            expect(*apvts.getRawParameterValue(ParamIDs::image2) < 0.5f, "II should default to STEREO");
+            expect(*apvts.getRawParameterValue(ParamIDs::imageB) > 0.5f, "I+II should default to MONO");
 
-            // rateB reaches beyond rate1/rate2 on purpose - the factory bank needs 9.75-14Hz there.
-            if (auto* rb = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(ParamIDs::rateB)))
-                expect(rb->getNormalisableRange().end > 8.0f,
-                       "rateB must reach past 8Hz or the I+II factory rates clamp");
+            // All three Rates share one range and one skew. This is not cosmetic tidying: the plate
+            // prints ONE 0.05-16 Hz scale, used by whichever page is showing, so a narrower range on
+            // I or II would put its pointer at the wrong printed numeral for every value.
+            //
+            // The skew is asserted too, because the printed marks were placed from it. Section 7.1's
+            // five anchors come out of ((v-0.05)/15.95)^0.35 to within 0.09 degrees of arc.
+            for (const auto* id : {ParamIDs::rate1, ParamIDs::rate2, ParamIDs::rateB})
+            {
+                auto* r = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(id));
+                expect(r != nullptr, juce::String(id) + " must exist");
+                if (r == nullptr)
+                    continue;
+
+                const auto range = r->getNormalisableRange();
+                expectWithinAbsoluteError(range.start, 0.05f, 1.0e-6f, juce::String(id) + " start");
+                expectWithinAbsoluteError(range.end, 16.0f, 1.0e-6f, juce::String(id) + " end");
+                expectWithinAbsoluteError(range.skew, 0.35f, 1.0e-6f, juce::String(id) + " skew");
+
+                // The printed marks, checked through the parameter's own mapping rather than a
+                // restatement of the curve. 0.5 Hz sits at 28.7% of sweep, 2 Hz at 47.9%, 8 Hz at
+                // 78.4% - section 7.1.
+                expectWithinAbsoluteError(range.convertTo0to1(0.5f), 0.287f, 0.002f,
+                                           juce::String(id) + " 0.5Hz mark");
+                expectWithinAbsoluteError(range.convertTo0to1(2.0f), 0.479f, 0.002f,
+                                           juce::String(id) + " 2Hz mark");
+                expectWithinAbsoluteError(range.convertTo0to1(8.0f), 0.784f, 0.002f,
+                                           juce::String(id) + " 8Hz mark");
+            }
         }
 
         beginTest("Full round trip through state XML preserves values, including skewed parameters");
