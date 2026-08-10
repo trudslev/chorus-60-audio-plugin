@@ -99,6 +99,16 @@ juce_add_plugin(Chorus60
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-1024.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-256.png"
     BUNDLE_ID "com.neonfoundry.chorus60"
+    # Without this the Standalone cannot get audio INPUT on macOS, and fails silently doing it.
+    # An app with no NSMicrophoneUsageDescription is never granted capture access - the OS does not
+    # prompt and does not error, the input stream simply delivers zeros. On an effect that reads as
+    # dead metering: IN sits at -INF and OUT follows, because there is nothing to process. The
+    # meters are wired correctly; they have nothing to show.
+    #
+    # Plugin formats are unaffected - the host owns the input there - so this only shows up when
+    # someone opens the Standalone to listen.
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "CHORUS-60 needs audio input so the Standalone can process what you play into it."
     PLUGIN_MANUFACTURER_CODE Nfdy
     PLUGIN_CODE Ch60
     FORMATS ${CHORUS60_FORMATS}
