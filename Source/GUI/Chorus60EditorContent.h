@@ -126,6 +126,11 @@ private:
     ModScope modScope;
     ProgramHeader programHeader;
 
+    /** Paints nothing and claims no clicks of its own; it exists so the Program list has a parent
+        area to be laid out in. Its bounds are what stop the list moving or overflowing the panel -
+        see the constructor, and ../../CLAUDE.md's "The Program dropdown". */
+    juce::Component menuHost;
+
     // Single shared popup for every knob's setTooltip() text - scoped to this component (rather than
     // nullptr/whole-desktop) so it only ever considers Chorus-60's own controls. Static descriptive
     // tooltips stay; the drag-time value popup is gone with the standing readouts, because the LCD

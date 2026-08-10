@@ -167,14 +167,51 @@ void ProgramHeader::showProgramMenu()
     // Anchored to, and at least as wide as, the whole program window. localAreaToGlobal keeps this
     // right on a scaled or moved editor.
     const auto glassOnScreen = localAreaToGlobal(programWindowRect.getSmallestIntegerContainer());
+    const auto window = programWindowRect.getSmallestIntegerContainer();
 
-    menu.showMenuAsync(juce::PopupMenu::Options()
-                           .withTargetComponent(this)
-                           .withTargetScreenArea(glassOnScreen)
-                           .withMinimumWidth(glassOnScreen.getWidth()),
+    auto options = juce::PopupMenu::Options()
+                       .withTargetComponent(this)
+                       .withTargetScreenArea(glassOnScreen)
+                       .withMaximumNumColumns(1);
+
+    if (menuParent != nullptr)
+    {
+        // The list is laid out INSIDE menuHost rather than as its own desktop window. JUCE fits a
+        // menu to its parent area, so an area running from the window's bottom edge to the panel's
+        // gives both guarantees at once: the top cannot move and the height cannot exceed the
+        // panel. A bank too long to fit scrolls. See ../../CLAUDE.md, "The Program dropdown".
+        //
+        // Anchor to a 1px strip on the window's bottom EDGE, not the window. With a parent, JUCE
+        // first does constrainedWithin(parentArea), which slides the whole 29px window down into
+        // the host before measuring and opens the list 29px too low. 1px and not zero: a
+        // zero-height rectangle is isEmpty(), which drops the list out of align-to-rectangle into
+        // the sideways placement meant for submenus.
+        const juce::Rectangle<int> anchor { window.getX(), menuAnchorY() - 1, window.getWidth(), 1 };
+
+        options = options.withTargetScreenArea(localAreaToGlobal(anchor))
+                         .withParentComponent(menuParent)
+                         .withMinimumWidth(window.getWidth());
+    }
+    else
+    {
+        options = options.withMinimumWidth(glassOnScreen.getWidth());
+    }
+
+    menuOpen = true;
+    repaint();
+
+    menu.showMenuAsync(options,
                        [safeThis = juce::Component::SafePointer<ProgramHeader>(this)](int result)
                        {
-                           if (safeThis == nullptr || result == 0)
+                           if (safeThis == nullptr)
+                               return;
+
+                           // Cleared here rather than on selection: JUCE runs this callback on a
+                           // dismissal too, so clicking away cannot leave the mark inverted.
+                           safeThis->menuOpen = false;
+                           safeThis->repaint();
+
+                           if (result == 0)
                                return;
 
                            // Goes through ProgramManager's async apply path - the timerCallback
@@ -417,10 +454,16 @@ void ProgramHeader::paint(juce::Graphics& g)
         const float left = right - Layout::lcdChevronW;
         const float top = nameCellRect.getCentreY() - Layout::lcdChevronH * 0.5f;
 
+        // It inverts while the list is open, mirrored about the mark's own centre line rather than
+        // rotated, so the apex stays on one vertical axis and it reads as flipping in place. Without
+        // it the mark still points down at a list that is already down.
+        const float outerY = menuOpen ? top + Layout::lcdChevronH : top;
+        const float apexY = menuOpen ? top : top + Layout::lcdChevronH;
+
         juce::Path chevron;
-        chevron.startNewSubPath(left, top);
-        chevron.lineTo((left + right) * 0.5f, top + Layout::lcdChevronH);
-        chevron.lineTo(right, top);
+        chevron.startNewSubPath(left, outerY);
+        chevron.lineTo((left + right) * 0.5f, apexY);
+        chevron.lineTo(right, outerY);
 
         g.setColour(Colour::ledWindowText.withAlpha(Layout::lcdChevronAlpha));
         g.strokePath(chevron, juce::PathStrokeType(Layout::lcdChevronStroke,

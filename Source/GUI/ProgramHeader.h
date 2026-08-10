@@ -2,6 +2,7 @@
 
 #include "../PluginProcessor.h"
 #include "Chorus60MenuLookAndFeel.h"
+#include "Chorus60Theme.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
 // The program section (CHORUS60-GUI-SPEC.md section 6): "Contract is identical to Gatecrasher
@@ -39,6 +40,30 @@ public:
         cancels. */
     void showParameter(const juce::RangedAudioParameter& param);
     void releaseParameter();
+
+    /** The component the Program list is laid out inside. Its bounds become the list's parent area,
+        which is what fixes the list's top edge and caps its height - layout, not plumbing. Passing
+        nullptr returns the list to being a free desktop window sized to its own content, which for
+        a long bank overhangs the panel. See ../../CLAUDE.md, "The Program dropdown". */
+    void setMenuParent(juce::Component* parent) noexcept { menuParent = parent; }
+
+    /** The row the list's top edge lands on: the program window's own bottom edge, so the two read
+        as one object rather than a bar with a list floating under it. */
+    static int menuAnchorY() noexcept
+    {
+        return (int) std::floor(Chorus60Theme::Layout::programWindowY
+                                + Chorus60Theme::Layout::programWindowH);
+    }
+
+    /** Where menuHost has to start, and it is NOT the anchor: JUCE clamps a menu to
+        `jmax(parentArea.getY() + 1, ...)`, so a host beginning exactly at the anchor can only open
+        one pixel below it, leaving a hairline of panel between the bar and its list.
+
+        The lead has a floor and a ceiling. Too small and the clamp bites again; too large and the
+        list can grow past the panel, because JUCE sizes it to `parentArea.getHeight() - 24` while
+        the room actually below the anchor is the window's own height less than that. */
+    static int menuHostTop() noexcept { return menuAnchorY() - 8; }
+
     void mouseDown(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
     void mouseMove(const juce::MouseEvent&) override;
@@ -58,6 +83,9 @@ private:
     bool isButtonEnabled(HeaderButton) const;
 
     Chorus60AudioProcessor& processorRef;
+
+    juce::Component* menuParent = nullptr;
+    bool menuOpen = false;
 
     // Mirrors whatever program was loaded before SAVE was pressed - CANCEL reverts the display to
     // this without ever touching APVTS (the user's tweaked-but-unsaved knob values must survive a

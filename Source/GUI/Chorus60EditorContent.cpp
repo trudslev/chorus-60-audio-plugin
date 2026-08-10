@@ -200,6 +200,18 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     programHeader.setBounds(getLocalBounds());
     addAndMakeVisible(programHeader);
 
+    // The Program list opens inside this, so it can neither move its top edge nor grow past the
+    // panel. It must be a SIBLING of programHeader, never a child: that component narrows its
+    // hitTest to the program window and the two buttons, and JUCE stops searching a component's
+    // children once its own hitTest rejects the point - so a list parented there would be dead
+    // everywhere except the cell it drops from.
+    const int hostTop = ProgramHeader::menuHostTop();
+    menuHost.setBounds(0, hostTop, getWidth(), getHeight() - hostTop);
+    menuHost.setInterceptsMouseClicks(false, true);
+    addAndMakeVisible(menuHost);
+    menuHost.toFront(false);
+    programHeader.setMenuParent(&menuHost);
+
     // Seed at the settled position so the first frame after opening the editor is correct rather
     // than sweeping up from zero.
     const auto initial = processorRef.resolveActiveConfiguration();
