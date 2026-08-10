@@ -118,24 +118,25 @@ juce::String ProgramManager::getProgramName(int index) const
 
 juce::File ProgramManager::getUserProgramDirectory()
 {
-   #if JUCE_WINDOWS || JUCE_LINUX
-    // Windows: %APPDATA%\<Manufacturer>\<Plugin>\Programs. Linux: ~/.config/<Manufacturer>/<Plugin>/Programs
-    // (JUCE's userApplicationDataDirectory resolves to the right per-OS location on each).
+    // **Application data on every platform - no macOS special case.** This used to branch, putting
+    // macOS Programs under ~/Library/Audio/Presets. That is Apple's location for the AU PRESET
+    // FORMAT: .aupreset files the AU system itself scans, reads and writes. Our user Programs are
+    // not those - they are application-owned data in our own XML format - so they belong where an
+    // application keeps its data, and the AU folder should hold only what AU understands.
+    //
+    // Discoverability was the old justification, and it does not survive scrutiny: a host scanning
+    // that folder is looking for .aupreset, and would not have loaded a .chorus60program from it.
+    //
+    // The "Application Support" segment is JUCE's and must never be hard-coded:
+    // userApplicationDataDirectory resolves to ~/Library/Application Support on macOS, %APPDATA% on
+    // Windows and ~/.config on Linux. A shared literal would be wrong on two of the three.
+    //
+    // No migration from the old location - nothing has shipped, so nothing is there to migrate.
+    // See Elmer's ProgramManager for why that is a decision rather than an oversight.
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile(pluginCompanyName)
         .getChildFile(pluginProductName)
         .getChildFile("Programs");
-   #else
-    // "Presets" here is Apple/AU's own special-location folder name that Logic and other hosts
-    // scan (~/Library/Audio/Presets/<Manufacturer>/<Plugin>/) - not a lapse into "Preset"
-    // terminology, just the OS convention this path has to match to be discoverable.
-    return juce::File::getSpecialLocation(juce::File::userHomeDirectory)
-        .getChildFile("Library")
-        .getChildFile("Audio")
-        .getChildFile("Presets")
-        .getChildFile(pluginCompanyName)
-        .getChildFile(pluginProductName);
-   #endif
 }
 
 void ProgramManager::refreshUserProgramList()
