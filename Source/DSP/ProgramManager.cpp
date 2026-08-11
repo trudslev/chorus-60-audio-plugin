@@ -25,6 +25,10 @@ namespace
 ProgramManager::ProgramManager(juce::AudioProcessorValueTreeState& stateToControl)
     : apvts(stateToControl)
 {
+    // The identity must be valid before initialise() runs, exactly as the atomic index it replaced
+    // was valid from its in-class initialiser: a host may query the moment the processor exists.
+    setCurrentId(factoryIdAt(defaultFactoryProgramIndex));
+
 }
 
 ProgramManager::~ProgramManager()
@@ -36,7 +40,7 @@ void ProgramManager::initialise()
 {
     refreshUserProgramList();
     applyFactoryProgram(kFactoryPrograms[(size_t) defaultFactoryProgramIndex]);
-    currentProgramIndex.store(defaultFactoryProgramIndex, std::memory_order_relaxed);
+    setCurrentId(factoryIdAt(defaultFactoryProgramIndex));
     captureCleanSnapshot();
 }
 
@@ -85,50 +89,141 @@ bool ProgramManager::isModifiedFromLoadedProgram() const
     return false;
 }
 
-int ProgramManager::getNumPrograms() const noexcept
+//==============================================================================
+// Identity. Nothing below addresses a Program by position except the deliberate crossings.
+
+ProgramId ProgramManager::factoryIdAt(int factoryPosition)
 {
-    return kNumFactoryPrograms + userProgramFiles.size();
+    const auto& p = kFactoryPrograms[(size_t) factoryPosition];
+    return { ProgramBank::factory, p.slug, p.name };
 }
 
-void ProgramManager::requestProgramChange(int index)
+ProgramId ProgramManager::initId()
 {
-    // INIT is a legal target and is NOT in [0, getNumPrograms()), so it is admitted explicitly
-    // rather than by widening the range check - which would also admit every other negative index.
-    if (! isInitProgram(index) && (index < 0 || index >= getNumPrograms()))
-        return;
-    pendingProgramIndex.store(index, std::memory_order_relaxed);
+    return { ProgramBank::init, kInitProgram.slug, kInitProgram.name };
+}
+
+int ProgramManager::factoryPositionOf(const juce::String& slug)
+{
+    for (size_t i = 0; i < kFactoryPrograms.size(); ++i)
+        if (slug == kFactoryPrograms[i].slug)
+            return (int) i;
+
+    return -1;
+}
+
+ProgramId ProgramManager::getCurrentProgramId() const
+{
+    const juce::SpinLock::ScopedLockType lock(currentIdLock);
+    return currentId;
+}
+
+void ProgramManager::setCurrentId(const ProgramId& id)
+{
+    const juce::SpinLock::ScopedLockType lock(currentIdLock);
+    currentId = id;
+}
+
+int ProgramManager::getCurrentFactoryPosition() const
+{
+    const auto id = getCurrentProgramId();
+
+    if (id.bank == ProgramBank::factory)
+        if (const int pos = factoryPositionOf(id.id); pos >= 0)
+            return pos;
+
+    return 0;
+}
+
+ProgramId ProgramManager::resolve(ProgramBank bank, const juce::String& id,
+                                   const juce::String& displayName) const
+{
+    if (bank == ProgramBank::init && id == kInitProgram.slug)
+        return initId();
+
+    if (bank == ProgramBank::factory)
+        if (const int pos = factoryPositionOf(id); pos >= 0)
+            return factoryIdAt(pos);
+
+    if (bank == ProgramBank::user)
+        for (const auto& f : userProgramFiles)
+            if (f.getFileNameWithoutExtension() == id)
+                return { ProgramBank::user, id, id };
+
+    // **Degrade honestly.** The restored values are correct and stay put; only the name is unknown.
+    return { ProgramBank::unresolved, id, displayName.isNotEmpty() ? displayName : id };
+}
+
+std::vector<ProgramId> ProgramManager::listPrograms() const
+{
+    std::vector<ProgramId> out;
+    out.reserve(1 + kFactoryPrograms.size() + (size_t) userProgramFiles.size());
+
+    out.push_back(initId());
+
+    for (size_t i = 0; i < kFactoryPrograms.size(); ++i)
+        out.push_back(factoryIdAt((int) i));
+
+    for (const auto& f : userProgramFiles)
+    {
+        const auto stem = f.getFileNameWithoutExtension();
+        out.push_back({ ProgramBank::user, stem, stem });
+    }
+
+    return out;
+}
+
+juce::String ProgramManager::displayLabelFor(const ProgramId& id) const
+{
+    if (id.bank == ProgramBank::factory)
+        if (const int pos = factoryPositionOf(id.id); pos >= 0)
+            return juce::String(pos + 1).paddedLeft('0', 2) + " " + id.displayName;
+
+    return id.displayName;
+}
+
+juce::File ProgramManager::userProgramFile(const juce::String& stem) const
+{
+    for (const auto& f : userProgramFiles)
+        if (f.getFileNameWithoutExtension() == stem)
+            return f;
+
+    return {};
+}
+
+void ProgramManager::requestProgramChange(const ProgramId& id)
+{
+    {
+        const juce::SpinLock::ScopedLockType lock(pendingLock);
+        pendingProgram = id;
+        hasPendingProgram = true;
+    }
+
     triggerAsyncUpdate();
 }
 
 void ProgramManager::handleAsyncUpdate()
 {
-    const int index = pendingProgramIndex.exchange(noPendingProgram, std::memory_order_relaxed);
-    if (index != noPendingProgram)
-        applyProgramByIndex(index);
+    ProgramId id;
+
+    {
+        const juce::SpinLock::ScopedLockType lock(pendingLock);
+
+        if (! hasPendingProgram)
+            return;
+
+        id = pendingProgram;
+        hasPendingProgram = false;
+    }
+
+    applyProgram(id);
 }
 
-juce::String ProgramManager::getProgramName(int index) const
+juce::String ProgramManager::getProgramName(int factoryPosition) const
 {
-    if (isInitProgram(index))
-        return kInitProgram.name;
-
-    if (isFactoryProgram(index))
-        return kFactoryPrograms[(size_t) index].name;
-
-    const int userIndex = index - kNumFactoryPrograms;
-    if (userIndex >= 0 && userIndex < userProgramFiles.size())
-        return userProgramFiles.getReference(userIndex).getFileNameWithoutExtension();
-    return {};
-}
-
-juce::String ProgramManager::getProgramDisplayName(int index) const
-{
-    const auto name = getProgramName(index);
-
-    if (isInitProgram(index) || name.isEmpty())
-        return name;
-
-    return juce::String(index + 1).paddedLeft('0', 2) + " " + name;
+    return juce::isPositiveAndBelow(factoryPosition, kNumFactoryPrograms)
+               ? juce::String(kFactoryPrograms[(size_t) factoryPosition].name)
+               : juce::String();
 }
 
 juce::File ProgramManager::getUserProgramDirectory()
@@ -171,30 +266,78 @@ juce::File ProgramManager::getUserProgramDirectory()
 void ProgramManager::refreshUserProgramList()
 {
     userProgramFiles.clear();
+    unloadableReports.clear();
+
     const auto dir = getUserProgramDirectory();
     if (! dir.isDirectory())
         return;
 
     for (const auto& entry : juce::RangedDirectoryIterator(dir, false, "*.chorus60program"))
-        userProgramFiles.add(entry.getFile());
+    {
+        const auto file = entry.getFile();
 
+        // **A file this build cannot read is REPORTED, not silently skipped.** Chorus-60 is the one
+        // casting with a genuinely unreadable old schema - v1 predates the paged-engine rework, so
+        // its normalised values mean something else - and dropping those files quietly would make
+        // Programs disappear from the dropdown with nothing to diagnose from. That is
+        // indistinguishable from data loss, which is the one outcome this suite's notes are most
+        // emphatic about.
+        std::unique_ptr<juce::XmlElement> probe(juce::XmlDocument::parse(file));
+
+        if (probe != nullptr)
+        {
+            const int schema = probe->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1);
+
+            switch (LegacyMigration::classifySchema(schema))
+            {
+                case LegacyMigration::SchemaVerdict::tooOld:
+                    unloadableReports.add(file.getFileName() + " - saved by an older version (schema "
+                                          + juce::String(schema) + "); its values cannot be read");
+                    continue;
+
+                case LegacyMigration::SchemaVerdict::tooNew:
+                    unloadableReports.add(file.getFileName() + " - saved by a NEWER version (schema "
+                                          + juce::String(schema) + "); update CHORUS-60 to load it");
+                    continue;
+
+                case LegacyMigration::SchemaVerdict::readable:
+                    break;
+            }
+        }
+
+        userProgramFiles.add(file);
+    }
+
+    // **The displayed name, case-insensitively.** The STEM, not getFileName() - comparing with the
+    // extension attached sorts "AB C" before "AB", because a space (0x20) precedes the dot (0x2E).
+    // And compareIgnoreCase, not operator<, which is a codepoint compare that put every lowercase
+    // name after every uppercase one.
     std::sort(userProgramFiles.begin(), userProgramFiles.end(),
-               [] (const juce::File& a, const juce::File& b) { return a.getFileName() < b.getFileName(); });
+               [] (const juce::File& a, const juce::File& b)
+               {
+                   return a.getFileNameWithoutExtension()
+                           .compareIgnoreCase(b.getFileNameWithoutExtension()) < 0;
+               });
 }
 
-void ProgramManager::applyProgramByIndex(int index)
+void ProgramManager::applyProgram(const ProgramId& id)
 {
-    if (isInitProgram(index))
+    if (id.bank == ProgramBank::init)
     {
         applyFactoryProgram(kInitProgram);
     }
-    else if (isFactoryProgram(index))
+    else if (id.bank == ProgramBank::factory)
     {
-        applyFactoryProgram(kFactoryPrograms[(size_t) index]);
+        const int pos = factoryPositionOf(id.id);
+
+        if (pos < 0)
+            return;
+
+        applyFactoryProgram(kFactoryPrograms[(size_t) pos]);
     }
-    else
+    else if (id.bank == ProgramBank::user)
     {
-        const int userIndex = index - kNumFactoryPrograms;
+        const int userIndex = userProgramFiles.indexOf(userProgramFile(id.id));
         if (userIndex < 0 || userIndex >= userProgramFiles.size())
             return;
 
@@ -202,19 +345,31 @@ void ProgramManager::applyProgramByIndex(int index)
         if (xml == nullptr || ! xml->hasTagName(apvts.state.getType()))
             return;
 
-        // Same schema gate as the session-restore path in PluginProcessor::setStateInformation.
-        // This path used not to check, which meant a file written under an older schema still
-        // parsed and still replaced the state - it just silently left every parameter the schema
-        // bump had renamed sitting at its default. A stale Program that refuses to load is a
-        // visible problem; one that loads two-thirds of itself is not.
-        if (xml->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1)
-                != LegacyMigration::currentStateSchemaVersion)
+        // Same classification as the session-restore path. It used to read `!= current`, which
+        // discarded a Program on every schema bump even when nothing about its parameters had
+        // changed; the scan above has already filtered the genuinely unreadable ones and reported
+        // them, so anything reaching here is readable and this is a belt-and-braces check.
+        if (LegacyMigration::classifySchema(
+                xml->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1))
+                != LegacyMigration::SchemaVerdict::readable)
             return;
 
         apvts.replaceState(juce::ValueTree::fromXml(*xml));
     }
 
-    currentProgramIndex.store(index, std::memory_order_relaxed);
+    else
+    {
+        // Unresolved: the values are whatever the session restored and stay exactly as they are.
+        setCurrentId(id);
+        captureCleanSnapshot();
+
+        if (onProgramListChanged)
+            onProgramListChanged();
+
+        return;
+    }
+
+    setCurrentId(id);
     captureCleanSnapshot();
     if (onProgramListChanged)
         onProgramListChanged();
@@ -285,12 +440,18 @@ void ProgramManager::saveNewUserProgram(const juce::String& requestedName)
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     xml->setAttribute(LegacyMigration::stateSchemaVersionAttribute, LegacyMigration::currentStateSchemaVersion);
 
-    const juce::File file = dir.getChildFile(juce::File::createLegalFileName(name) + ".chorus60program");
+    juce::File file = dir.getChildFile(juce::File::createLegalFileName(name) + ".chorus60program");
+
+    // **SAVE never overwrites**, which BRAND.md states as a guarantee and this used to break. It
+    // matters more now that the filename IS the identity - two Programs cannot share one.
+    if (file.existsAsFile())
+        file = file.getNonexistentSibling();
+
     xml->writeTo(file);
 
     refreshUserProgramList();
-    const int newIndex = kNumFactoryPrograms + userProgramFiles.indexOf(file);
-    currentProgramIndex.store(newIndex, std::memory_order_relaxed);
+    const auto stem = file.getFileNameWithoutExtension();
+    setCurrentId({ ProgramBank::user, stem, stem });
     // The just-saved program IS the current parameter state, so this becomes the new clean baseline
     // and SAVE goes back to disabled immediately after storing, until something moves again.
     captureCleanSnapshot();
@@ -298,28 +459,31 @@ void ProgramManager::saveNewUserProgram(const juce::String& requestedName)
         onProgramListChanged();
 }
 
-void ProgramManager::deleteUserProgram(int index)
+void ProgramManager::deleteUserProgram(const ProgramId& id)
 {
-    if (isFactoryProgram(index))
+    if (id.bank != ProgramBank::user)
         return;
 
-    const int userIndex = index - kNumFactoryPrograms;
-    if (userIndex < 0 || userIndex >= userProgramFiles.size())
+    const auto target = userProgramFile(id.id);
+
+    if (target == juce::File())
         return;
 
-    const bool wasCurrent = currentProgramIndex.load(std::memory_order_relaxed) == index;
+    const int userIndex = userProgramFiles.indexOf(target);
+    const bool wasCurrent = getCurrentProgramId() == id;
     userProgramFiles.getReference(userIndex).deleteFile();
     refreshUserProgramList();
 
+    // Deliberately NOT the unresolved state: deleting from the panel is unambiguous intent.
     if (wasCurrent)
-        requestProgramChange(defaultFactoryProgramIndex);
+        requestProgramChange(factoryIdAt(defaultFactoryProgramIndex));
     else if (onProgramListChanged)
         onProgramListChanged();
 }
 
-void ProgramManager::setCurrentProgramIndexWithoutApplying(int index) noexcept
+void ProgramManager::setCurrentProgramWithoutApplying(const ProgramId& id)
 {
-    currentProgramIndex.store(index, std::memory_order_relaxed);
+    setCurrentId(id);
 
     // Treats the restored session as its own clean baseline rather than diffing it against the
     // remembered program's stored values - those aren't loaded here by design (the caller restores
@@ -332,6 +496,10 @@ void ProgramManager::setCurrentProgramIndexWithoutApplying(int index) noexcept
 
 void ProgramManager::cancelPendingChange() noexcept
 {
-    pendingProgramIndex.store(noPendingProgram, std::memory_order_relaxed);
+    {
+        const juce::SpinLock::ScopedLockType lock(pendingLock);
+        hasPendingProgram = false;
+    }
+
     cancelPendingUpdate();
 }

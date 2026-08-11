@@ -293,7 +293,7 @@ namespace Chorus60Theme
         // window without re-checking those two.
         constexpr float lcdCssPx = 15.0f, lcdTrackingEm = 0.10f;
         constexpr int lcdCharacterBudget = 36;
-        constexpr int maxProgramNameLength = 24; // mirrors ProgramManager::maxProgramNameLength
+        constexpr int maxProgramNameLength = 31; // mirrors ProgramManager::maxProgramNameLength
 
         // Held after the gesture ends before the program name returns (section 5).
         constexpr int lcdReadoutHoldMs = 900;

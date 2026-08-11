@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DSP/FactoryPrograms.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 // Parameter layout for CHORUS-60.
@@ -78,7 +80,67 @@ namespace LegacyMigration
     // migration - but the version is recorded so a genuine migration can be written later if one is
     // ever needed.
     constexpr auto stateSchemaVersionAttribute = "chorus60StateSchemaVersion";
-    constexpr int currentStateSchemaVersion = 3;
+    constexpr int currentStateSchemaVersion = 4;
+
+    /** The schema at which the session stopped storing a positional index and started storing bank
+        + identifier. */
+    constexpr int identitySchemaVersion = 4;
+
+    /** **The oldest schema whose values can still be interpreted, pinned to a literal.**
+
+        v1 predates the paged-engine rework: delayCenter and decorrelation were single globals and
+        rate1/rate2 spanned 0.2-2 Hz rather than 0.05-8 Hz, so a stored NORMALISED value means
+        something different there. There is nothing to salvage, and loading it would produce
+        plausible wrong values rather than an obvious fallback.
+
+        v2 and v3 are readable: v3 added identity attributes, which is purely additive.
+
+        **This is a literal on purpose.** The gate used to read `savedSchema != current`, which was
+        correct exactly once - every schema bump then discarded the previous version's sessions
+        wholesale, including ones whose parameters had not changed meaning at all. Gatecrasher had
+        the same shape in its algorithm remap and it silently rotated the choice on every load. */
+    constexpr int oldestReadableSchemaVersion = 2;
+
+    /** **The identity attributes, and they are a contract.** Rename one and the session still
+        parses while the Program silently reverts, with no error anywhere. `...ProgramName` is
+        DISPLAY ONLY - it names an unresolved identifier on the panel and resolves nothing. */
+    constexpr auto programBankAttribute = "chorus60ProgramBank";
+    constexpr auto programIdAttribute   = "chorus60ProgramId";
+    constexpr auto programNameAttribute = "chorus60ProgramName";
+
+    inline juce::String bankAttributeValue (ProgramBank bank)
+    {
+        switch (bank)
+        {
+            case ProgramBank::init:       return "init";
+            case ProgramBank::factory:    return "factory";
+            case ProgramBank::user:       return "user";
+            case ProgramBank::unresolved: return "unresolved";
+        }
+
+        return "factory";
+    }
+
+    inline ProgramBank bankFromAttribute (const juce::String& value)
+    {
+        if (value == "init")       return ProgramBank::init;
+        if (value == "user")       return ProgramBank::user;
+        if (value == "unresolved") return ProgramBank::unresolved;
+
+        return ProgramBank::factory;
+    }
+
+    /** How a stored schema relates to what this build understands. Three outcomes, deliberately
+        distinct: too old to interpret, too new to know about, or usable. */
+    enum class SchemaVerdict { tooOld, tooNew, readable };
+
+    inline SchemaVerdict classifySchema (int savedSchema) noexcept
+    {
+        if (savedSchema < oldestReadableSchemaVersion) return SchemaVerdict::tooOld;
+        if (savedSchema > currentStateSchemaVersion)   return SchemaVerdict::tooNew;
+
+        return SchemaVerdict::readable;
+    }
 }
 
 namespace Chorus60Ranges

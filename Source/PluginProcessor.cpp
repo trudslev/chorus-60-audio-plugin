@@ -215,12 +215,30 @@ juce::AudioProcessorEditor* Chorus60AudioProcessor::createEditor()
     return new Chorus60AudioProcessorEditor(*this);
 }
 
+void Chorus60AudioProcessor::setCurrentProgram(int index)
+{
+    if (! juce::isPositiveAndBelow(index, programManager.getNumPrograms()))
+        return;
+
+    // The stale-replay guard, disarmed by this call whether or not it is honoured. A replay carries
+    // the position we last reported, so a matching index right after a restore is ignored.
+    if (justRestoredState.exchange(false, std::memory_order_relaxed) && index == getCurrentProgram())
+        return;
+
+    programManager.requestProgramChange(ProgramManager::factoryIdAt(index));
+}
+
 void Chorus60AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     xml->setAttribute(LegacyMigration::stateSchemaVersionAttribute, LegacyMigration::currentStateSchemaVersion);
-    xml->setAttribute("chorus60CurrentProgramIndex", programManager.getCurrentProgram());
+    // **The bank, the identifier, and the full parameter state.** The values make the session sound
+    // right; the identity only decides what the panel CALLS them.
+    const auto id = programManager.getCurrentProgramId();
+    xml->setAttribute(LegacyMigration::programBankAttribute, LegacyMigration::bankAttributeValue(id.bank));
+    xml->setAttribute(LegacyMigration::programIdAttribute, id.id);
+    xml->setAttribute(LegacyMigration::programNameAttribute, id.displayName);
     copyXmlToBinary(*xml, destData);
 }
 
@@ -239,29 +257,57 @@ void Chorus60AudioProcessor::setStateInformation(const void* data, int sizeInByt
             // globals and rate1/rate2 spanned 0.2-2Hz rather than 0.05-8Hz. A stored *normalised*
             // value therefore means something different in each, so there is nothing to salvage
             // by reading it - the honest move is to discard it and load the default program.
+            // **Two branches, both pinned to literals, because they are different situations.**
+            // Too old: v1's normalised values mean something else entirely, so there is nothing to
+            // salvage. Too new: written by a later build, and reading it with today's assumptions
+            // would produce plausible wrong values rather than an obvious fallback - refusing is the
+            // honest answer, and the user needs a newer CHORUS-60 rather than a repair.
+            //
+            // This replaced `savedSchema != currentStateSchemaVersion`, which was correct exactly
+            // once: every bump then discarded the previous version's sessions wholesale, including
+            // ones whose parameters had not changed meaning at all.
             const int savedSchema = xml->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1);
-            if (savedSchema != LegacyMigration::currentStateSchemaVersion)
+
+            if (LegacyMigration::classifySchema(savedSchema) != LegacyMigration::SchemaVerdict::readable)
             {
                 programManager.cancelPendingChange();
-                programManager.requestProgramChange(defaultFactoryProgramIndex);
+                programManager.requestProgramChange(
+                    ProgramManager::factoryIdAt(defaultFactoryProgramIndex));
                 return;
             }
 
             programManager.cancelPendingChange();
             apvts.replaceState(juce::ValueTree::fromXml(*xml));
 
-            const int savedProgramIndex =
-                xml->getIntAttribute("chorus60CurrentProgramIndex", defaultFactoryProgramIndex);
+            ProgramId restored;
 
-            // INIT is a valid remembered Program and is NOT isPositiveAndBelow, so it is admitted
-            // explicitly rather than by widening the check. **No migration is needed**: INIT was
-            // ADDED at -1 rather than inserted at 0, so not one existing Factory index moved and
-            // every session saved before today still names the sound it was saved with.
-            const bool valid = ProgramManager::isInitProgram(savedProgramIndex)
-                               || juce::isPositiveAndBelow(savedProgramIndex, programManager.getNumPrograms());
+            if (savedSchema >= LegacyMigration::identitySchemaVersion)
+            {
+                restored = programManager.resolve(
+                    LegacyMigration::bankFromAttribute(
+                        xml->getStringAttribute(LegacyMigration::programBankAttribute)),
+                    xml->getStringAttribute(LegacyMigration::programIdAttribute),
+                    xml->getStringAttribute(LegacyMigration::programNameAttribute));
+            }
+            else
+            {
+                // Older readable sessions stored a position. Map it through the CURRENT bank -
+                // correct because nothing has shipped and the bank has not moved.
+                const int savedIndex =
+                    xml->getIntAttribute("chorus60CurrentProgramIndex", defaultFactoryProgramIndex);
 
-            programManager.setCurrentProgramIndexWithoutApplying(
-                valid ? savedProgramIndex : defaultFactoryProgramIndex);
+                if (savedIndex == -1)
+                    restored = ProgramManager::initId();
+                else if (juce::isPositiveAndBelow(savedIndex, kNumFactoryPrograms))
+                    restored = ProgramManager::factoryIdAt(savedIndex);
+                else
+                    restored = ProgramManager::factoryIdAt(defaultFactoryProgramIndex);
+            }
+
+            programManager.setCurrentProgramWithoutApplying(restored);
+
+            // **Armed AFTER replaceState**, or the restore's own writes would disarm it.
+            justRestoredState.store(true, std::memory_order_relaxed);
         }
 }
 

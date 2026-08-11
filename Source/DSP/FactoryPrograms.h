@@ -1,5 +1,7 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+
 #include <array>
 
 // Flat POD table of the factory programs, one field per APVTS parameter. Plain bool/float fields
@@ -40,8 +42,38 @@ struct FactoryConfiguration
     bool  imageMono;
 };
 
+/** Which list a Program belongs to. INIT is its own bank rather than a magic index; `unresolved`
+    is a stored identifier that no longer names anything. */
+enum class ProgramBank
+{
+    init,
+    factory,
+    user,
+    unresolved
+};
+
+/** **How a Program is identified everywhere except the host adapter.** Not a position - positions
+    change when the bank is reordered or extended, so a stored position is a name that stops meaning
+    the same thing.
+
+    `displayName` is carried because a factory slug is not presentable: "eighty-two?" in the LCD
+    would read as a rendering fault. It is display only and never resolves anything. */
+struct ProgramId
+{
+    ProgramBank bank = ProgramBank::factory;
+    juce::String id;
+    juce::String displayName;
+
+    bool operator== (const ProgramId& o) const noexcept { return bank == o.bank && id == o.id; }
+    bool operator!= (const ProgramId& o) const noexcept { return ! operator== (o); }
+};
+
 struct FactoryProgram
 {
+    /** **The permanent identity, fixed at creation and never changed again.** `name` is a label the
+        designers may revise; `slug` may not be, because it is what a saved session stores. */
+    const char* slug;
+
     const char* name;
 
     // Which engines are latched on when the program loads. All three configurations below are
@@ -67,15 +99,15 @@ struct FactoryProgram
 // for Chorus 2) rather than round numbers. That is deliberate, not a typo.
 inline constexpr std::array<FactoryProgram, 9> kFactoryPrograms{ {
     //                     eng1   eng2   configuration I                            configuration II                           configuration I+II                          drift  sat    noise  mix    trim
-    { "EIGHTY-TWO",        true,  false, { 0.55f,  25.0f,  8.0f,  70.0f, false }, { 1.0f,   55.0f,  8.0f,  70.0f, false }, {  9.75f,  50.0f, 3.5f,  70.0f, true }, 40.0f, 15.0f, 20.0f, 50.0f, 0.0f },
-    { "DETUNED TWELVE",    true,  true,  { 0.513f, 70.0f,  8.0f, 100.0f, false }, { 0.863f, 85.0f,  8.0f, 100.0f, false }, { 11.0f,   80.0f, 3.5f, 100.0f, true }, 40.0f, 15.0f, 20.0f, 60.0f, 0.0f },
-    { "STRING MACHINE",    true,  true,  { 0.35f,  20.0f, 12.0f,  60.0f, false }, { 0.5f,   35.0f, 12.0f,  60.0f, false }, {  9.75f,  50.0f, 3.5f,  60.0f, true }, 30.0f, 20.0f, 25.0f, 55.0f, 0.0f },
-    { "CLEAN SWEEP",       true,  false, { 0.4f,   12.0f,  7.0f,  50.0f, false }, { 1.0f,   55.0f,  7.0f,  50.0f, false }, {  9.75f,  50.0f, 3.5f,  50.0f, true }, 25.0f, 10.0f, 15.0f, 35.0f, 0.0f },
-    { "NEW WAVE SIX",      false, true,  { 0.55f,  25.0f,  8.0f,  75.0f, false }, { 1.6f,   60.0f,  8.0f,  75.0f, false }, {  9.75f,  50.0f, 3.5f,  75.0f, true }, 45.0f, 40.0f, 25.0f, 55.0f, 0.0f },
-    { "DOUBLING BOOTH",    true,  false, { 0.5f,   15.0f,  6.0f,  10.0f, false }, { 1.0f,   55.0f,  6.0f,  10.0f, false }, {  9.75f,  50.0f, 3.5f,  10.0f, true }, 20.0f, 10.0f, 15.0f, 30.0f, 0.0f },
-    { "WHISPER WIDE",      true,  false, { 0.45f,  18.0f,  8.0f,  55.0f, false }, { 1.0f,   55.0f,  8.0f,  55.0f, false }, {  9.75f,  50.0f, 3.5f,  55.0f, true }, 10.0f,  5.0f, 10.0f, 40.0f, 0.0f },
-    { "HALFWAY CHORUS",    true,  false, { 0.775f, 40.0f,  8.0f,  70.0f, false }, { 1.0f,   55.0f,  8.0f,  70.0f, false }, {  9.75f,  50.0f, 3.5f,  70.0f, true }, 40.0f, 15.0f, 20.0f, 50.0f, 0.0f },
-    { "RUNAWAY",           true,  true,  { 0.513f, 90.0f, 10.0f, 100.0f, false }, { 0.863f, 90.0f, 10.0f, 100.0f, false }, { 14.0f,  100.0f, 3.5f, 100.0f, true }, 95.0f, 85.0f, 70.0f, 65.0f, 0.0f },
+    { "eighty-two", "EIGHTY-TWO",        true,  false, { 0.55f,  25.0f,  8.0f,  70.0f, false }, { 1.0f,   55.0f,  8.0f,  70.0f, false }, {  9.75f,  50.0f, 3.5f,  70.0f, true }, 40.0f, 15.0f, 20.0f, 50.0f, 0.0f },
+    { "detuned-twelve", "DETUNED TWELVE",    true,  true,  { 0.513f, 70.0f,  8.0f, 100.0f, false }, { 0.863f, 85.0f,  8.0f, 100.0f, false }, { 11.0f,   80.0f, 3.5f, 100.0f, true }, 40.0f, 15.0f, 20.0f, 60.0f, 0.0f },
+    { "string-machine", "STRING MACHINE",    true,  true,  { 0.35f,  20.0f, 12.0f,  60.0f, false }, { 0.5f,   35.0f, 12.0f,  60.0f, false }, {  9.75f,  50.0f, 3.5f,  60.0f, true }, 30.0f, 20.0f, 25.0f, 55.0f, 0.0f },
+    { "clean-sweep", "CLEAN SWEEP",       true,  false, { 0.4f,   12.0f,  7.0f,  50.0f, false }, { 1.0f,   55.0f,  7.0f,  50.0f, false }, {  9.75f,  50.0f, 3.5f,  50.0f, true }, 25.0f, 10.0f, 15.0f, 35.0f, 0.0f },
+    { "new-wave-six", "NEW WAVE SIX",      false, true,  { 0.55f,  25.0f,  8.0f,  75.0f, false }, { 1.6f,   60.0f,  8.0f,  75.0f, false }, {  9.75f,  50.0f, 3.5f,  75.0f, true }, 45.0f, 40.0f, 25.0f, 55.0f, 0.0f },
+    { "doubling-booth", "DOUBLING BOOTH",    true,  false, { 0.5f,   15.0f,  6.0f,  10.0f, false }, { 1.0f,   55.0f,  6.0f,  10.0f, false }, {  9.75f,  50.0f, 3.5f,  10.0f, true }, 20.0f, 10.0f, 15.0f, 30.0f, 0.0f },
+    { "whisper-wide", "WHISPER WIDE",      true,  false, { 0.45f,  18.0f,  8.0f,  55.0f, false }, { 1.0f,   55.0f,  8.0f,  55.0f, false }, {  9.75f,  50.0f, 3.5f,  55.0f, true }, 10.0f,  5.0f, 10.0f, 40.0f, 0.0f },
+    { "halfway-chorus", "HALFWAY CHORUS",    true,  false, { 0.775f, 40.0f,  8.0f,  70.0f, false }, { 1.0f,   55.0f,  8.0f,  70.0f, false }, {  9.75f,  50.0f, 3.5f,  70.0f, true }, 40.0f, 15.0f, 20.0f, 50.0f, 0.0f },
+    { "runaway", "RUNAWAY",           true,  true,  { 0.513f, 90.0f, 10.0f, 100.0f, false }, { 0.863f, 90.0f, 10.0f, 100.0f, false }, { 14.0f,  100.0f, 3.5f, 100.0f, true }, 95.0f, 85.0f, 70.0f, 65.0f, 0.0f },
 } };
 
 inline constexpr int kNumFactoryPrograms = (int) kFactoryPrograms.size();
@@ -114,7 +146,7 @@ inline constexpr int initProgramIndex = -1;
     TapeRot and Elmer, sit at 100 % for the opposite reason. */
 inline constexpr FactoryProgram kInitProgram
     //                     eng1   eng2   configuration I                        configuration II                       configuration I+II                     drift  sat    noise  mix    trim
-    { "INIT",              true,  false, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, 0.0f,  0.0f,  0.0f,  50.0f, 0.0f };
+    { "init", "INIT",              true,  false, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, 0.0f,  0.0f,  0.0f,  50.0f, 0.0f };
 
 // EIGHTY-TWO is the program the plugin instantiates on. Its values deliberately differ from
 // Parameters.h's own defaults, which is harmless because ProgramManager::initialise applies this

@@ -30,19 +30,43 @@ public:
     // Delay Center + a couple ms excursion), unlike a reverb's open-ended decay.
     double getTailLengthSeconds() const override { return 0.05; }
 
+    //==============================================================================
+    /** **The host adapter - the ONLY place a Program is addressed by position.**
+
+        **The list is the Factory bank and nothing else** - not INIT, not User Programs. That is a
+        conformance requirement: juce_AudioProcessor.h documents getNumPrograms as "The value
+        returned must be valid as soon as this object is created, and must not change over its
+        lifetime", and a count including User Programs changed the moment one was saved.
+
+        Before anyone makes the count dynamic again: JUCE's VST3 wrapper builds the automatable
+        Program parameter ONCE in its constructor from this value, so a Program saved afterwards was
+        unreachable from the host. That was the API keeping its documented promise, not a bug.
+
+        Excluding INIT too means host index n IS Factory Program n+1.
+
+        **Accepted divergence.** getCurrentProgram answers 0 while a User Program is loaded, so a
+        host's menu shows a Factory name while the panel shows the user's Program. Sound and panel
+        are both correct; only the host's own menu is wrong. */
     int getNumPrograms() override { return programManager.getNumPrograms(); }
-    int getCurrentProgram() override { return programManager.getCurrentProgram(); }
-    void setCurrentProgram(int index) override { programManager.requestProgramChange(index); }
+    int getCurrentProgram() override { return programManager.getCurrentFactoryPosition(); }
+    void setCurrentProgram(int index) override;
     const juce::String getProgramName(int index) override { return programManager.getProgramName(index); }
+    /** Deliberately a no-op: with Factory-only exposure nothing on the host's list can be renamed -
+        Factory names are fixed and User Programs are not exposed. Implementing it would be a back
+        door into the Factory bank, which is what the permanent slugs exist to prevent. */
     void changeProgramName(int, const juce::String&) override {}
 
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    bool isFactoryProgram(int index) const noexcept { return programManager.isFactoryProgram(index); }
+    /** The Program model. The panel talks to this directly, in ProgramIds. */
+    ProgramManager& getProgramManager() noexcept { return programManager; }
+
+    /** Clears the stale-replay guard. Called from the editor when a change is USER-originated. */
+    void noteUserEdit() noexcept { justRestoredState.store(false, std::memory_order_relaxed); }
     bool isCurrentProgramModified() const { return programManager.isModifiedFromLoadedProgram(); }
     void saveNewUserProgram(const juce::String& name) { programManager.saveNewUserProgram(name); }
-    void deleteUserProgram(int index) { programManager.deleteUserProgram(index); }
+    void deleteUserProgram(const ProgramId& id) { programManager.deleteUserProgram(id); }
 
     juce::AudioProcessorValueTreeState apvts;
 
@@ -77,6 +101,12 @@ public:
     ActiveConfiguration resolveActiveConfiguration() const;
 
 private:
+    /** **Guards a host replaying a stale program index over a just-restored session.** Armed by
+        setStateInformation, disarmed by the first setCurrentProgram (itself ignored only when it
+        matches what getCurrentProgram reports) or the first USER-originated edit. Automation must
+        not disarm it: a host may write automation on load before replaying. */
+    std::atomic<bool> justRestoredState { false };
+
     ProgramManager programManager;
 
     // One configuration's five parameters. Three of these exist - I, II and I+II - and exactly one

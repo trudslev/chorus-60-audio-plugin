@@ -5,6 +5,8 @@
 #include "Chorus60Theme.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <vector>
+
 // The program section (CHORUS60-GUI-SPEC.md section 6): "Contract is identical to Gatecrasher
 // section 6" per the spec's own words - ported directly from Gatecrasher's ProgramHeader, re-pointed
 // at this plugin's own coordinates (section 6's table), its own three header-state bitmaps
@@ -99,11 +101,13 @@ private:
     // cancels rather than opening the menu - the same press/release contract the buttons use.
     bool pressedNameCell = false;
 
-    // -2, not -1: -1 is INIT's index now, so it can no longer double as "nothing cached yet".
-    int displayedProgramIndex = -2;
-    juce::String displayedProgramName;
-    bool displayedIsFactory = true;
-    bool displayedIsInit = false;
+    /** The Program the panel is showing, mirrored so the poll only repaints on a real change. An
+        identity, not a position - so a bank that changed underneath cannot make this name the
+        wrong sound. */
+    ProgramId displayedId;
+
+    /** The Programs the open menu was built from, in row order. */
+    std::vector<ProgramId> menuRows;
 
     bool namingMode = false;
     juce::String typedName;

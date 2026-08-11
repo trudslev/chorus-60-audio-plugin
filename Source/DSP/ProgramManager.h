@@ -28,25 +28,36 @@ public:
     // Call once from PluginProcessor's constructor, after the APVTS/parameters exist.
     void initialise();
 
-    int getNumPrograms() const noexcept;
-    int getCurrentProgram() const noexcept { return currentProgramIndex.load(std::memory_order_relaxed); }
+    /** The Factory bank's size - what the host is told, and it never changes. */
+    int getNumPrograms() const noexcept { return kNumFactoryPrograms; }
+
+    ProgramId getCurrentProgramId() const;
+    static ProgramId factoryIdAt(int factoryPosition);
+    static ProgramId initId();
+    static int factoryPositionOf(const juce::String& slug);
+
+    /** The Factory position of the current Program, or 0 when it is INIT, a User Program or
+        unresolved - none of which the host's list contains. */
+    int getCurrentFactoryPosition() const;
+
+    ProgramId resolve(ProgramBank bank, const juce::String& id, const juce::String& displayName) const;
+    std::vector<ProgramId> listPrograms() const;
+
+    /** **What the LCD and the dropdown print - a label, not a key.** Only Factory Programs get the
+        two-digit number, computed from their bank position at paint time. */
+    juce::String displayLabelFor(const ProgramId& id) const;
+
+    /** User Program files rejected on the last scan because their schema could not be read, with
+        the reason. **Surfaced rather than dropped**: a Program vanishing from the dropdown with no
+        explanation is indistinguishable from data loss. */
+    const juce::StringArray& getUnloadableProgramReports() const noexcept { return unloadableReports; }
     // Safe to call from any thread (see class comment) - actual application happens async.
-    void requestProgramChange(int index);
-    juce::String getProgramName(int index) const;
+    void requestProgramChange(const ProgramId& id);
+    /** Raw, unnumbered - what the HOST's list wants, since a host renders its own numbering. */
+    juce::String getProgramName(int factoryPosition) const;
 
-    bool isFactoryProgram(int index) const noexcept
-    {
-        return index >= 0 && index < kNumFactoryPrograms;
-    }
 
-    /** INIT sits outside both banks at index -1, so it is neither factory nor user. */
-    static bool isInitProgram(int index) noexcept { return index == initProgramIndex; }
 
-    /** What the LCD and the dropdown show: a two-digit 1-based index, a space, then the name.
-        getProgramName stays raw - that is what the HOST's program list wants, since a host renders
-        its own numbering and would print "01" twice. INIT is unnumbered in both, because it is
-        outside the bank and a number would place it in a running order it is not part of. */
-    juce::String getProgramDisplayName(int index) const;
 
     // Always creates a new file and switches to it - never overwrites. Name is defensively
     // uppercased and capped at 22 characters here (not just enforced by the GUI's name-entry
@@ -55,7 +66,7 @@ public:
 
     // No-op for factory indices. Falls back to defaultFactoryProgramIndex if the deleted program
     // was the currently loaded one.
-    void deleteUserProgram(int index);
+    void deleteUserProgram(const ProgramId& id);
 
     // Called by PluginProcessor's setStateInformation after apvts.replaceState() restores a saved
     // session - keeps the FACT/USER header tag in sync with whatever program index the session
@@ -67,7 +78,7 @@ public:
     // Gatecrasher's behaviour exactly - the two plugins share one program paradigm.
     bool isModifiedFromLoadedProgram() const;
 
-    void setCurrentProgramIndexWithoutApplying(int index) noexcept;
+    void setCurrentProgramWithoutApplying(const ProgramId& id);
 
     // Called by PluginProcessor's setStateInformation before restoring a full session: drops any
     // requestProgramChange that arrived just before the restore but hasn't been applied yet (its
@@ -82,7 +93,9 @@ public:
 
 private:
     void handleAsyncUpdate() override;
-    void applyProgramByIndex(int index);
+    void applyProgram(const ProgramId& id);
+    void setCurrentId(const ProgramId& id);
+    juce::File userProgramFile(const juce::String& stem) const;
     void applyFactoryProgram(const FactoryProgram& program);
     void refreshUserProgramList();
     void captureCleanSnapshot();
@@ -90,11 +103,12 @@ private:
 
     juce::AudioProcessorValueTreeState& apvts;
 
-    std::atomic<int> currentProgramIndex { defaultFactoryProgramIndex };
-    // **-2, not -1.** -1 is INIT's index now, so it can no longer double as "nothing pending" -
-    // using it would make selecting INIT indistinguishable from having nothing queued.
-    static constexpr int noPendingProgram = -2;
-    std::atomic<int> pendingProgramIndex { noPendingProgram };
+    mutable juce::SpinLock currentIdLock;
+    ProgramId currentId;
+    juce::StringArray unloadableReports;
+    juce::SpinLock pendingLock;
+    bool hasPendingProgram = false;
+    ProgramId pendingProgram;
 
     // Sorted alphabetically by filename (stable across relaunches, unlike mtime-sort). Index i in
     // this array is program index kNumFactoryPrograms + i.
@@ -106,5 +120,15 @@ private:
     // path), so it needs no synchronisation of its own.
     std::vector<float> cleanSnapshot;
 
-    static constexpr int maxProgramNameLength = 24;   // spec section 5; mirrored by Layout::maxProgramNameLength
+    // **31, recomputed now that the "NN " prefix is gone from the displayed string.**
+    //
+    // The theme declares a 36-character budget, but the paint path trims lcdNameRightPadding (26px)
+    // off the cell, so the string is actually drawn into 326px - 33 characters at 9.6px each. The
+    // dirty marker " *" takes 2 of those. The naming field uses a different inset (reduced(12,0),
+    // 328px = 34) and draws a block cursor, so 31 + 1 clears that too.
+    //
+    // The old 24 came from the spec rather than from either measurement. Chorus60Theme.h's
+    // lcdCharacterBudget still says 36; that figure describes the cell, not the drawn run, and the
+    // comment there now says so.
+    static constexpr int maxProgramNameLength = 31;   // mirrored by Layout::maxProgramNameLength
 };
