@@ -40,7 +40,12 @@ namespace Chorus60Theme
         // contrast: 15.24-15.37:1 vs plate:modEngineHeadingRow [functional]
         inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // engaged button letters
         inline const juce::Colour controlLabelText{0xFFA5ADB2};    //  8.04:1 - functional text
-        inline const juce::Colour captionTertiary{0xFF8A9196};     //  5.73:1 - captions, footer, scope status
+        // **Functional, not a caption.** All three uses carry live state: the MOD ENGINE status
+        // note prints the engine configuration or BYPASS, the footer prints ENGAGED/BYPASS, and
+        // the scope status row prints its division and state. Flavour is for text that can be
+        // missed. Raised from #8A9196, which read 5.78 against the plate under a 7:1 bar.
+        // contrast: 7.09-7.38:1 vs plate:modEngineHeadingRow,plate:modEngineStatusNote,plate:footerRow [functional]
+        inline const juce::Colour captionTertiary{0xFF9CA2A6};
 
         // Everything inside a display well.
         inline const juce::Colour ledWindowBg{0xFF07090A};
