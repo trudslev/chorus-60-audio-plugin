@@ -1,6 +1,6 @@
 # CHORUS-60 CH-60 — Build Handoff
 
-Companion to `CHORUS60-GUI-SPEC.md`. That document is the design spec (palette, type, geometry,
+Companion to `GUI-SPEC.md`. That document is the design spec (palette, type, geometry,
 scales, states). **This document is the asset contract**: what ships as a bitmap, what the build
 draws at runtime, and where every file lives.
 
@@ -45,6 +45,7 @@ is a multiply over the whole panel (plate included) rather than a per-element re
 | **Global control labels** `DRIFT`, `SATURATION`, `NOISE`, `MIX`, `OUTPUT TRIM` | Static strings |
 | **Switch position prints** `STEREO`, `MONO` | These are values, not the control name — static |
 | Empty wells: scope, PROGRAM LCD (bank cell + name field, with divider), IN and OUT meters | Inset background, border, inner shadow only — **no contents** |
+| **Empty Program button boxes** — SAVE and DELETE | Face gradient, border and shadow only — **no legends**. The boxes never change; only the legends' illumination does |
 
 ### 1.2 Drawn at runtime — NOT in the bitmap
 
@@ -54,7 +55,7 @@ is a multiply over the whole panel (plate included) rather than a per-element re
 | Scope annotations `DLY MOD`, `+ MAX`, `- MAX` | Drawn onto the scope canvas each frame with its contents |
 | Scope status `ENGINE I` / `ENGINE I + II` / `ENGINE BYPASS` | Changes with engine state |
 | Scope status `250 ms / DIV` | Sits in the same status row; drawn with it |
-| PROGRAM LCD: bank tag `FACT` / `USER`, program name, parameter readout, name-entry caret | Dynamic |
+| PROGRAM LCD: bank tag `FACT` / `USER` / `NAME`, program name, parameter readout, name-entry caret | Dynamic |
 | IN / OUT numerals | Metering |
 | MOD ENGINE box heading `MOD ENGINE I` / `II` / `I+II` | Page-dependent |
 | MOD ENGINE status note `ENGINE I ENGAGED` / `BOTH ENGAGED · MONO BBD PAIR` / `BYPASS` | Page- and state-dependent |
@@ -62,7 +63,7 @@ is a multiply over the whole panel (plate included) rather than a per-element re
 | Engine button letters `I`, `II`, `OFF` | Colour changes with engagement (`#E6EBEE` engaged / `#A5ADB2` not) |
 | Knob sprites | Filmstrip frame per value |
 | Engine buttons, indicator lamps, Image switch | Sprites, see §3 |
-| SAVE / STORE / DELETE / CANCEL buttons | Labels and enabled state change |
+| **Program button legends** `SAVE`, `STORE`, `DELETE`, `CANCEL` | All four are permanent and never change their text — but each legend's **colour** carries lit/unlit state, so they cannot be baked. Draw all four every frame in `#EEF3F6` (lit, with the glow) or `#757D82` (unlit). See GUI spec §13 |
 | Footer `BBD 1024 STAGE · ENGAGED · v1.0` | Contains live engine state |
 
 **Both directions matter.** Redrawing a baked string double-prints it; baking a runtime string freezes
@@ -89,12 +90,19 @@ All at `assets/controls/`, `@1x` and `@2x` of each.
 | `button-ii` | 132 × 132 | (26, 183) |
 | `button-i` | 132 × 132 | (26, 356) |
 | `button-off` | 132 × 132 | (26, 528) |
+| `program-save-lit` / `program-store-lit` / `program-save-dark` | 70 × 34 | (976, 31) — three faces of one button |
+| `program-delete-lit` / `program-cancel-lit` / `program-delete-dark` | 70 × 34 | (1052, 31) — three faces of one button |
 | `lamp-on` | 96 × 96 | Drawn **centred** on the lamp position — LED centre is at (48, 48) in the sprite; the glow is baked into the transparent margin |
 | `lamp-off` | 96 × 96 | Same registration |
 | `switch-track` | 34 × 68 | (1147.5, 343) — empty track |
 | `switch-thumb` | 26 × 26 | Drawn over the track at (1151.5, 347) for STEREO, (1151.5, 381) for MONO — **34 px of travel**, animate it |
 | `switch-stereo` | 34 × 68 | Composed both-parts image, kept for reference/static use |
 | `switch-mono` | 34 × 68 | Composed, as above |
+
+The `program-*` sprites are supplied as complete faces for reference and static use. In the build,
+prefer the baked empty box plus the four runtime legends — a sprite per face works, but a modified
+User Program needs SAVE and DELETE lit simultaneously, which is a fourth face per button rather than
+a combination of the three.
 
 Lamp centres: **(182.5, 250)** for II, **(182.5, 422.5)** for I — i.e. the `lamp-*` sprite's top-left
 goes at (134.5, 202) and (134.5, 374.5). The OFF button's lamp position is empty on the hardware and
@@ -212,13 +220,17 @@ numerals are dynamic. Their **wells** are in the plate; their **contents** are n
 
 ## 8. Everything else the build needs
 
-In `CHORUS60-GUI-SPEC.md`:
+In `GUI-SPEC.md`:
 
 - §2 palette — hex values and measured contrast ratios per role. Runtime-drawn text must match the
   baked text exactly, so these are not suggestions.
 - §3 typography — face, size and tracking per role.
 - §4 layout — every region's x / y / w / h.
-- §5 LCD — window and name-field geometry, 9.6 px per character, 36-character budget.
+- §4 layout — the header row's five elements at y 31, outer height 34, and where the 6 px came from.
+- §5 LCD — window and name-field geometry, 9.6 px per character, **36-character budget, 31-character
+  user-name cap**. The cap may never be reduced.
+- §13 Program buttons — dual stacked legends, backlit lit/unlit treatment, the full state table, and
+  the `dirty` flag SAVE's lamp shares with the LCD's ` *` marker.
 - §7 printed scales — per-knob marks, sweep fractions and tick angles, and the numeral placement rule.
 - §7.1 Rate's power-law anchors.
 - §7.2 the IMAGE rename (`mono1`/`mono2`/`monoB` → `image1`/`image2`/`imageB`).
@@ -226,7 +238,7 @@ In `CHORUS60-GUI-SPEC.md`:
 - §9 the OFF state — 0.50 as a multiply, pointers held, no caption.
 - §10 the paged MOD ENGINE contract.
 - §11 parameters, ranges, defaults, skews.
-- §12 the unchanged list.
+- §12 the unchanged list — note the three `header-*@3x.png` state renders in it are now superseded.
 
 ## 9. Source files
 

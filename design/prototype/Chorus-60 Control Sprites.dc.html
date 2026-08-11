@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; padding: 0; background: #0E1012; }
+a { color: #cfd7dc; }
+a:hover { color: #fff; }
+</style>
+</helmet>
+<div style="min-height:100vh;padding:40px;background:#0E1012;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;font-family:ui-sans-serif,system-ui,sans-serif">
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">button-ii · 132</div>
+    <div id="button-ii" style="width:132px;height:132px;border-radius:5px;background:linear-gradient(160deg,#E5A021,#C07908);box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 -7px 12px -4px rgba(0,0,0,.5) inset"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">button-i · 132</div>
+    <div id="button-i" style="width:132px;height:132px;border-radius:5px;background:linear-gradient(160deg,#EAD681,#D0B857);box-shadow:0 1px 1px rgba(255,255,255,.5) inset, 0 -7px 12px -4px rgba(0,0,0,.45) inset"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">button-off · 132</div>
+    <div id="button-off" style="width:132px;height:132px;border-radius:5px;background:linear-gradient(160deg,#EAECEC,#C9CDCF);box-shadow:0 1px 1px rgba(255,255,255,.85) inset, 0 -7px 12px -4px rgba(0,0,0,.35) inset"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">lamp-on · 96 (LED at 48,48)</div>
+    <div id="lamp-on" style="width:96px;height:96px;position:relative">
+      <div style="position:absolute;left:40.5px;top:40.5px;width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 40% 34%,#FF2B1C,#B0140C 70%,#6D0B06);box-shadow:0 0 12px 3px rgba(255,43,28,.55), 0 0 30px 8px rgba(255,43,28,.22)"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">lamp-off · 96 (LED at 48,48)</div>
+    <div id="lamp-off" style="width:96px;height:96px;position:relative">
+      <div style="position:absolute;left:40.5px;top:40.5px;width:15px;height:15px;border-radius:50%;background:#3A1512;box-shadow:0 1px 0 rgba(255,255,255,.14) inset"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">switch-track · 34×68</div>
+    <div id="switch-track" style="width:34px;height:68px;border-radius:17px;background:linear-gradient(#0A0C0D,#141719);box-shadow:0 0 0 1px #000, 0 2px 6px rgba(0,0,0,.85) inset"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">switch-thumb · 26×26</div>
+    <div id="switch-thumb" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(#E4E8EA,#A9B0B5);box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 3px 6px -1px rgba(0,0,0,.85)"></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">switch-stereo · 34×68 (composed)</div>
+    <div id="switch-stereo" style="position:relative;width:34px;height:68px;border-radius:17px;background:linear-gradient(#0A0C0D,#141719);box-shadow:0 0 0 1px #000, 0 2px 6px rgba(0,0,0,.85) inset">
+      <div style="position:absolute;left:4px;top:4px;width:26px;height:26px;border-radius:50%;background:linear-gradient(#E4E8EA,#A9B0B5);box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 3px 6px -1px rgba(0,0,0,.85)"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">switch-mono · 34×68</div>
+    <div id="switch-mono" style="position:relative;width:34px;height:68px;border-radius:17px;background:linear-gradient(#0A0C0D,#141719);box-shadow:0 0 0 1px #000, 0 2px 6px rgba(0,0,0,.85) inset">
+      <div style="position:absolute;left:4px;top:38px;width:26px;height:26px;border-radius:50%;background:linear-gradient(#E4E8EA,#A9B0B5);box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 3px 6px -1px rgba(0,0,0,.85)"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px;width:100%;padding-top:8px;border-top:1px solid #1C2023">
+    <div style="font-size:11px;letter-spacing:.18em;color:#8A9196">program buttons · 70×34 native · dark face, warm-backlit legends · lit #F1EFEA + warm bloom / unlit #757D82, matte (3.55:1 worst case, top of field gradient)</div>
+
+    <div style="display:flex;gap:40px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-save-lit</div>
+        <div id="program-save-lit" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#F1EFEA;text-shadow:0 0 7px rgba(255,229,188,.5), 0 0 2px rgba(255,246,232,.42)">SAVE</div>
+          <div style="color:#757D82">STORE</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-store-lit</div>
+        <div id="program-store-lit" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#757D82">SAVE</div>
+          <div style="color:#F1EFEA;text-shadow:0 0 7px rgba(255,229,188,.5), 0 0 2px rgba(255,246,232,.42)">STORE</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-save-dark (nothing to do)</div>
+        <div id="program-save-dark" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#757D82">SAVE</div>
+          <div style="color:#757D82">STORE</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-delete-lit</div>
+        <div id="program-delete-lit" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#F1EFEA;text-shadow:0 0 7px rgba(255,229,188,.5), 0 0 2px rgba(255,246,232,.42)">DELETE</div>
+          <div style="color:#757D82">CANCEL</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-cancel-lit</div>
+        <div id="program-cancel-lit" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#757D82">DELETE</div>
+          <div style="color:#F1EFEA;text-shadow:0 0 7px rgba(255,229,188,.5), 0 0 2px rgba(255,246,232,.42)">CANCEL</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:10px;letter-spacing:.14em;color:#6E767B">program-delete-dark (factory / INIT)</div>
+        <div id="program-delete-dark" style="width:70px;height:34px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(#23282B,#15181A);border:1px solid #050708;box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:12px;letter-spacing:.12em;text-indent:.12em">
+          <div style="color:#757D82">DELETE</div>
+          <div style="color:#757D82">CANCEL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>

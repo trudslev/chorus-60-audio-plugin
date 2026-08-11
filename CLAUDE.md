@@ -9,9 +9,24 @@ Tests/ approach, BUILDING.md shape, and - for Gatecrasher specifically - the Pro
 architecture and several GUI components ported directly rather than redesigned). Read `../BRAND.md`
 first for the cross-plugin design system (naming, "Program" not "Preset", the one-accent-color rule,
 component grammar), then this file for CHORUS-60's own conventions and status.
-`design/CHORUS60-GUI-SPEC.md` and `design/CLAUDE.md` remain the authoritative source for exact GUI
-pixel/asset detail and the sections ported from Gatecrasher; `design/BBD-TECHNICAL-NOTES.md` is the
-authoritative source for the real circuit behavior the DSP layer models.
+`design/GUI-SPEC.md` is the authoritative source for exact GUI pixel/asset detail and the sections
+ported from Gatecrasher. Bundles no longer ship a `design/CLAUDE.md`; a repo-owned filename inside a
+handoff reads as authority while being a snapshot of whatever the designers held when they cut it.
+
+**`design/BBD-TECHNICAL-NOTES.md` never existed in this repo and has been removed.** It was a
+0-byte file from the initial commit onward, and seven places still cite it as the authority for the
+circuit behaviour the DSP models — `BBDDelayLine.h`, `CharacterStage.h`, `ModulationEngine.h/.cpp`,
+`StereoDecorrelationStage.h`, `BUILDING.md` and this file. Those citations are not wrong about where
+the reasoning came from; the document simply was never committed, and an empty file that seven
+comments call authoritative is the worst version of that — it reads as present.
+
+What the repo does hold is `design/BBD-TECHNICAL-NOTES-ADDENDUM.md`, which *quotes* the original
+("The original `BBD-TECHNICAL-NOTES.md` described I+II as…") and corrects exactly one claim: I+II is
+a third distinct fast/narrow/mono mode, not a sum of I and II. It does **not** carry the
+nonlinearities, tiny-imperfections or LFO-shape material the other five citations point at, so those
+have deliberately not been repointed at it — that would attribute content to a document that does
+not contain it. Requested from the designers; until it arrives, the addendum plus the linked
+Juno60 source are the only written record.
 
 ## Commands
 
@@ -120,7 +135,7 @@ per-OS user-programs directory pattern, same `LegacyMigration` schema-version se
 comments.
 
 **Factory bank**: 9 curated programs (see `FactoryPrograms.h`), replacing both the earlier 3-entry
-I/II/I+II placeholder and the 16-name list `design/CHORUS60-GUI-SPEC.md` section 9 suggests - the
+I/II/I+II placeholder and the 16-name list `design/GUI-SPEC.md` section 9 suggests - the
 shipped bank is authoritative over that suggestion. `01 EIGHTY-TWO` is the default on instantiation.
 
 Its **core invariant**, enforced by `Tests/FactoryProgramsTests.cpp`: every program must sound
@@ -209,8 +224,8 @@ was written last and flickers for the length of a song.
 stored in a Program, but they are the panel's pager and its bypass, hit mid-performance - counting a
 press as an edit meant merely bypassing the plugin lit SAVE and claimed unsaved work.
 
-`design/CHORUS60-GUI-SPEC.md` is the authoritative pixel spec, `design/CHORUS60-BUILD-HANDOFF.md` the
-asset contract, and `design/CHORUS60-HANDOFF-README.md` carries deltas not yet folded into the spec
+`design/GUI-SPEC.md` is the authoritative pixel spec, `design/CHORUS60-BUILD-HANDOFF.md` the
+asset contract, and `design/README.md` carries deltas not yet folded into the spec
 (the LCD chevron is one). Read them before touching GUI code - and **measure the plate rather than
 trusting a coordinate**: the spec's section 5 puts the LCD window at x 571, the plate has it at 593,
 and the two numbers the character budget rests on (a 59 px bank cell, a 352 px glyph run) are the ones
@@ -236,7 +251,7 @@ Unlike Gatecrasher, CHORUS-60 has no sidechain input bus - `BusesProperties` is 
 ## Status
 
 - **DSP**: every stage has real, functioning processing - no stubs, all grounded in
-  `design/BBD-TECHNICAL-NOTES.md`'s description of the real circuit. Filter cutoffs and
+  the designers' BBD technical notes on the real circuit (not in the repo — see the note at the top of `CLAUDE.md`). Filter cutoffs and
   character-parameter ranges are a first, technically-reasoned pass rather than a tuned one - see
   `BUILDING.md`'s DSP tuning note. Build, load, listen, adjust. `auval` and
   `pluginval --strictness-level 8` both pass on AU and VST3.

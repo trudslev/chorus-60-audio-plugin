@@ -61,7 +61,7 @@ public:
 
     // Always creates a new file and switches to it - never overwrites. Name is defensively
     // uppercased and capped at 22 characters here (not just enforced by the GUI's name-entry
-    // field), falling back to "NEW PROGRAM" if empty, per CHORUS60-GUI-SPEC.md section 6.
+    // field), falling back to "NEW PROGRAM" if empty, per GUI-SPEC.md section 6.
     void saveNewUserProgram(const juce::String& requestedName);
 
     // No-op for factory indices. Falls back to defaultFactoryProgramIndex if the deleted program

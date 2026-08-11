@@ -141,10 +141,10 @@ covered here — see the "DSP tuning" note below.
   against.
 - JUCE's free/personal tier splash screen is enabled (no paid license configured).
 - **DSP tuning**: every DSP stage has real, functioning processing (no stubs), grounded in
-  `design/BBD-TECHNICAL-NOTES.md`'s description of the real circuit, but the exact filter cutoffs,
+  the designers' BBD technical notes on the real circuit (not in the repo — see the note at the top of `CLAUDE.md`), but the exact filter cutoffs,
   excursion/drift/noise-floor ranges, and saturation drive curve are a first, technically-reasoned
   pass, not a tuned one - same status both siblings' own DSP had before their by-ear pass. Build,
   load, listen, adjust.
 - **Factory bank**: only 3 baseline programs (I, II, I+II) are implemented so far - the full curated
-  16-name bank from `design/CHORUS60-GUI-SPEC.md` section 9 is an explicit follow-up, tracked in
+  16-name bank from `design/GUI-SPEC.md` section 9 is an explicit follow-up, tracked in
   `prompts/PROMPTS.md`.

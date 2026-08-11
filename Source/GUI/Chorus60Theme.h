@@ -6,7 +6,7 @@
 #include <array>
 #include <cmath>
 
-// Centralises every pixel constant from design/CHORUS60-GUI-SPEC.md (palette, coordinates, the
+// Centralises every pixel constant from design/GUI-SPEC.md (palette, coordinates, the
 // filmstrip contract) in one place, mirroring GatecrasherTheme.h's role for Gatecrasher.
 //
 // REVISION 2 INVERTED THIS FILE'S SCOPE. The plate used to be bare material with every glyph drawn
@@ -309,7 +309,7 @@ namespace Chorus60Theme
         constexpr int lcdReadoutHoldMs = 900;
 
         // The chevron affordance at the right of the name field, added by the handoff README's
-        // "Delta since the last spec revision" (it is not in CHORUS60-GUI-SPEC.md yet): 11 x 7,
+        // "Delta since the last spec revision" (it is not in GUI-SPEC.md yet): 11 x 7,
         // 1.4 px stroke with square caps, currentColor at 0.75, vertically centred, inset 10 px
         // from the field's right edge, and the field takes 26 px of right padding to clear it.
         //

@@ -4,7 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
 
-// The delay-modulation oscilloscope - the product's centrepiece (CHORUS60-GUI-SPEC.md section 5,
+// The delay-modulation oscilloscope - the product's centrepiece (GUI-SPEC.md section 5,
 // "11. What matters most" #1). Fully code-drawn, same visual grammar as Gatecrasher's GateScope
 // (scrolling grid, glow+core red trace, grey input underlay) but reading Chorus-60's own signal.
 //

@@ -1,5 +1,14 @@
 # CHORUS-60 CH-60 — GUI Implementation Spec
 
+**Build from this file.** It is the contract for everything the panel looks like and does. One
+companion carries the rest: **which assets ship as bitmaps vs. are drawn at runtime, and where the
+files live — see `CHORUS60-BUILD-HANDOFF.md`.** Nothing else in the bundle is a contract; the
+`README.md` is orientation and the `.dc.html` prototypes are reference.
+
+Brand-level rules (wordmark, palette roles, the legibility floor, the Program-button treatment this
+panel implements) live in `BRAND.md` **in the repo** — deliberately not copied into this bundle, so
+there is one authority and it is the current one.
+
 **Revision 2 — density, printed scales, LCD, contrast, OFF state.**
 Everything in the identity is unchanged: dark synth-panel fascia, blue CHORUS stripe, three coloured
 engine buttons, silkscreen wordmark, delay-modulation scope, red accent. This revision changes
@@ -116,6 +125,22 @@ Origin is the inside of the panel border. Panel content area 1280 × 775.
 | CHARACTER box | 285 | 508 | 567 | 218 |
 | OUTPUT box | 868 | 508 | 390 | 218 |
 
+**Header row — the five-element band.** LCD well, SAVE, DELETE, IN and OUT all sit at **y 31 with an
+outer height of exactly 34 px**, one shared baseline at y 65. The row grew from 28 to 34 px in the
+suite-wide header pass; the 6 px came out of the header band's own padding (16 / 14 → 14 / 12) so the
+band stays 78 px and **no body coordinate moved**. Do not take the height out of the LCD instead.
+
+| Element | x | w | h |
+|---|---|---|---|
+| LCD well | 519 | 451 | 34 |
+| SAVE / STORE button | 976 | 70 | 34 |
+| DELETE / CANCEL button | 1052 | 70 | 34 |
+| IN meter | 1138 | 56 | 34 |
+| OUT meter | 1202 | 56 | 34 |
+
+Captions (`PROGRAM`, `IN`, `OUT`) sit 6 px above the row at y 13. Meters widened 54 → 56 px so the
+border sits inside the stated box, matching the well and the buttons.
+
 Body padding 18 / 22 / 22; column gap 21 either side of the rule; 16 px between stacked blocks;
 16 px between CHARACTER and OUTPUT. Group boxes: 1 px `#000` border, 8 / 16–18 / 12 padding,
 heading row separated by a 1 px `rgba(0,0,0,.6)` rule with a `rgba(255,255,255,.05)` highlight under it.
@@ -143,11 +168,12 @@ sparser than the rest of the panel. **Do not centre the stack — distribute it.
 
 | | |
 |---|---|
-| Window | **435 × 28 at x 571, y 34** — one inset well holding the bank cell and the name field |
-| Bank cell | 59 px wide at x 572, right-hand 1 px `#2A3035` divider |
-| **Name field** | **376 px at x 631**, 12 px padding each side → **352 px of glyph run** |
+| Window | **451 × 34 at x 519, y 31** — one inset well holding the bank cell and the name field. Height is border-box: 34 px **including** the 1 px border, so the well's outer height equals the buttons' and the meters' exactly |
+| Bank cell | 59 px wide at x 520, right-hand 1 px `#2A3035` divider |
+| **Name field** | **390 px at x 579**, 12 px left / 26 px right padding (the right pad is the chevron gutter) → **352 px of glyph run** |
 | Face / size | Share Tech Mono 15 px, .10em tracking → **9.6 px per character** |
-| **Character budget** | **36 characters** at 15 px |
+| **Character budget** | **36 characters** at 15 px — 352 / 9.6 |
+| **User-name cap** | **31 characters** — budget 36 less `NN ` (3) and the ` *` dirty marker (2) |
 | Well | `#07090A`, 1 px `#363C41`, `0 2px 6px rgba(0,0,0,.9)` inset |
 
 `FACT` / `USER` is set in **the same face, size, tracking and colour as the program name** — it is
@@ -160,7 +186,16 @@ Three contents, one field:
    `NAME: VALUE UNIT`, e.g. `DECORRELATION I+II: 100 %` (25 characters — 240 px, comfortably inside
    the 352 px field with 112 px to spare). Held for 900 ms after release, then the program name
    returns. This is the panel's *only* live numeric display.
-3. **Name entry** (after SAVE) — left-aligned typed text, 24-character limit, blinking block caret.
+3. **Name entry** (after STORE is armed) — left-aligned typed text, **31-character limit**, blinking
+   block caret. The bank cell reads `NAME` while typing, not `USER` — the Program is not in the user
+   bank until the name is committed.
+
+**The cap is 31 and may never fall below it.** The header-height change to 34 px did not touch the
+name field's width, face, size or tracking, so the budget is still 36 and the cap is still 31; the
+constants `LCD_BUDGET = 36` and `NAME_CAP = 31` are named in the prototype logic for that reason.
+The build previously truncated typed names at 24 characters, which was below the published cap —
+corrected to 31. Any future change to header height, font size, tracking or cell width must restate
+the resulting budget and confirm it has not fallen.
 
 ## 6. Knob assets — **CHANGED, re-render required**
 
@@ -385,75 +420,99 @@ revision and none of it needs regenerating:
   Ø84 / Ø68 sheets are rendered from).
 - **Wordmark face** — `assets/LibrestileExtBold.ttf`.
 - **Reference photography** — `jn80-chorus-reference.jpeg`, `gatecrasher-panel-reference.png`.
-- **Header state renders** — `header-factory-program@3x.png`, `header-user-program@3x.png`,
-  `header-name-entry@3x.png`.
+- ~~**Header state renders**~~ — superseded. `header-factory-program@3x.png`,
+  `header-user-program@3x.png` and `header-name-entry@3x.png` show the retired 28 px row with pale
+  buttons; **discard them**. Replaced by `reference/chorus60-header-naming@2x.png` and the six
+  `program-*` sprites.
 
 - Product icon and the full 16–1024 ladder in `assets/icon/`.
 - Wordmark: Librestile Extended Bold, silkscreen treatment, `text-shadow: 0 1px 0 rgba(0,0,0,.9),
   0 0 1px rgba(230,235,238,.5)`.
 - Scope construction: 8 × 6 grid, 250 ms/div, scrolling 2 s window, three-pass red trace
   (glow / halo / core), BBD noise floor behind it, playhead dot at the right edge.
-- Program section contract (SAVE / STORE / DELETE / CANCEL, factory-vs-user states, name entry).
+- Factory-vs-user Program semantics: SAVE always creates a new Program and never overwrites; DELETE
+  acts only on User Programs. **The buttons' faces and legends did change — see §13.**
 - Blue stripe hue and its two-band placement above and below the button column.
 - Fonts, group-box construction, footer contents.
 
----
+## 13. Program buttons — **CHANGED**
 
-## Program model — identity, numbering and the INIT entry
+Both Program buttons carry **two printed legends each, stacked, and never change their face**: SAVE
+above STORE, DELETE above CANCEL — the resting function on top, what the button becomes during name
+entry beneath it. Nothing relabels itself.
 
-*Recorded 2026-08-11. This section is authoritative for the Program list's behaviour; where an earlier
-part of this document describes numbering or the factory bank differently, this governs.*
+| | |
+|---|---|
+| Box | **70 × 34**, border-box, at x 976 (SAVE) and x 1052 (DELETE) |
+| Face | `linear-gradient(#23282B,#15181A)`, 1 px `#050708`, `0 1px 0 rgba(255,255,255,.07) inset, 0 1px 2px rgba(0,0,0,.55)` |
+| Legend face | Barlow Condensed 600, **10 px**, 12 px line-height, .12em tracking, .12em text-indent |
+| Lit | `#F1EFEA` + **warm** `text-shadow: 0 0 7px rgba(255,229,188,.5), 0 0 2px rgba(255,246,232,.42)` |
+| Unlit | `#757D82`, **no shadow at all** — matte, not a dimmer ink. **3.55:1** against the lightest part of the face (`#23282B`, top of the gradient), above the 3:1 state floor. 4.26:1 at the bottom; quote the worst case. |
 
-**A Program is identified by name, never by position.** Factory Programs carry a permanent slug fixed
-when the Program is created and unchanged even if its display name is later revised; User Programs are
-identified by their filename. Positions appear only in the four `AudioProcessor` overrides JUCE
-requires them for, and nowhere else — not in saved state, not in the dropdown, not in the LCD.
+The bloom is deliberately **warm** against the cool-neutral face: a warm bloom is what reads as
+*backlit* rather than as brighter ink, which is the distinction the brand rule is drawing. It is not
+the accent — the accent red stays with the engine lamps and appears nowhere on these buttons.
 
-**The INIT entry.** A single row at the **top of the dropdown, above the FACTORY group and separated
-from it by a divider**. It is:
+**The legends are backlit, and light individually.** The face is dark enough that a bright legend
+reads as illuminated, so the indication is the legend itself rather than a lamp beside it — the
+pale-face form is not used on this casting, and the two forms are never mixed. Lit is a **neutral
+bright**: the engine identity colours (orange `#E5A021`, yellow `#EAD681`) stay reserved for I / II /
+I+II and appear nowhere in the header.
 
-- **unnumbered** — it sits outside both banks, so a number would place it in a running order it is
-  not part of;
-- **never the default on instantiation** — it is a starting point the user chooses, not the sound the
-  plugin makes when a host loads it;
-- shown with the bank tag reading an **em-dash**, not FACT and not USER, because it is in neither;
-- **DELETE disabled while it is selected**, as for a Factory Program — INIT is not a stored thing, so
-  there is nothing to delete.
+**The button faces changed from pale to dark in this pass.** They were previously a light gradient
+(`#DBE0E3 → #AAB1B6`) with dark ink, which is the face that requires the lamp-beside-legend form.
+Backlit legends need a dark face, so the face moved with the treatment.
 
-**Factory numbering starts at 01 on the first authored sound**, and the two-digit number is a **label
-computed when the panel paints**, from the Program's position in the factory bank. It is not stored
-and nothing is looked up by it.
+**There is no disabled face.** Where a function does not apply, its legend is simply dark:
 
-**User Programs carry no number at all** — the bank tag, then the name alone:
+| Panel state | SAVE | STORE | DELETE | CANCEL |
+|---|---|---|---|---|
+| Factory Program, unmodified | dark | dark | dark | dark |
+| Factory Program, modified | **lit** | dark | dark | dark |
+| User Program, unmodified | dark | dark | **lit** | dark |
+| User Program, modified | **lit** | dark | **lit** | dark |
+| Naming a Program | dark | **lit** | dark | **lit** |
 
-```
-FACT  │  01 EIGHTY-TWO
-USER  │  BRIGHT ROOM
-  —   │  INIT
-```
+Rules the appearance table does not imply, and which the build must not decide for itself:
 
-They are sorted **alphabetically and case-insensitively, on the displayed name** (the filename stem,
-without its extension). Any number would change whenever another Program was saved, which is why they
-have none. Comparing the filename *with* its extension sorts `AB C` before `AB`, since a space
-(0x20) precedes the dot (0x2E); comparing case-sensitively puts every lowercase name after every
-uppercase one.
+| Rule | Behaviour |
+|---|---|
+| Escape, or CANCEL, out of naming | Leaves the Program **still modified** — nothing was stored, so the edited flag survives and SAVE lights again the moment naming exits. Do not clear it. |
+| Bank tag during naming | Reads `NAME`, **not** `USER` — the Program is not in the user bank until STORE commits it. |
+| STORE with an empty name | Commits as `NEW PROGRAM` rather than refusing; there is no error state on this panel. |
+| Enter / Escape while not naming | Ignored entirely — these keys are only live in the naming state. |
+| What sets the edited flag | Any knob move, any knob reset, any engine or page change. Cleared only by STORE and by loading a Program. |
+| DELETE on a Factory Program | Dark and inert — Factory Programs cannot be deleted, and this is why the row exists rather than being folded into "unmodified". |
 
-**Dirty marker.** An edited Program shows a trailing ` *` in the LCD, in the same type and colour as
-the name. The marker and SAVE's enabled state read the same flag, so they cannot disagree. No marker
-appears on an unresolved identifier — there is no baseline to differ from.
+Both legends dark reads as "nothing to do here", never as a blank button — both stay printed and
+readable. The old treatment (a dimmer fill, `opacity .55` and `#8B9297` ink on DELETE) is retired; it
+measured well under the state floor and it was a typographic change standing in for a lamp.
 
-**Unresolved identifier.** If a stored identifier no longer names anything — a Factory Program
-removed in a later version, or a deleted user file — the **parameter values still restore**; only the
-name is unknown. The display then shows the em-dash bank tag and the remembered name with a trailing
-`?` (`—  │  BRIGHT ROOM?`), SAVE enabled, DELETE disabled, no dirty marker. Deleting a Program from
-the panel is deliberately *not* this case: the intent is unambiguous, so it falls back to the default.
+SAVE's lamp and the LCD's trailing ` *` dirty marker **read the same flag**, so they cannot disagree.
+The prototype now tracks that flag (`dirty`, set by any knob, reset, or engine change; cleared on
+store and on load). **Open item:** the ` *` marker itself is not yet drawn in the LCD — it is
+budgeted for (the 31-character cap reserves its two columns) but needs adding alongside this.
 
-**User-name cap: 31 characters.** 33 characters as actually drawn (326px after lcdNameRightPadding is trimmed, at 9.6px per character - the theme's declared 36 describes the cell, not the drawn run) less 2 for the dirty marker.
+Stacked rather than side by side because it costs no width: each button is already sized by its
+longest single word, and `DELETE` and `CANCEL` are both six characters. Side by side would roughly
+double both buttons and the width would have to come out of the LCD.
 
-**This figure is per-casting and must not be collapsed into a shared one** — each panel's cell width,
-type size and tracking differ, and the caps range from 22 to 35 across the suite. The cap is the
-budget less whichever of the dirty marker (2) and the naming cursor (1) is larger.
+**The legends stay runtime text — never baked into the button bitmap.** Each of the four can light
+independently, so a baked legend would freeze one state's lighting into the face. What ships as a
+bitmap is the face only; the build draws SAVE / STORE / DELETE / CANCEL live and applies the lit or
+matte treatment per the table above.
 
-**Release rule.** Once a version ships, new Factory Programs may only be **appended** — never
-inserted, reordered or removed — because the host addresses the factory bank by position. See
-`../../BRAND.md`.
+Sprites: `program-save-lit`, `program-store-lit`, `program-save-dark`, `program-delete-lit`,
+`program-cancel-lit`, `program-delete-dark` in `Chorus-60 Control Sprites.dc.html`, all at 70 × 34
+native.
+
+Reference renders in `reference/buttons/`, the **button pair together** at 3× — the two buttons move
+as one unit, so the pair is diffable in a way separate crops are not. One per row of the table:
+
+| File | Row |
+|---|---|
+| `01-factory-nothing-to-do.png` | Factory Program, unmodified — all four dark |
+| `02-factory-edited-save-lit.png` | Factory Program, modified — SAVE lit |
+| `03-user-unmodified-delete-lit.png` | User Program, unmodified — DELETE lit |
+| `04-user-edited-save-delete-lit.png` | User Program, modified — SAVE and DELETE lit |
+| `05-naming-store-cancel-lit.png` | Naming a Program — STORE and CANCEL lit |

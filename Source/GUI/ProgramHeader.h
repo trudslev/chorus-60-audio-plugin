@@ -7,7 +7,7 @@
 
 #include <vector>
 
-// The program section (CHORUS60-GUI-SPEC.md section 6): "Contract is identical to Gatecrasher
+// The program section (GUI-SPEC.md section 6): "Contract is identical to Gatecrasher
 // section 6" per the spec's own words - ported directly from Gatecrasher's ProgramHeader, re-pointed
 // at this plugin's own coordinates (section 6's table), its own three header-state bitmaps
 // (header-factory-program@3x.png / header-user-program@3x.png / header-name-entry@3x.png), and
