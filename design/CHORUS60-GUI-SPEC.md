@@ -396,3 +396,64 @@ revision and none of it needs regenerating:
 - Program section contract (SAVE / STORE / DELETE / CANCEL, factory-vs-user states, name entry).
 - Blue stripe hue and its two-band placement above and below the button column.
 - Fonts, group-box construction, footer contents.
+
+---
+
+## Program model — identity, numbering and the INIT entry
+
+*Recorded 2026-08-11. This section is authoritative for the Program list's behaviour; where an earlier
+part of this document describes numbering or the factory bank differently, this governs.*
+
+**A Program is identified by name, never by position.** Factory Programs carry a permanent slug fixed
+when the Program is created and unchanged even if its display name is later revised; User Programs are
+identified by their filename. Positions appear only in the four `AudioProcessor` overrides JUCE
+requires them for, and nowhere else — not in saved state, not in the dropdown, not in the LCD.
+
+**The INIT entry.** A single row at the **top of the dropdown, above the FACTORY group and separated
+from it by a divider**. It is:
+
+- **unnumbered** — it sits outside both banks, so a number would place it in a running order it is
+  not part of;
+- **never the default on instantiation** — it is a starting point the user chooses, not the sound the
+  plugin makes when a host loads it;
+- shown with the bank tag reading an **em-dash**, not FACT and not USER, because it is in neither;
+- **DELETE disabled while it is selected**, as for a Factory Program — INIT is not a stored thing, so
+  there is nothing to delete.
+
+**Factory numbering starts at 01 on the first authored sound**, and the two-digit number is a **label
+computed when the panel paints**, from the Program's position in the factory bank. It is not stored
+and nothing is looked up by it.
+
+**User Programs carry no number at all** — the bank tag, then the name alone:
+
+```
+FACT  │  01 EIGHTY-TWO
+USER  │  BRIGHT ROOM
+  —   │  INIT
+```
+
+They are sorted **alphabetically and case-insensitively, on the displayed name** (the filename stem,
+without its extension). Any number would change whenever another Program was saved, which is why they
+have none. Comparing the filename *with* its extension sorts `AB C` before `AB`, since a space
+(0x20) precedes the dot (0x2E); comparing case-sensitively puts every lowercase name after every
+uppercase one.
+
+**Dirty marker.** An edited Program shows a trailing ` *` in the LCD, in the same type and colour as
+the name. The marker and SAVE's enabled state read the same flag, so they cannot disagree. No marker
+appears on an unresolved identifier — there is no baseline to differ from.
+
+**Unresolved identifier.** If a stored identifier no longer names anything — a Factory Program
+removed in a later version, or a deleted user file — the **parameter values still restore**; only the
+name is unknown. The display then shows the em-dash bank tag and the remembered name with a trailing
+`?` (`—  │  BRIGHT ROOM?`), SAVE enabled, DELETE disabled, no dirty marker. Deleting a Program from
+the panel is deliberately *not* this case: the intent is unambiguous, so it falls back to the default.
+
+**User-name cap: 31 characters.** 33 characters as actually drawn (326px after lcdNameRightPadding is trimmed, at 9.6px per character - the theme's declared 36 describes the cell, not the drawn run) less 2 for the dirty marker.
+
+**This figure is per-casting and must not be collapsed into a shared one** — each panel's cell width,
+type size and tracking differ, and the caps range from 22 to 35 across the suite. The cap is the
+budget less whichever of the dirty marker (2) and the naming cursor (1) is larger.
+
+**Release rule.** Once a version ships, new Factory Programs may only be **appended** — never
+inserted, reordered or removed — because the host addresses the factory bank by position. See
+`../../BRAND.md`.
