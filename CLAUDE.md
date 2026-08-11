@@ -224,6 +224,38 @@ was written last and flickers for the length of a song.
 stored in a Program, but they are the panel's pager and its bypass, hit mid-performance - counting a
 press as an edit meant merely bypassing the plugin lit SAVE and claimed unsaved work.
 
+**The header band is 34px at y 32, and the plate is what settles it.** LCD well, both Program
+buttons and both meter windows share one height. The row was 28-29 here, with the LCD's border box a
+pixel larger than its own neighbours - the drift the suite audit found in four castings.
+
+**The spec's table disagreed with the plate again, and the plate won again.** This file already
+records one such disagreement (the spec's x 571 against the plate's 593). In this revision the spec
+gives the window as 451 wide at x 519 where the plate has **414 at x 557** — only the right edge
+agrees (519 + 451 = 970; the plate's name cell ends at 969.5), so the two describe the same
+right-hand edge and different left-hand ones. The whole LCD moved **36px left**: tag cell 594 → 558,
+name cell 654 → 618, both by exactly 36. The name cell stayed 352 wide, so the 36-character budget
+is untouched.
+
+**The plate now bakes both button faces, and the build draws only the legends.** That is §13's
+split: each of the four legends lights independently, so a baked legend would freeze one state's
+lighting into the bitmap — but the face has no state to freeze, so it belongs in the plate with the
+rest of the static furniture. **Nothing in `ProgramHeader` fills or borders these buttons**; doing so
+would paint a live control over a baked copy of itself, which is the bug this casting's own notes
+keep naming.
+
+The buttons were 43 × 28 and 55 × 28 — two different widths. They are 70 × 34 each now, and the
+second legend is what makes them equal rather than what forced them apart: each is sized by its
+longest word, and DELETE and CANCEL are both six characters.
+
+**The face went pale → dark, and that follows from the treatment.** A pale face is the one that
+requires the lamp-beside-legend form; backlit legends need somewhere brighter to go. Nine colour
+constants went with it, including a disabled label that had itself just been rescued from `#8B9297`
+at **1.42:1**. The disabled state stopped existing rather than getting a better grey.
+
+The bloom is deliberately **warm** against the cool-neutral face — a warm bloom reads as backlit
+where a neutral one reads as merely brighter ink, which is the distinction BRAND.md draws. It is not
+the accent: the engine reds and yellows stay with I / II / I+II and appear nowhere in the header.
+
 `design/GUI-SPEC.md` is the authoritative pixel spec, `design/CHORUS60-BUILD-HANDOFF.md` the
 asset contract, and `design/README.md` carries deltas not yet folded into the spec
 (the LCD chevron is one). Read them before touching GUI code - and **measure the plate rather than

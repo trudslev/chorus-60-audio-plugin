@@ -69,20 +69,24 @@ namespace Chorus60Theme
 
         // SAVE / DELETE. Identical to Gatecrasher's and TapeRot's by design, not by accident - the
         // utility surface is shared across the suite.
-        inline const juce::Colour buttonEnabledTop{0xFFDBE0E3};
-        inline const juce::Colour buttonEnabledBottom{0xFFAAB1B6};
-        inline const juce::Colour buttonEnabledBorder{0xFF6D7478};
-        inline const juce::Colour buttonEnabledLabel{0xFF22272B};
-        inline const juce::Colour buttonPressedTop{0xFFA9B0B5};
-        inline const juce::Colour buttonPressedBottom{0xFFC9D0D4};
-        inline const juce::Colour buttonDisabledTop{0xFFC2C8CC};
-        inline const juce::Colour buttonDisabledBottom{0xFFA8AFB3};
-        inline const juce::Colour buttonDisabledBorder{0xFF8D9498};
-        // Darkened from #8B9297, which read 1.42:1 against its own button - absent rather than
-        // dim. A disabled control is allowed to be quiet; someone still has to be able to read
-        // what they cannot do.
-        // contrast: 3.18-4.18:1 vs buttonDisabledTop,buttonDisabledBottom [state]
-        inline const juce::Colour buttonDisabledLabel{0xFF55595C};
+        /** **The Program buttons' two legends. There is no face colour here any more** - the
+            plate bakes the face, and section 13 keeps only the legends at runtime, because each of
+            the four lights independently while the face has no state to freeze.
+
+            Nine constants went with the old treatment: a pale enabled face (#DBE0E3 -> #AAB1B6)
+            with dark ink, a pressed face, a separate disabled face, and a disabled label that had
+            itself just been rescued from #8B9297 at 1.42:1. **The pale face is what required the
+            lamp-beside-legend form**; backlit legends need a dark face, so the face moved with the
+            treatment, and the disabled state stopped existing rather than getting a better grey. */
+        inline const juce::Colour legendLit{0xFFF1EFEA};
+        /** Matte, not a dimmer ink - no bloom at all, which is what separates "unlit" from
+            "slightly darker". Quoted at the worst case, the lightest part of the face.
+            // contrast: 3.55:1 vs buttonCapTop [state] */
+        inline const juce::Colour legendUnlit{0xFF757D82};
+        /** Not drawn - the plate carries the face. Declared so the legend ratios above have a
+            named ground to be measured against, and so a future re-cut has the value on record. */
+        inline const juce::Colour buttonCapTop{0xFF23282B};
+        inline const juce::Colour buttonCapBottom{0xFF15181A};
     }
 
     /** Which of the two re-rendered filmstrips a knob uses. */
@@ -290,12 +294,27 @@ namespace Chorus60Theme
         // table gives x 571 for the window and 631 for the name field, but the plate has them at 593
         // and 654. The two numbers the spec and the plate agree on are the ones the character budget
         // rests on - a 59 px bank cell and a 352 px glyph run - so those are exact either way.
-        constexpr float programWindowX = 593.0f, programWindowY = 33.0f;
-        constexpr float programWindowW = 414.0f, programWindowH = 29.0f;
-        constexpr float programTagCellX = 594.0f, programTagCellY = 34.0f;
-        constexpr float programTagCellW = 59.0f, programTagCellH = 28.0f;
-        constexpr float programNameCellX = 654.0f, programNameCellY = 34.0f;
-        constexpr float programNameCellW = 352.0f, programNameCellH = 28.0f;
+        // **The header band: y 32, outer height 34, shared by all five parts** - the LCD well,
+        // both Program buttons and both meter windows. 34 is BRAND.md's suite figure rather than
+        // this panel's: the castings are differently-sized units, not scales of one design. The
+        // row was 28-29 here, with the LCD's border box a pixel larger than its own neighbours -
+        // the drift the suite audit found in four castings.
+        //
+        // **Measured off the re-exported plate, not transcribed - again.** This file already
+        // records the spec's table disagreeing with the plate once (x 571 against 593); it
+        // disagrees again in this revision, giving the window as 451 wide at x 519 where the plate
+        // has 414 at x 557. Only the RIGHT edge agrees (519 + 451 = 970, and the plate's name cell
+        // ends at 969.5), so the two describe the same right-hand edge and different left-hand
+        // ones. The plate wins, as it did last time.
+        //
+        // The whole LCD moved 36px LEFT this revision: the tag cell 594 -> 558 and the name cell
+        // 654 -> 618, both by exactly 36.
+        constexpr float programWindowX = 557.0f, programWindowY = 32.0f;
+        constexpr float programWindowW = 414.0f, programWindowH = 34.0f;
+        constexpr float programTagCellX = 558.0f, programTagCellY = 33.0f;
+        constexpr float programTagCellW = 59.0f, programTagCellH = 32.0f;
+        constexpr float programNameCellX = 618.0f, programNameCellY = 33.0f;
+        constexpr float programNameCellW = 352.0f, programNameCellH = 32.0f;
 
         // Share Tech Mono 15 px at .10em advances 9.6 px per character, so the 352 px run holds 36.
         // The longest strings that can appear are a 27-character "NN " + 24-char name and a
@@ -322,13 +341,30 @@ namespace Chorus60Theme
         constexpr float lcdChevronAlpha = 0.75f;
         constexpr float lcdNameRightPadding = 26.0f;
 
-        // SAVE / DELETE aren't wells, so the plate has nothing for them; these are measured off
-        // chorus60-page-i@2x.png, which draws both.
-        constexpr float saveButtonX = 1015.0f, saveButtonY = 34.0f, saveButtonW = 43.0f, saveButtonH = 28.0f;
-        constexpr float deleteButtonX = 1066.0f, deleteButtonY = 34.0f, deleteButtonW = 55.0f, deleteButtonH = 28.0f;
+        /** **The plate bakes both button FACES now, and the build draws only the legends.**
 
-        constexpr float inWindowX = 1139.0f, inWindowY = 34.0f, inWindowW = 54.0f, inWindowH = 28.0f;
-        constexpr float outWindowX = 1203.0f, outWindowY = 34.0f, outWindowW = 54.0f, outWindowH = 28.0f;
+            That is section 13's split: "the legends stay runtime text - never baked into the
+            button bitmap", because each of the four can light independently and a baked legend
+            would freeze one state's lighting into the face. The face itself has no state to
+            freeze, so it belongs in the plate like every other static furniture.
+
+            Measured on the re-exported plate at x 977..1047 and 1053..1123, y 32..66 - 70 x 34
+            each, matching section 13's box. They were 43 x 28 and 55 x 28: two buttons of
+            DIFFERENT widths, which the second legend fixes rather than causes (each is sized by
+            its longest word, and DELETE and CANCEL are both six characters).
+
+            **Nothing here draws a face.** Doing so would paint a live control over a baked copy of
+            itself, which is the bug this casting's own notes keep naming. */
+        constexpr float saveButtonX = 977.0f, saveButtonY = 32.0f, saveButtonW = 70.0f, saveButtonH = 34.0f;
+        constexpr float deleteButtonX = 1053.0f, deleteButtonY = 32.0f, deleteButtonW = 70.0f, deleteButtonH = 34.0f;
+
+        /** Two stacked legends, 10px on a 12px line box. 10px is BRAND.md's floor for functional
+            text and both legends are functional, so neither is set smaller to make the pair fit. */
+        constexpr float legendCssPx = 10.0f, legendTrackingEm = 0.12f, legendLineHeight = 12.0f;
+
+        // These are text-centring boxes over wells the plate bakes, not wells the build draws.
+        constexpr float inWindowX = 1139.0f, inWindowY = 32.0f, inWindowW = 54.0f, inWindowH = 34.0f;
+        constexpr float outWindowX = 1203.0f, outWindowY = 32.0f, outWindowW = 54.0f, outWindowH = 34.0f;
 
         // Below this the IN/OUT readouts show -INF rather than a number: the plugin's own BBD clock
         // noise sits well above it, so anything lower is silence.

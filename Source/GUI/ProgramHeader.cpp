@@ -497,28 +497,76 @@ void ProgramHeader::paint(juce::Graphics& g)
     drawTrackedText(g, formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
                      outWindowRect, juce::Justification::centred, Colour::ledWindowText);
 
-    // SAVE / DELETE (STORE / CANCEL while naming), drawn live per section 6's state table.
-    auto drawButton = [&] (juce::Rectangle<float> rect, const juce::String& label, bool enabled, bool pressed)
+    // SAVE / STORE and DELETE / CANCEL, per section 13.
+    //
+    // **The face is baked; only the legends are drawn.** Each of the four legends lights
+    // independently, so baking one would freeze that state's lighting into the bitmap - but the
+    // face itself has no state to freeze, so it sits in the plate with the rest of the static
+    // furniture. Nothing below fills or borders the button: painting a face here would put a live
+    // control over a baked copy of itself.
+    auto drawButton = [&] (juce::Rectangle<float> rect,
+                           const juce::String& upperLegend, const juce::String& lowerLegend,
+                           bool upperLit, bool lowerLit)
     {
-        const auto top = pressed ? Colour::buttonPressedTop
-                                  : (enabled ? Colour::buttonEnabledTop : Colour::buttonDisabledTop);
-        const auto bottom = pressed ? Colour::buttonPressedBottom
-                                     : (enabled ? Colour::buttonEnabledBottom : Colour::buttonDisabledBottom);
+        const auto font = labelFont(labelFontHeightForCssPx(Layout::legendCssPx));
+        const float tracking = trackingPxForEm(Layout::legendTrackingEm, Layout::legendCssPx);
 
-        g.setGradientFill({top, rect.getX(), rect.getY(), bottom, rect.getX(), rect.getBottom(), false});
-        g.fillRect(rect);
+        const float lineH = Layout::legendLineHeight;
+        const float blockTop = rect.getCentreY() - lineH;   // two 12px line boxes, centred as a pair
 
-        g.setColour(enabled ? Colour::buttonEnabledBorder : Colour::buttonDisabledBorder);
-        g.drawRect(rect, 1.0f);
+        auto legend = [&] (const juce::String& text, float y, bool lit)
+        {
+            const juce::Rectangle<float> line { rect.getX(), y, rect.getWidth(), lineH };
 
-        // Section 6: Barlow Condensed 600, 9px, .12em tracking.
-        drawTrackedText(g, label, labelFont(labelFontHeightForCssPx(9.0f)), trackingPxForEm(0.12f, 9.0f),
-                         rect, juce::Justification::centred,
-                         enabled ? Colour::buttonEnabledLabel : Colour::buttonDisabledLabel);
+            if (lit)
+            {
+                // Section 13's bloom is deliberately WARM against the cool-neutral face: a warm
+                // bloom reads as backlit where a neutral one reads as merely brighter ink, which is
+                // the distinction the brand rule draws. It is not the accent - the engine reds and
+                // yellows stay with I / II / I+II and appear nowhere in the header.
+                //
+                // JUCE has no text-shadow and no cheap blur for a string, so each radius is the
+                // same tracked text drawn at eight points around a circle. Alphas are tuned, not
+                // quoted: eight copies at alpha a reach 1-(1-a)^8 where they coincide.
+                for (auto [radius, alpha, colour] : {
+                         std::tuple { 3.5f, 0.055f, juce::Colour (0xFFFFE5BC) },
+                         std::tuple { 1.0f, 0.070f, juce::Colour (0xFFFFF6E8) } })
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        const float angle = juce::MathConstants<float>::twoPi * (float) i / 8.0f;
+
+                        drawTrackedText(g, text, font, tracking,
+                                        line.translated(std::cos(angle) * radius,
+                                                        std::sin(angle) * radius),
+                                        juce::Justification::centred, colour.withAlpha(alpha));
+                    }
+            }
+
+            drawTrackedText(g, text, font, tracking, line, juce::Justification::centred,
+                            lit ? Colour::legendLit : Colour::legendUnlit);
+        };
+
+        const juce::Graphics::ScopedSaveState state(g);
+        g.reduceClipRegion(rect.getSmallestIntegerContainer());
+
+        legend(upperLegend, blockTop, upperLit);
+        legend(lowerLegend, blockTop + lineH, lowerLit);
     };
 
-    drawButton(saveButtonRect, namingMode ? "STORE" : "SAVE",
-                isButtonEnabled(HeaderButton::save), pressedButton == HeaderButton::save);
-    drawButton(deleteButtonRect, namingMode ? "CANCEL" : "DELETE",
-                isButtonEnabled(HeaderButton::deleteOrCancel), pressedButton == HeaderButton::deleteOrCancel);
+    /*  Section 13's state table:
+
+        | Panel state                 | SAVE | STORE | DELETE | CANCEL |
+        | Factory Program, unmodified | dark | dark  | dark   | dark   |
+        | Factory Program, modified   | LIT  | dark  | dark   | dark   |
+        | User Program, unmodified    | dark | dark  | LIT    | dark   |
+        | User Program, modified      | LIT  | dark  | LIT    | dark   |
+        | Naming a Program            | dark | LIT   | dark   | LIT    |
+
+        Escape or CANCEL out of naming leaves the Program still modified - nothing was stored, so
+        SAVE lights again the moment naming exits. DELETE on a Factory Program is dark and inert,
+        which is why that row exists rather than being folded into "unmodified". */
+    drawButton(saveButtonRect, "SAVE", "STORE",
+               ! namingMode && isButtonEnabled(HeaderButton::save), namingMode);
+    drawButton(deleteButtonRect, "DELETE", "CANCEL",
+               ! namingMode && isButtonEnabled(HeaderButton::deleteOrCancel), namingMode);
 }
