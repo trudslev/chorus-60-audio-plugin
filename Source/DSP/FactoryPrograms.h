@@ -80,6 +80,42 @@ inline constexpr std::array<FactoryProgram, 9> kFactoryPrograms{ {
 
 inline constexpr int kNumFactoryPrograms = (int) kFactoryPrograms.size();
 
+/** INIT's index. **-1, deliberately outside the bank rather than position 0 within it.**
+
+    INIT is the blank canvas you start from, not an authored sound competing with the nine, so
+    numbering it would push EIGHTY-TWO to 02 and imply a running order it is not part of. Keeping it
+    outside also means it never renumbers anything, so no saved session needs migrating.
+
+    -1 is therefore a meaningful index here, and every "no index" sentinel in this casting has to be
+    something else - see ProgramManager's pending-apply sentinel, which is -2. */
+inline constexpr int initProgramIndex = -1;
+
+/** The blank canvas: one chorus engine present and audible in its plainest form, with everything
+    that gives CHORUS-60 its character at zero.
+
+    Three rules decide every value, and they are not the same rule:
+      - **Character and amount go to zero** - Depth, Decorrelation, Drift, Saturation, Noise. Raise
+        any one and you immediately hear what that one does.
+      - **Structure goes to a usable middle, never zero** - Rate at 0.5 Hz and Delay Centre at 8 ms,
+        the centre of a 2-14 ms range. A chorus at zero delay is not neutral, it is a bypass with
+        extra steps: with Depth at 0 the delay line still has to be somewhere sensible for the first
+        turn of the Depth knob to sound like chorus rather than a flanger.
+      - **Anything meaning "not acting" takes whatever value that is** - Trim 0 dB, IMAGE on STEREO
+        (the unprocessed image), Engine II off.
+
+    **All three configurations carry the same values**, per the invariant in CLAUDE.md: every
+    Program populates I, II and I+II regardless of which engines it latches, because the engine
+    toggles are combinable in place and any combination can be reached without loading a Program.
+    A blank canvas that only filled configuration I would jump to stale values the moment someone
+    pressed Engine II.
+
+    **Mix is 50 %.** CHORUS-60 is a wet/dry effect, and the midpoint reads as "nothing decided yet"
+    where a value like 35 % would look like a judgement someone made. The two serial castings,
+    TapeRot and Elmer, sit at 100 % for the opposite reason. */
+inline constexpr FactoryProgram kInitProgram
+    //                     eng1   eng2   configuration I                        configuration II                       configuration I+II                     drift  sat    noise  mix    trim
+    { "INIT",              true,  false, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, { 0.5f, 0.0f, 8.0f, 0.0f, false }, 0.0f,  0.0f,  0.0f,  50.0f, 0.0f };
+
 // EIGHTY-TWO is the program the plugin instantiates on. Its values deliberately differ from
 // Parameters.h's own defaults, which is harmless because ProgramManager::initialise applies this
 // program over the defaults on construction. The only place the difference shows is a knob's

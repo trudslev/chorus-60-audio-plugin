@@ -39,6 +39,15 @@ public:
         return index >= 0 && index < kNumFactoryPrograms;
     }
 
+    /** INIT sits outside both banks at index -1, so it is neither factory nor user. */
+    static bool isInitProgram(int index) noexcept { return index == initProgramIndex; }
+
+    /** What the LCD and the dropdown show: a two-digit 1-based index, a space, then the name.
+        getProgramName stays raw - that is what the HOST's program list wants, since a host renders
+        its own numbering and would print "01" twice. INIT is unnumbered in both, because it is
+        outside the bank and a number would place it in a running order it is not part of. */
+    juce::String getProgramDisplayName(int index) const;
+
     // Always creates a new file and switches to it - never overwrites. Name is defensively
     // uppercased and capped at 22 characters here (not just enforced by the GUI's name-entry
     // field), falling back to "NEW PROGRAM" if empty, per CHORUS60-GUI-SPEC.md section 6.
@@ -82,7 +91,10 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
 
     std::atomic<int> currentProgramIndex { defaultFactoryProgramIndex };
-    std::atomic<int> pendingProgramIndex { -1 };
+    // **-2, not -1.** -1 is INIT's index now, so it can no longer double as "nothing pending" -
+    // using it would make selecting INIT indistinguishable from having nothing queued.
+    static constexpr int noPendingProgram = -2;
+    std::atomic<int> pendingProgramIndex { noPendingProgram };
 
     // Sorted alphabetically by filename (stable across relaunches, unlike mtime-sort). Index i in
     // this array is program index kNumFactoryPrograms + i.

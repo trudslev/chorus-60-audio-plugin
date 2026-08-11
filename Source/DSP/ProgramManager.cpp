@@ -92,7 +92,9 @@ int ProgramManager::getNumPrograms() const noexcept
 
 void ProgramManager::requestProgramChange(int index)
 {
-    if (index < 0 || index >= getNumPrograms())
+    // INIT is a legal target and is NOT in [0, getNumPrograms()), so it is admitted explicitly
+    // rather than by widening the range check - which would also admit every other negative index.
+    if (! isInitProgram(index) && (index < 0 || index >= getNumPrograms()))
         return;
     pendingProgramIndex.store(index, std::memory_order_relaxed);
     triggerAsyncUpdate();
@@ -100,13 +102,16 @@ void ProgramManager::requestProgramChange(int index)
 
 void ProgramManager::handleAsyncUpdate()
 {
-    const int index = pendingProgramIndex.exchange(-1, std::memory_order_relaxed);
-    if (index >= 0)
+    const int index = pendingProgramIndex.exchange(noPendingProgram, std::memory_order_relaxed);
+    if (index != noPendingProgram)
         applyProgramByIndex(index);
 }
 
 juce::String ProgramManager::getProgramName(int index) const
 {
+    if (isInitProgram(index))
+        return kInitProgram.name;
+
     if (isFactoryProgram(index))
         return kFactoryPrograms[(size_t) index].name;
 
@@ -114,6 +119,16 @@ juce::String ProgramManager::getProgramName(int index) const
     if (userIndex >= 0 && userIndex < userProgramFiles.size())
         return userProgramFiles.getReference(userIndex).getFileNameWithoutExtension();
     return {};
+}
+
+juce::String ProgramManager::getProgramDisplayName(int index) const
+{
+    const auto name = getProgramName(index);
+
+    if (isInitProgram(index) || name.isEmpty())
+        return name;
+
+    return juce::String(index + 1).paddedLeft('0', 2) + " " + name;
 }
 
 juce::File ProgramManager::getUserProgramDirectory()
@@ -169,7 +184,11 @@ void ProgramManager::refreshUserProgramList()
 
 void ProgramManager::applyProgramByIndex(int index)
 {
-    if (isFactoryProgram(index))
+    if (isInitProgram(index))
+    {
+        applyFactoryProgram(kInitProgram);
+    }
+    else if (isFactoryProgram(index))
     {
         applyFactoryProgram(kFactoryPrograms[(size_t) index]);
     }
@@ -313,6 +332,6 @@ void ProgramManager::setCurrentProgramIndexWithoutApplying(int index) noexcept
 
 void ProgramManager::cancelPendingChange() noexcept
 {
-    pendingProgramIndex.store(-1, std::memory_order_relaxed);
+    pendingProgramIndex.store(noPendingProgram, std::memory_order_relaxed);
     cancelPendingUpdate();
 }

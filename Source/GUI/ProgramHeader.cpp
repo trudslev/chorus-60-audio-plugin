@@ -39,6 +39,7 @@ ProgramHeader::ProgramHeader(Chorus60AudioProcessor& processor) : processorRef(p
     displayedProgramIndex = processorRef.getCurrentProgram();
     displayedProgramName = processorRef.getProgramName(displayedProgramIndex);
     displayedIsFactory = processorRef.isFactoryProgram(displayedProgramIndex);
+    displayedIsInit = ProgramManager::isInitProgram(displayedProgramIndex);
     displayedIsModified = processorRef.isCurrentProgramModified();
 
     setWantsKeyboardFocus(true);
@@ -115,6 +116,7 @@ void ProgramHeader::refreshDisplayFromProcessor()
         displayedProgramIndex = index;
         displayedProgramName = processorRef.getProgramName(index);
         displayedIsFactory = processorRef.isFactoryProgram(index);
+        displayedIsInit = ProgramManager::isInitProgram(index);
     }
 
     // Naming mode shows STORE, which stays enabled regardless of whether anything was modified (its
@@ -143,6 +145,13 @@ void ProgramHeader::showProgramMenu()
     juce::PopupMenu menu;
     menu.setLookAndFeel(&menuLookAndFeel);
     bool hasUserPrograms = false;
+
+    // INIT first, unnumbered and above the Factory group, with a divider beneath it. Its item ID
+    // cannot be index + 1 like the rest - that would be 0, which PopupMenu reserves for "dismissed"
+    // - so it carries its own sentinel and is translated back on selection.
+    constexpr int initMenuId = 9999;
+    menu.addItem(initMenuId, "INIT", true, ProgramManager::isInitProgram(currentIndex));
+    menu.addSeparator();
 
     menu.addSectionHeader("Factory");
     for (int i = 0; i < numPrograms; ++i)
@@ -216,7 +225,8 @@ void ProgramHeader::showProgramMenu()
 
                            // Goes through ProgramManager's async apply path - the timerCallback
                            // picks the change up and repaints, so no forced refresh here.
-                           safeThis->processorRef.setCurrentProgram(result - 1);
+                           safeThis->processorRef.setCurrentProgram(
+                               result == initMenuId ? initProgramIndex : result - 1);
                        });
 }
 
@@ -245,7 +255,9 @@ bool ProgramHeader::isButtonEnabled(HeaderButton button) const
     if (button == HeaderButton::save)
         return displayedIsModified; // nothing changed since the program loaded = nothing to save
     if (button == HeaderButton::deleteOrCancel)
-        return !displayedIsFactory; // DELETE disabled for read-only factory programs
+        // Disabled for read-only factory programs AND for INIT - INIT is not a stored thing, so
+        // there is nothing to delete.
+        return !displayedIsFactory && !displayedIsInit;
     return false;
 }
 
@@ -401,9 +413,16 @@ void ProgramHeader::paint(juce::Graphics& g)
     const auto lcdFont = monoFont(monoFontHeightForCssPx(Layout::lcdCssPx));
     const float lcdTracking = trackingPxForEm(Layout::lcdTrackingEm, Layout::lcdCssPx);
 
+    // **On INIT the tag reads an em-dash at 42% ink, not FACT and not USER.** INIT sits outside
+    // both banks, so either word would name a bank it is not in.
+    const bool onInit = displayedIsInit && !namingMode;
     const bool showUserTag = namingMode || !displayedIsFactory;
-    drawTrackedText(g, showUserTag ? "USER" : "FACT", lcdFont, lcdTracking, tagCellRect,
-                     juce::Justification::centred, Colour::ledWindowText);
+    const auto tagText = onInit ? juce::String::charToString((juce::juce_wchar) 0x2014)
+                                : juce::String(showUserTag ? "USER" : "FACT");
+
+    drawTrackedText(g, tagText, lcdFont, lcdTracking, tagCellRect,
+                     juce::Justification::centred,
+                     onInit ? Colour::ledWindowText.withAlpha(0.42f) : Colour::ledWindowText);
 
     if (namingMode)
     {
@@ -440,7 +459,11 @@ void ProgramHeader::paint(juce::Graphics& g)
         // which reset displayedIsModified through refreshDisplayFromProcessor, so nothing extra is
         // needed here. Worst case is 27 characters of "NN " + a 24-char name plus 2 for the marker,
         // which is 29 of the field's 36.
-        const juce::String shown = indexText + " " + displayedProgramName
+        // **INIT is unnumbered**, here as in the dropdown: it is outside the bank, so a number
+        // would place it in a running order it is not part of - and the arithmetic would print
+        // "00", since its index is -1.
+        const juce::String shown = (displayedIsInit ? displayedProgramName
+                                                    : indexText + " " + displayedProgramName)
                                  + (displayedIsModified ? " *" : "");
 
         // Centred in the field less its right padding, so the name stays clear of the chevron.

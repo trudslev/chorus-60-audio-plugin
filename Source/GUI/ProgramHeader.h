@@ -99,9 +99,11 @@ private:
     // cancels rather than opening the menu - the same press/release contract the buttons use.
     bool pressedNameCell = false;
 
-    int displayedProgramIndex = -1;
+    // -2, not -1: -1 is INIT's index now, so it can no longer double as "nothing cached yet".
+    int displayedProgramIndex = -2;
     juce::String displayedProgramName;
     bool displayedIsFactory = true;
+    bool displayedIsInit = false;
 
     bool namingMode = false;
     juce::String typedName;

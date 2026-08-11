@@ -252,10 +252,16 @@ void Chorus60AudioProcessor::setStateInformation(const void* data, int sizeInByt
 
             const int savedProgramIndex =
                 xml->getIntAttribute("chorus60CurrentProgramIndex", defaultFactoryProgramIndex);
+
+            // INIT is a valid remembered Program and is NOT isPositiveAndBelow, so it is admitted
+            // explicitly rather than by widening the check. **No migration is needed**: INIT was
+            // ADDED at -1 rather than inserted at 0, so not one existing Factory index moved and
+            // every session saved before today still names the sound it was saved with.
+            const bool valid = ProgramManager::isInitProgram(savedProgramIndex)
+                               || juce::isPositiveAndBelow(savedProgramIndex, programManager.getNumPrograms());
+
             programManager.setCurrentProgramIndexWithoutApplying(
-                juce::isPositiveAndBelow(savedProgramIndex, programManager.getNumPrograms())
-                    ? savedProgramIndex
-                    : defaultFactoryProgramIndex);
+                valid ? savedProgramIndex : defaultFactoryProgramIndex);
         }
 }
 
