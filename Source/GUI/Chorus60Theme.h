@@ -37,7 +37,8 @@ namespace Chorus60Theme
         // approximations. The retired values, for anyone reading an old commit: #8A9196 as a *label*
         // colour, #7B8287, #5F666B and #5A6165 have all collapsed into the two below, and #C6CED3
         // went with the standing value readouts.
-        inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // 12.9:1 - engaged button letters
+        // contrast: 12.9:1 vs plate:modEngineHeadingRow [functional]
+        inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // engaged button letters
         inline const juce::Colour controlLabelText{0xFFA5ADB2};    //  8.04:1 - functional text
         inline const juce::Colour captionTertiary{0xFF8A9196};     //  5.73:1 - captions, footer, scope status
 
