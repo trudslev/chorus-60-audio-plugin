@@ -12,7 +12,7 @@ if(APPLE)
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Universal: Apple Silicon + Intel")
 endif()
 
-project(Chorus60 VERSION 0.1.0 LANGUAGES CXX C)
+project(Chorus60 VERSION 1.0.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -141,6 +141,7 @@ target_sources(Chorus60 PRIVATE
     Source/GUI/Chorus60EditorContent.cpp)
 
 target_compile_definitions(Chorus60 PUBLIC
+    NF_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0

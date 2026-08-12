@@ -466,7 +466,12 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
     const juce::String midDot = juce::String::fromUTF8("\xc2\xb7");
     const juce::String footer = "BBD 1024 STAGE " + midDot + " "
                               + (poweredDown ? "BYPASS" : "ENGAGED")
-                              + " " + midDot + " v1.0";
+                              // **Derived, not a literal.** It read "v1.0" hard-coded, which was
+                              // true only by coincidence until the suite went to 1.0.0 and would
+                              // have quietly lied at the first 1.1. NF_VERSION_SHORT comes from
+                              // PROJECT_VERSION in CMakeLists, so the panel and the plugin's
+                              // reported version cannot disagree.
+                              + " " + midDot + " v" NF_VERSION_SHORT;
     const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerCentreY - 8.0f,
                                              400.0f, 16.0f);
     drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(10.0f)), trackingPxForEm(0.10f, 10.0f),
