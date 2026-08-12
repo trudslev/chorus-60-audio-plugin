@@ -1,4 +1,6 @@
 #include "ProgramManager.h"
+
+#include <nf/UserProgramDirectory.h>
 #include <cmath>
 #include "../Parameters.h"
 #include <algorithm>
@@ -26,8 +28,12 @@ namespace
     constexpr const char* programFileExtension = ".chorus60program";
 }
 
-ProgramManager::ProgramManager(juce::AudioProcessorValueTreeState& stateToControl)
-    : apvts(stateToControl)
+ProgramManager::ProgramManager(juce::AudioProcessorValueTreeState& stateToControl,
+                               juce::File userDirectoryOverride)
+    : apvts(stateToControl),
+      store(nf::userProgramDirectory(pluginCompanyName, pluginProductName, userDirectoryOverride),
+            programFileExtension,
+            maxProgramNameLength)
 {
     // The identity must be valid before initialise() runs, exactly as the atomic index it replaced
     // was valid from its in-class initialiser: a host may query the moment the processor exists.
@@ -42,55 +48,41 @@ ProgramManager::~ProgramManager()
 
 void ProgramManager::initialise()
 {
-    refreshUserProgramList();
+    store.refresh();
     applyFactoryProgram(kFactoryPrograms[(size_t) defaultFactoryProgramIndex]);
     setCurrentId(factoryIdAt(defaultFactoryProgramIndex));
     captureCleanSnapshot();
 }
 
+bool ProgramManager::isPerformanceLatch(const juce::String& parameterID)
+{
+    // engine1 and engine2 are excluded from the DIRTY CHECK, deliberately - and this is the lighter
+    // of two different tools, which get confused. They are still stored and still recalled; loading
+    // a Program sets them. Touching one simply does not claim unsaved work. (Excluding a parameter
+    // from STORAGE is the heavier tool, and needs a different test: it is only correct when the
+    // Program cannot recall a state in which that parameter is audible.)
+    //
+    // The reason is that these two are the front panel's PAGER and its BYPASS, hit mid-performance,
+    // so treating a press as an edit means merely bypassing the plugin lights SAVE and claims you
+    // have unsaved work.
+    //
+    // The cost is that switching I to I+II and pressing nothing else cannot be stored as a new
+    // Program on its own; in practice the I+II page has its own parameter set, so anyone
+    // auditioning it moves a knob and SAVE lights anyway.
+    return parameterID == ParamIDs::engine1 || parameterID == ParamIDs::engine2;
+}
+
 void ProgramManager::captureCleanSnapshot()
 {
-    const auto& params = apvts.processor.getParameters();
-    cleanSnapshot.clear();
-    cleanSnapshot.reserve((size_t) params.size());
-    for (const auto* param : params)
-        cleanSnapshot.push_back(param->getValue());
+    cleanSnapshot.capture(apvts.processor);
 }
 
 bool ProgramManager::isModifiedFromLoadedProgram() const
 {
-    const auto& params = apvts.processor.getParameters();
-    if (cleanSnapshot.size() != (size_t) params.size())
-        return false;
-
-    // engine1 and engine2 are excluded, deliberately. They are stored in a Program - loading one
-    // still sets them - but they are the front panel's PAGER and its BYPASS, hit mid-performance,
-    // and treating a press as an edit means merely bypassing the plugin lights SAVE and claims you
-    // have unsaved work. Every other parameter counts.
-    //
-    // The cost is that switching I to I+II and pressing nothing else cannot be stored as a new
-    // Program on its own; in practice the I+II page has its own parameter set, so anyone auditioning
-    // it moves a knob and SAVE lights anyway.
-    const auto isPerformanceLatch = [] (const juce::AudioProcessorParameter* p)
-    {
-        if (const auto* withID = dynamic_cast<const juce::AudioProcessorParameterWithID*>(p))
-            return withID->paramID == ParamIDs::engine1 || withID->paramID == ParamIDs::engine2;
-        return false;
-    };
-
-    // Compared in normalised 0..1 space, so one epsilon is meaningful for every parameter whatever
-    // its real-world range. Loose enough to absorb the float round-trip through a user program's
-    // XML (so a just-loaded user program doesn't read as modified), far tighter than the smallest
-    // movement any control can actually produce.
-    for (int i = 0; i < params.size(); ++i)
-    {
-        if (isPerformanceLatch(params[i]))
-            continue;
-        if (std::abs(params[i]->getValue() - cleanSnapshot[(size_t) i]) > 1.0e-4f)
-            return true;
-    }
-
-    return false;
+    // Still compared in normalised 0..1 space at 1e-4, the figure this casting already used: loose
+    // enough to absorb the float round-trip through a user Program's XML, far tighter than the
+    // smallest movement any control can produce.
+    return cleanSnapshot.differsFrom(apvts.processor, isPerformanceLatch);
 }
 
 //==============================================================================
@@ -150,9 +142,8 @@ ProgramId ProgramManager::resolve(ProgramBank bank, const juce::String& id,
             return factoryIdAt(pos);
 
     if (bank == ProgramBank::user)
-        for (const auto& f : userProgramFiles)
-            if (f.getFileNameWithoutExtension() == id)
-                return { ProgramBank::user, id, id };
+        if (store.fileFor(id) != juce::File())
+            return { ProgramBank::user, id, id };
 
     // **Degrade honestly.** The restored values are correct and stay put; only the name is unknown.
     return { ProgramBank::unresolved, id, displayName.isNotEmpty() ? displayName : id };
@@ -161,14 +152,14 @@ ProgramId ProgramManager::resolve(ProgramBank bank, const juce::String& id,
 std::vector<ProgramId> ProgramManager::listPrograms() const
 {
     std::vector<ProgramId> out;
-    out.reserve(1 + kFactoryPrograms.size() + (size_t) userProgramFiles.size());
+    out.reserve(1 + kFactoryPrograms.size() + (size_t) store.getFiles().size());
 
     out.push_back(initId());
 
     for (size_t i = 0; i < kFactoryPrograms.size(); ++i)
         out.push_back(factoryIdAt((int) i));
 
-    for (const auto& f : userProgramFiles)
+    for (const auto& f : store.getFiles())
     {
         const auto stem = f.getFileNameWithoutExtension();
         out.push_back({ ProgramBank::user, stem, stem });
@@ -186,14 +177,6 @@ juce::String ProgramManager::displayLabelFor(const ProgramId& id) const
     return id.displayName;
 }
 
-juce::File ProgramManager::userProgramFile(const juce::String& stem) const
-{
-    for (const auto& f : userProgramFiles)
-        if (f.getFileNameWithoutExtension() == stem)
-            return f;
-
-    return {};
-}
 
 void ProgramManager::requestProgramChange(const ProgramId& id)
 {
@@ -230,99 +213,25 @@ juce::String ProgramManager::getProgramName(int factoryPosition) const
                : juce::String();
 }
 
-juce::File ProgramManager::getUserProgramDirectory()
+juce::File ProgramManager::getUserProgramDirectory() const
 {
-    // **Application data on every platform - no macOS special case.** This used to branch, putting
-    // macOS Programs under ~/Library/Audio/Presets. That is Apple's location for the AU PRESET
-    // FORMAT: .aupreset files the AU system itself scans, reads and writes. Our user Programs are
-    // not those - they are application-owned data in our own XML format - so they belong where an
-    // application keeps its data, and the AU folder should hold only what AU understands.
-    //
-    // Discoverability was the old justification, and it does not survive scrutiny: a host scanning
-    // that folder is looking for .aupreset, and would not have loaded a .chorus60program from it.
-    //
-    // **macOS needs the "Application Support" segment added by hand, and only macOS.** JUCE's
-    // userApplicationDataDirectory is `~/Library` there - NOT `~/Library/Application Support` -
-    // while it is `%APPDATA%` on Windows and `~/.config` on Linux, both of which are already the
-    // right root. JUCE's own PropertiesFile appends the segment the same way, for the same reason.
-    //
-    // This was got wrong once in exactly the plausible direction: the note here used to claim JUCE
-    // resolved the segment for us, and that hard-coding it would be wrong on two platforms out of
-    // three. The first half was false, and the second half only argues for the `#if` - it is one
-    // platform's extra segment, not a shared literal path. Programs landed directly in
-    // `~/Library/<Company>/` for a while, which is not where application data goes on macOS and is
-    // not a folder anything else writes into.
-    //
-    // No migration from the old location - nothing has shipped, so nothing is there to migrate.
-    // See Elmer's ProgramManager for why that is a decision rather than an oversight.
-    auto dir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory);
-
-   #if JUCE_MAC
-    dir = dir.getChildFile("Application Support");
-   #endif
-
-    return dir
-        .getChildFile(pluginCompanyName)
-        .getChildFile(pluginProductName)
-        .getChildFile("Programs");
+    return store.getDirectory();
 }
 
-void ProgramManager::refreshUserProgramList()
+juce::File ProgramManager::getDefaultUserProgramDirectory()
 {
-    userProgramFiles.clear();
-    unloadableReports.clear();
-
-    const auto dir = getUserProgramDirectory();
-    if (! dir.isDirectory())
-        return;
-
-    for (const auto& entry : juce::RangedDirectoryIterator(dir, false, juce::String("*") + programFileExtension))
-    {
-        const auto file = entry.getFile();
-
-        // **A file this build cannot read is REPORTED, not silently skipped.** Chorus-60 is the one
-        // casting with a genuinely unreadable old schema - v1 predates the paged-engine rework, so
-        // its normalised values mean something else - and dropping those files quietly would make
-        // Programs disappear from the dropdown with nothing to diagnose from. That is
-        // indistinguishable from data loss, which is the one outcome this suite's notes are most
-        // emphatic about.
-        std::unique_ptr<juce::XmlElement> probe(juce::XmlDocument::parse(file));
-
-        if (probe != nullptr)
-        {
-            const int schema = probe->getIntAttribute(LegacyMigration::stateSchemaVersionAttribute, 1);
-
-            switch (LegacyMigration::classifySchema(schema))
-            {
-                case LegacyMigration::SchemaVerdict::tooOld:
-                    unloadableReports.add(file.getFileName() + " - saved by an older version (schema "
-                                          + juce::String(schema) + "); its values cannot be read");
-                    continue;
-
-                case LegacyMigration::SchemaVerdict::tooNew:
-                    unloadableReports.add(file.getFileName() + " - saved by a NEWER version (schema "
-                                          + juce::String(schema) + "); update CHORUS-60 to load it");
-                    continue;
-
-                case LegacyMigration::SchemaVerdict::readable:
-                    break;
-            }
-        }
-
-        userProgramFiles.add(file);
-    }
-
-    // **The displayed name, case-insensitively.** The STEM, not getFileName() - comparing with the
-    // extension attached sorts "AB C" before "AB", because a space (0x20) precedes the dot (0x2E).
-    // And compareIgnoreCase, not operator<, which is a codepoint compare that put every lowercase
-    // name after every uppercase one.
-    std::sort(userProgramFiles.begin(), userProgramFiles.end(),
-               [] (const juce::File& a, const juce::File& b)
-               {
-                   return a.getFileNameWithoutExtension()
-                           .compareIgnoreCase(b.getFileNameWithoutExtension()) < 0;
-               });
+    // The per-OS resolution, the "Application Support" segment macOS alone needs, and the reason
+    // ~/Library/Audio/Presets is the wrong answer are all in nf/UserProgramDirectory.h now. That
+    // reasoning was carried in six near-identical comment blocks, and the one time it was wrong it
+    // was wrong in all six at once.
+    //
+    // **Company and product come from CMake, never a literal.** A hand-synced copy of this path
+    // drifted to "Tanis" here after COMPANY_NAME changed, quietly pointing saved Programs at a dead
+    // directory. Core takes them as arguments for exactly that reason - a shared default would
+    // reintroduce the same drift in one place for all six.
+    return nf::userProgramDirectory(pluginCompanyName, pluginProductName);
 }
+
 
 void ProgramManager::applyProgram(const ProgramId& id)
 {
@@ -341,11 +250,11 @@ void ProgramManager::applyProgram(const ProgramId& id)
     }
     else if (id.bank == ProgramBank::user)
     {
-        const int userIndex = userProgramFiles.indexOf(userProgramFile(id.id));
-        if (userIndex < 0 || userIndex >= userProgramFiles.size())
+        const auto file = store.fileFor(id.id);
+        if (file == juce::File())
             return;
 
-        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(userProgramFiles.getReference(userIndex)));
+        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(file));
         if (xml == nullptr || ! xml->hasTagName(apvts.state.getType()))
             return;
 
@@ -430,35 +339,32 @@ void ProgramManager::applyFactoryProgram(const FactoryProgram& program)
 
 void ProgramManager::saveNewUserProgram(const juce::String& requestedName)
 {
-    juce::String name = requestedName.trim().toUpperCase();
-    if (name.isEmpty())
-        name = "NEW PROGRAM";
-    if (name.length() > maxProgramNameLength)
-        name = name.substring(0, maxProgramNameLength);
-
-    const auto dir = getUserProgramDirectory();
-    if (! dir.isDirectory())
-        dir.createDirectory();
-
+    // **What a Program CONTAINS stays here** - the whole APVTS state plus the schema version. Core
+    // owns naming, the collision check and the write, and takes finished XML.
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     xml->setAttribute(LegacyMigration::stateSchemaVersionAttribute, LegacyMigration::currentStateSchemaVersion);
 
-    juce::File file = dir.getChildFile(juce::File::createLegalFileName(name) + programFileExtension);
+    // **The empty-name fallback is `TAKE n` now, not `NEW PROGRAM`.** The suite had five different
+    // ones across six castings; TAKE n is the one that is better rather than merely different,
+    // since consecutive empty saves give TAKE 3, TAKE 4 instead of leaning on getNonexistentSibling
+    // for "NEW PROGRAM (2)". Trimming, upper-casing and the 31-character cap are core's now too -
+    // this casting already applied all three here, so only the fallback string changes.
+    const auto file = store.save(requestedName, *xml);
 
-    // **SAVE never overwrites**, which BRAND.md states as a guarantee and this used to break. It
-    // matters more now that the filename IS the identity - two Programs cannot share one.
-    if (file.existsAsFile())
-        file = file.getNonexistentSibling();
+    if (file == juce::File())
+        return;   // the write failed; the panel keeps naming the Program it was already on
 
-    xml->writeTo(file);
-
-    refreshUserProgramList();
+    // **The stem comes off the file core returned, not off the requested name.** A collision takes
+    // the next free sibling, so taking it from the request would point the panel at the first file
+    // while the values came from the second.
     const auto stem = file.getFileNameWithoutExtension();
     setCurrentId({ ProgramBank::user, stem, stem });
+
     // The just-saved program IS the current parameter state, so this becomes the new clean baseline
     // and SAVE goes back to disabled immediately after storing, until something moves again.
     captureCleanSnapshot();
+
     if (onProgramListChanged)
         onProgramListChanged();
 }
@@ -468,15 +374,10 @@ void ProgramManager::deleteUserProgram(const ProgramId& id)
     if (id.bank != ProgramBank::user)
         return;
 
-    const auto target = userProgramFile(id.id);
-
-    if (target == juce::File())
-        return;
-
-    const int userIndex = userProgramFiles.indexOf(target);
     const bool wasCurrent = getCurrentProgramId() == id;
-    userProgramFiles.getReference(userIndex).deleteFile();
-    refreshUserProgramList();
+
+    if (! store.remove(id.id))
+        return;
 
     // Deliberately NOT the unresolved state: deleting from the panel is unambiguous intent.
     if (wasCurrent)

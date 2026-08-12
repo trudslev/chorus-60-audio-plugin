@@ -233,9 +233,33 @@ centred, reverting 900 ms after release. **The caller guards that on the control
 and on every host automation step, and without the guard the display latches onto whichever parameter
 was written last and flickers for the length of a song.
 
-`engine1`/`engine2` are excluded from the modified-since-load check in `ProgramManager`. They are
-stored in a Program, but they are the panel's pager and its bypass, hit mid-performance - counting a
-press as an edit meant merely bypassing the plugin lit SAVE and claimed unsaved work.
+`engine1`/`engine2` are excluded from the modified-since-load check in `ProgramManager`
+(`isPerformanceLatch`, passed to `nf::ParameterSnapshot::differsFrom` as its exclusion predicate).
+They are stored in a Program, but they are the panel's pager and its bypass, hit mid-performance -
+counting a press as an edit meant merely bypassing the plugin lit SAVE and claimed unsaved work.
+
+**That is the lighter of two different tools and they get confused.** Excluding a parameter from the
+dirty check leaves it stored and recalled, so Programs stay reproducible; excluding it from
+*storage* is the heavier one, and is only correct when the Program cannot recall a state in which
+that parameter is audible. Chorus-60 needs the light one; Fifth Member's Cross-Feed is the case that
+needed the heavy test and failed it.
+
+**The bank on disk, the dirty flag and Program identity all come from `neon-foundry-core`**, pinned
+at `v1.0.0` and declared *after* `FetchContent_MakeAvailable(JUCE)` — core links `juce::juce_core`
+and refuses to fetch its own, and two JUCE trees in one build link two `juce_core` builds into one
+binary. It is linked into both `Chorus60` and `Chorus60Tests`, because `ProgramManager.cpp` is
+compiled into both.
+
+What a Program *contains* stays here: the whole APVTS state plus the schema version. Two things
+changed with the move — the empty-name fallback is **`TAKE n`**, not `NEW PROGRAM`, and the dirty
+baseline is **keyed by parameter ID and guarded by a `SpinLock`** where it was a positional
+`std::vector<float>` with neither. The old comment claimed every writer ran on the message thread;
+`setStateInformation` carries no such guarantee, and the GUI polls the flag while it runs.
+
+**The user-Programs path takes company and product as arguments, never a shared default** — this is
+the casting whose hand-synced copy of that path drifted to "Tanis" after `COMPANY_NAME` changed,
+quietly pointing saved Programs at a dead directory. A default inside core would reintroduce that in
+one place for all six.
 
 **The header band is 34px at y 32, and the plate is what settles it.** LCD well, both Program
 buttons and both meter windows share one height. The row was 28-29 here, with the LCD's border box a

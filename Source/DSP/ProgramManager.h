@@ -1,6 +1,9 @@
 #pragma once
 
 #include "FactoryPrograms.h"
+
+#include <nf/ParameterSnapshot.h>
+#include <nf/UserProgramStore.h>
 #include <functional>
 #include <vector>
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -22,7 +25,11 @@
 class ProgramManager : private juce::AsyncUpdater
 {
 public:
-    explicit ProgramManager(juce::AudioProcessorValueTreeState& stateToControl);
+    /** @param userDirectoryOverride  where User Programs live. Defaults to the real per-OS
+                                      location; a test passes a temporary directory so it never
+                                      writes into the user's own Programs folder. */
+    explicit ProgramManager(juce::AudioProcessorValueTreeState& stateToControl,
+                            juce::File userDirectoryOverride = {});
     ~ProgramManager() override;
 
     // Call once from PluginProcessor's constructor, after the APVTS/parameters exist.
@@ -62,6 +69,10 @@ public:
     // Always creates a new file and switches to it - never overwrites. Name is defensively
     // uppercased and capped at 22 characters here (not just enforced by the GUI's name-entry
     // field), falling back to "NEW PROGRAM" if empty, per GUI-SPEC.md section 6.
+    /** Where this instance stores User Programs, and the real per-OS location regardless of it. */
+    juce::File getUserProgramDirectory() const;
+    static juce::File getDefaultUserProgramDirectory();
+
     void saveNewUserProgram(const juce::String& requestedName);
 
     // No-op for factory indices. Falls back to defaultFactoryProgramIndex if the deleted program
@@ -95,13 +106,17 @@ private:
     void handleAsyncUpdate() override;
     void applyProgram(const ProgramId& id);
     void setCurrentId(const ProgramId& id);
-    juce::File userProgramFile(const juce::String& stem) const;
     void applyFactoryProgram(const FactoryProgram& program);
-    void refreshUserProgramList();
     void captureCleanSnapshot();
-    static juce::File getUserProgramDirectory();
+
+    /** True for a parameter that is stored and recalled but does not count as an edit. */
+    static bool isPerformanceLatch(const juce::String& parameterID);
 
     juce::AudioProcessorValueTreeState& apvts;
+
+    // The User bank on disk. Scanning, sorting, naming, the collision check, save and delete are
+    // core's; WHAT a Program contains - the whole APVTS state - stays here.
+    nf::UserProgramStore store;
 
     mutable juce::SpinLock currentIdLock;
     ProgramId currentId;
@@ -110,15 +125,11 @@ private:
     bool hasPendingProgram = false;
     ProgramId pendingProgram;
 
-    // Sorted alphabetically by filename (stable across relaunches, unlike mtime-sort). Index i in
-    // this array is program index kNumFactoryPrograms + i.
-    juce::Array<juce::File> userProgramFiles;
-
-    // Normalised parameter values as of the last program load, in getParameters() order - what
-    // isModifiedFromLoadedProgram compares against. Message-thread only (every writer runs there:
-    // initialise at construction, handleAsyncUpdate, saveNewUserProgram, and the session-restore
-    // path), so it needs no synchronisation of its own.
-    std::vector<float> cleanSnapshot;
+    // The baseline isModifiedFromLoadedProgram compares against. Keyed by parameter ID inside
+    // rather than held in getParameters() order - see nf/ParameterSnapshot.h for why an index is
+    // the wrong key, and for the SpinLock this used to lack. The claim that every writer runs on
+    // the message thread was not quite true: setStateInformation carries no thread guarantee.
+    nf::ParameterSnapshot cleanSnapshot;
 
     // **31, recomputed now that the "NN " prefix is gone from the displayed string.**
     //
