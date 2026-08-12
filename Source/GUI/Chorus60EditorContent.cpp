@@ -179,6 +179,31 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     engine2Attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processorRef.apvts, ParamIDs::engine2, buttonII);
 
+    /*  **The engine buttons report to the LCD, like every knob.** BRAND.md's rule is that every
+        control changing a parameter announces itself there, switches included - and these are its
+        strongest case in the suite. Turning a knob shows you its own printed scale; pressing I or
+        II rebinds what the entire MOD ENGINE page controls, and shows nothing about which
+        configuration you have landed in.
+
+        onClick rather than a value listener, so this fires only for a press: the attachment also
+        moves these buttons on Program recall and on host automation, and neither should take the
+        glass. Same distinction the knobs draw with isMouseButtonDown. */
+    const auto reportEngine = [this] (juce::Button& button, const char* paramID)
+    {
+        button.onClick = [this, paramID]
+        {
+            if (auto* ranged = dynamic_cast<juce::RangedAudioParameter*> (
+                                   processorRef.apvts.getParameter (paramID)))
+            {
+                programHeader.showParameter (*ranged);
+                programHeader.releaseParameter();
+            }
+        };
+    };
+
+    reportEngine (buttonI,  ParamIDs::engine1);
+    reportEngine (buttonII, ParamIDs::engine2);
+
     // The heading-row LED sits ABOVE the MOD ENGINE box's rule, so it belongs to this component
     // rather than to the dimmable group - in bypass it goes dark rather than dimming.
     groupLed.setBounds(getLocalBounds());
@@ -314,6 +339,18 @@ void Chorus60EditorContent::advanceAnimation(float dtMs)
     const float slew = 1.0f - std::pow(Layout::slewRemainderAtSettle, dtMs / Layout::slewSettleMs);
     const float fade = 1.0f - std::pow(Layout::slewRemainderAtSettle, dtMs / Layout::powerDownFadeMs);
 
+    // Polled against the current ProgramId rather than pushed from the manager: a Program can
+    // arrive from the host, the dropdown or a session restore, and any unwired path would slew
+    // silently.
+    bool snapDisplay = false;
+
+    if (const auto current = processorRef.getProgramManager().getCurrentProgramId();
+        current != lastAppliedProgram)
+    {
+        lastAppliedProgram = current;
+        snapDisplay = true;
+    }
+
     for (int slot = 0; slot < numSlots; ++slot)
     {
         auto& knob = *slotKnobs[(size_t) slot];
@@ -323,7 +360,15 @@ void Chorus60EditorContent::advanceAnimation(float dtMs)
 
         // A slot being dragged tracks the pointer 1:1 - slewing under the user's own hand would
         // feel like lag, not like motion.
-        if (knob.isMouseButtonDown())
+        //
+        // **Program recall SNAPS; the paging slew survives**, and the distinction is not a
+        // carve-out to save existing code. On recall the parameter's VALUE changes, so an animating
+        // pointer shows a value that is not current for the length of the animation - the one thing
+        // a pointer is for. On a page change the BINDING changes: the knob stops meaning slot A and
+        // starts meaning slot B, no single current value is misreported, and the travel is what
+        // tells you the knob now means something else. BRAND.md carries this beside the Program
+        // conventions; do not tidy the two into one behaviour.
+        if (snapDisplay || knob.isMouseButtonDown())
             display = parameterProportion;
         else
             display += slew * (parameterProportion - display);

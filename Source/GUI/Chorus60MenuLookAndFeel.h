@@ -117,7 +117,10 @@ public:
                                          Chorus60Theme::monoFont (headerTextSize), headerTracking,
                                          r.withTrimmedLeft ((float) tickColumn),
                                          juce::Justification::left,
-                                         Chorus60Theme::Colour::ledWindowText.withAlpha (0.55f));
+                                         // **Opaque.** BRAND.md permits opacity for STATE and
+                                         // forbids it for HIERARCHY; a section header is
+                                         // hierarchy. Size and tracking already carry it.
+                                         Chorus60Theme::Colour::ledWindowText);
 
         g.setColour (rule);
         g.fillRect (r.reduced (5.0f, 0.0f).withHeight (1.0f).withY (r.getBottom() - 1.0f));

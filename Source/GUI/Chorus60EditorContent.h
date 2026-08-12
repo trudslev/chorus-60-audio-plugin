@@ -110,6 +110,7 @@ private:
     // is no power-down rotation any more: section 9 deleted the wind-to-zero, so a bypassed panel
     // holds every pointer exactly where it is.
     std::array<float, numSlots> slotDisplay{};
+    ProgramId lastAppliedProgram {};   // see Chorus60EditorContent.cpp: recall snaps, paging slews
     float dimFactor = 1.0f;
     juce::uint32 lastFrameMs = 0;
 

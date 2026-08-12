@@ -31,6 +31,7 @@ public:
 
     void paint(juce::Graphics&) override;
     bool hitTest(int x, int y) override;
+    void focusLost (FocusChangeType) override;
 
     /** Section 5's parameter readout: while a control is being moved the name cell shows
         `NAME: VALUE UNIT` in #FFD9A0, reverting to the program name 900 ms after the gesture ends.

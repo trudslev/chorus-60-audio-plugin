@@ -370,6 +370,12 @@ namespace Chorus60Theme
 
             **Nothing here draws a face.** Doing so would paint a live control over a baked copy of
             itself, which is the bug this casting's own notes keep naming. */
+        /** 190px of vertical drag spans the full range, 760 while Shift is held. Suite figures:
+            six castings had six drag feels - this one was on 200 - so the same hand got a different
+            response from each. The Shift fine mode comes from Reflect-84. */
+        constexpr int knobDragPixels = 190;
+        constexpr int knobFineDragPixels = 760;
+
         constexpr float saveButtonX = 977.0f, saveButtonY = 32.0f, saveButtonW = 70.0f, saveButtonH = 34.0f;
         constexpr float deleteButtonX = 1053.0f, deleteButtonY = 32.0f, deleteButtonW = 70.0f, deleteButtonH = 34.0f;
 

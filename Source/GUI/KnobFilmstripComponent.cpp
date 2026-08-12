@@ -9,7 +9,7 @@ KnobFilmstripComponent::KnobFilmstripComponent(Chorus60Theme::KnobFilmstripSize 
 
     // Section 8: "full range over 200 px, x0.25 with Shift". The Shift-key fine-drag scaling is
     // juce::Slider's own built-in behaviour for RotaryVerticalDrag, not something to reproduce here.
-    setMouseDragSensitivity(200);
+    setMouseDragSensitivity(Chorus60Theme::Layout::knobDragPixels);
 }
 
 void KnobFilmstripComponent::paint(juce::Graphics& g)
@@ -74,4 +74,15 @@ float KnobFilmstripComponent::getDrawnProportion()
     if (displayProportionOverride >= 0.0f)
         return displayProportionOverride;
     return (float) valueToProportionOfLength(getValue());
+}
+
+void KnobFilmstripComponent::mouseDown(const juce::MouseEvent& e)
+{
+    // Sensitivity has to be settled BEFORE Slider::mouseDown records its drag anchor: JUCE measures
+    // from that anchor and scales by the current sensitivity, so changing it mid-drag rescales the
+    // distance already travelled and the value jumps.
+    setMouseDragSensitivity(e.mods.isShiftDown() ? Chorus60Theme::Layout::knobFineDragPixels
+                                                 : Chorus60Theme::Layout::knobDragPixels);
+
+    juce::Slider::mouseDown(e);
 }

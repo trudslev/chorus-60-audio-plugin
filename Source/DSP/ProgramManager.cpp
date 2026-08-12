@@ -20,6 +20,10 @@ namespace
 #endif
     constexpr const char* pluginCompanyName = NF_COMPANY_NAME;
     constexpr const char* pluginProductName = NF_PRODUCT_NAME;
+
+    // Named once. It was a literal in two places, which is two chances to rename one and not the
+    // other - and a Program written under one spelling is invisible to a scan using the other.
+    constexpr const char* programFileExtension = ".chorus60program";
 }
 
 ProgramManager::ProgramManager(juce::AudioProcessorValueTreeState& stateToControl)
@@ -272,7 +276,7 @@ void ProgramManager::refreshUserProgramList()
     if (! dir.isDirectory())
         return;
 
-    for (const auto& entry : juce::RangedDirectoryIterator(dir, false, "*.chorus60program"))
+    for (const auto& entry : juce::RangedDirectoryIterator(dir, false, juce::String("*") + programFileExtension))
     {
         const auto file = entry.getFile();
 
@@ -440,7 +444,7 @@ void ProgramManager::saveNewUserProgram(const juce::String& requestedName)
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     xml->setAttribute(LegacyMigration::stateSchemaVersionAttribute, LegacyMigration::currentStateSchemaVersion);
 
-    juce::File file = dir.getChildFile(juce::File::createLegalFileName(name) + ".chorus60program");
+    juce::File file = dir.getChildFile(juce::File::createLegalFileName(name) + programFileExtension);
 
     // **SAVE never overwrites**, which BRAND.md states as a guarantee and this used to break. It
     // matters more now that the filename IS the identity - two Programs cannot share one.

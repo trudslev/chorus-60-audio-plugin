@@ -32,6 +32,8 @@ public:
 
     void paint(juce::Graphics&) override;
 
+    void mouseDown (const juce::MouseEvent& e) override;   // Shift = 4x fine drag
+
     /** Draw at a rotation other than the parameter's own, so a page change can slew each pointer to
         its new value instead of snapping (section 10). Passing a negative value returns the knob to
         following its parameter directly.
