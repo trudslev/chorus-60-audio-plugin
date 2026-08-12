@@ -176,9 +176,11 @@ Retina is no longer an open dependency. The generator ships with the bundle
 (`tools/render-knob-filmstrips-chorus60.mjs`, `npm i canvas` then `node …`), so any future size is a
 re-run rather than an upscale. It carries the same shadow guard: all four sheets pass at ≤ 2.
 
-## 5. Product icon — **exists, unchanged**
+## 5. Product icon — **exists, unchanged, now bundled**
 
-Already delivered and not touched by this revision. Do not regenerate.
+Already delivered and not touched by this revision. Do not regenerate. The ladder was listed here but
+missing from the bundle until this revision; the files below are now present under `assets/icon/`,
+with `Chorus-60 Icon.dc.html` in `prototype/` as their source.
 
 | File | Size |
 |---|---|

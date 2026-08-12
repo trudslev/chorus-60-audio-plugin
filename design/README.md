@@ -50,6 +50,14 @@ points; multiply by 2 for the @2x asset set.
 
 ## Delta since the last spec revision — read this before the specs
 
+**Asset completeness pass (this revision).** The eight-file product-icon ladder was listed in
+`CHORUS60-BUILD-HANDOFF.md` §5 but had never been bundled — it is now in `assets/icon/`, with
+`prototype/Chorus-60 Icon.dc.html` as its source. The six Program-button faces shipped @2x only while
+every other control sprite ships both; their @1x exports are now in `assets/controls/`. A previous
+note claiming the engine buttons, lamps and IMAGE switch had never been exported was **wrong** —
+all nine have been present at @1x and @2x throughout. No design changed.
+
+
 **Bundle re-cut to the delivery convention (this revision).** Three changes, no design impact:
 the build contract is now `spec/GUI-SPEC.md` (was `CHORUS60-GUI-SPEC.md`) and its opening lines name
 its one companion so you never have to read the bundle to find the contract; `BRAND.md` is no longer
