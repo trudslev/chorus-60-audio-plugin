@@ -3,6 +3,7 @@ juce_add_console_app(Chorus60Tests PRODUCT_NAME "Chorus60Tests")
 target_sources(Chorus60Tests PRIVATE
     TestMain.cpp
     ReadoutConformanceTests.cpp
+    MenuMetricsTests.cpp
     ModulationEngineTests.cpp
     BBDDelayLineTests.cpp
     StereoDecorrelationStageTests.cpp

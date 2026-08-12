@@ -145,7 +145,17 @@ private:
     {
         nf::MenuMetrics m;
         m.rowHeight = rowHeight;
-        m.sectionHeaderHeight = rowHeight + rowHeight / 2;   // JUCE's own rule, made explicit
+        // **The construction, not a literal.** padding + the line box this panel's own caption
+        // type produces - nf::captionHeight. It comes out 19 here, the same as Elmer's, and that
+        // is a COINCIDENCE: Share Tech Mono's line box is 1.127 em against Plex Mono's 1.300, and
+        // 11px of one plus 9px of the other happen to meet once the padding is added. Writing 19
+        // would lose the rule and break it silently at the first type change - which is how this
+        // caption came to inherit JUCE's rowHeight + rowHeight / 2 in the first place.
+        //
+        // 3px above and 4px below is the suite's ADOPTED default, not a derived figure: only
+        // Elmer and Reflect-84 have designer-authored caption padding and they disagree (3/4
+        // against 9/4), so there is no suite constant to derive. See BRAND.md.
+        m.sectionHeaderHeight = nf::captionHeight (Chorus60Theme::monoFont (headerTextSize), 3, 4);
         m.separatorHeight = 9;
         m.leadingColumn = tickColumn;
         m.horizontalPadding = 26;
