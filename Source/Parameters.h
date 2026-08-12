@@ -192,10 +192,40 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
-    const auto hzAttrs = juce::AudioParameterFloatAttributes().withLabel("Hz");
-    const auto percentAttrs = juce::AudioParameterFloatAttributes().withLabel("%");
-    const auto msAttrs = juce::AudioParameterFloatAttributes().withLabel("ms");
-    const auto dbAttrs = juce::AudioParameterFloatAttributes().withLabel("dB");
+    // **Every float parameter gets an explicit formatter, and these four sets are why that is
+    // cheap.** The formatting used to live in Chorus60Theme::formatParameterValue, keyed on the
+    // LABEL - a second formatting convention beside the parameter's own, which is the arrangement
+    // that lets a panel and a host's automation lane disagree about the same control. They now
+    // agree because there is only one conversion.
+    //
+    // Without a formatter a float parameter renders through JUCE's default, which is SEVEN decimal
+    // places for a NormalisableRange with a zero interval - Gatecrasher hit that, TapeRot shipped
+    // it, and Elmer masked it with a hand-rolled panel formatter exactly as this casting did.
+    // Tests/ReadoutConformanceTests.cpp is what now fails a build over it.
+    //
+    // The unit stays in the LABEL rather than the text: nf::describeParameter joins the two with a
+    // space and JUCE's own generic UI appends the label the same way, so baking it in would double
+    // it up.
+    const auto hzAttrs = juce::AudioParameterFloatAttributes().withLabel("Hz")
+        .withStringFromValueFunction([] (float v, int) { return juce::String(v, 2); });
+
+    // roundToInt, NOT juce::String(v, 0): JUCE treats a decimal-place count of 0 as "use the
+    // default conversion" rather than "round to a whole number", so that spelling prints the full
+    // value - a Depth of 68.5916 rendered as "68.5916 %". It only looked correct while the
+    // displayed values happened to land on whole numbers, which every factory Program's do.
+    const auto percentAttrs = juce::AudioParameterFloatAttributes().withLabel("%")
+        .withStringFromValueFunction([] (float v, int) { return juce::String(juce::roundToInt(v)); });
+
+    const auto msAttrs = juce::AudioParameterFloatAttributes().withLabel("ms")
+        .withStringFromValueFunction([] (float v, int) { return juce::String(v, 1); });
+
+    // The sign is explicit: a trim of +2.5 and one of -2.5 are different enough that the reader
+    // should not have to infer the plus from its absence.
+    const auto dbAttrs = juce::AudioParameterFloatAttributes().withLabel("dB")
+        .withStringFromValueFunction([] (float v, int)
+        {
+            return (v >= 0.0f ? juce::String("+") : juce::String()) + juce::String(v, 1);
+        });
 
     // The switch reads MONO / STEREO on the panel rather than on/off, and a host's generic
     // parameter list should say the same thing rather than "On"/"Off".

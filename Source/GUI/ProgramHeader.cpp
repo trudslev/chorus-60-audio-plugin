@@ -66,10 +66,10 @@ void ProgramHeader::timerCallback()
 {
     // The live readout reverts on its own clock rather than a second timer (section 5: held 900 ms
     // after release, then the program name returns).
-    if (readoutRevertAtMs != 0 && juce::Time::getMillisecondCounter() >= readoutRevertAtMs)
+    if (const bool showing = readout.isShowing(juce::Time::getMillisecondCounter());
+        showing != readoutWasShowing)
     {
-        readoutRevertAtMs = 0;
-        liveReadout.clear();
+        readoutWasShowing = showing;
     }
 
     refreshDisplayFromProcessor();
@@ -82,36 +82,31 @@ void ProgramHeader::timerCallback()
 
 void ProgramHeader::showParameter(const juce::RangedAudioParameter& param)
 {
-    using namespace Chorus60Theme;
-
     if (namingMode)
         return;   // the glass belongs to the name field until it commits or cancels
 
-    // Straight through the parameter's own name and Chorus60Theme's formatter, so the LCD and the
-    // host never disagree about what a control reads. Section 5's examples set the shape:
-    // "DELAY CENTER I+II: 6.4 ms", "RATE I: 0.45 Hz", "IMAGE I: STEREO".
-    const auto name = param.getName(Layout::lcdCharacterBudget).toUpperCase();
-    const auto value = formatParameterValue(param, param.convertFrom0to1(param.getValue()));
+    // **Straight through nf::describeParameter**, which is straight through the parameter's own
+    // getText and getLabel. This used to route through Chorus60Theme::formatParameterValue, a
+    // second formatting convention keyed on the label - so the panel and the host's automation lane
+    // formatted the same control two different ways. The formatters live on the parameters now.
+    //
+    // Section 5's examples are unchanged: "DELAY CENTER I+II: 6.4 ms", "RATE I: 0.45 Hz",
+    // "IMAGE I: STEREO". The NAME is capitalised and the value is not - the IMAGE switch's
+    // MONO/STEREO already arrive upper-case from its own stringFromValue, which is exactly where
+    // that decision belongs.
+    const auto text = nf::describeParameter(param, Chorus60Theme::readoutFormat());
+    const auto now = juce::Time::getMillisecondCounter();
 
-    // The NAME is capitalised, the value is not. Section 5's examples set that split -
-    // "DELAY CENTER I+II: 6.4 ms" and "RATE I: 0.45 Hz" keep their units as written, and the
-    // IMAGE switch's MONO/STEREO already arrive upper-case from its own stringFromValue.
-    const auto text = name + ": " + value;
-    if (text != liveReadout)
-    {
-        liveReadout = text;
+    if (text != readout.textAt(now))
         repaint(nameCellRect.getSmallestIntegerContainer());
-    }
-    readoutRevertAtMs = 0;
+
+    readout.show(text);
+    readoutWasShowing = true;
 }
 
 void ProgramHeader::releaseParameter()
 {
-    using namespace Chorus60Theme;
-
-    if (liveReadout.isNotEmpty())
-        readoutRevertAtMs = juce::Time::getMillisecondCounter()
-                                + (juce::uint32) Layout::lcdReadoutHoldMs;
+    readout.release(juce::Time::getMillisecondCounter());
 }
 
 void ProgramHeader::refreshDisplayFromProcessor()
@@ -322,8 +317,8 @@ void ProgramHeader::mouseUp(const juce::MouseEvent& e)
 
 void ProgramHeader::enterNamingMode()
 {
-    liveReadout.clear();
-    readoutRevertAtMs = 0;
+    readout.suppress();
+    readoutWasShowing = false;
 
     namingMode = true;
     typedName.clear();
@@ -446,7 +441,8 @@ void ProgramHeader::paint(juce::Graphics& g)
         drawTrackedText(g, text, lcdFont, lcdTracking, nameCellRect.reduced(12.0f, 0.0f),
                          juce::Justification::left, Colour::ledWindowText);
     }
-    else if (liveReadout.isNotEmpty())
+    else if (const auto takeover = readout.textAt(juce::Time::getMillisecondCounter());
+             takeover.isNotEmpty())
     {
         // Section 5's second content: the parameter readout in #FFD9A0 while a control is being
         // moved. This is the panel's ONLY live numeric display - the standing per-knob readouts
@@ -456,7 +452,7 @@ void ProgramHeader::paint(juce::Graphics& g)
         // name in the same cell, and centring both means the text stays put as it swaps instead of
         // jumping to the left margin and back on every gesture. Only name ENTRY is left-aligned,
         // where it has to be, because a caret has to sit after the last character typed.
-        drawTrackedText(g, liveReadout, lcdFont, lcdTracking, nameCellRect,
+        drawTrackedText(g, takeover, lcdFont, lcdTracking, nameCellRect,
                          juce::Justification::centred, Colour::lcdParameterReadout);
     }
     else

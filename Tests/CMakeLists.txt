@@ -2,6 +2,7 @@ juce_add_console_app(Chorus60Tests PRODUCT_NAME "Chorus60Tests")
 
 target_sources(Chorus60Tests PRIVATE
     TestMain.cpp
+    ReadoutConformanceTests.cpp
     ModulationEngineTests.cpp
     BBDDelayLineTests.cpp
     StereoDecorrelationStageTests.cpp
@@ -30,6 +31,11 @@ target_compile_definitions(Chorus60Tests PRIVATE
 target_link_libraries(Chorus60Tests PRIVATE
     # ProgramManager.cpp is compiled into both targets and calls into core, so both link it.
     nf::core
+    # Chorus60BinaryData, because ReadoutConformanceTests includes Chorus60Theme.h to read
+    # readoutFormat() - the SHIPPING format, not a copy of it - and the theme pulls in BinaryData.h
+    # for the embedded faces. Linking the real generated header rather than stubbing it is the
+    # point, and it is what Fifth Member's and TapeRot's test targets already do.
+    Chorus60BinaryData
     juce::juce_dsp
     juce::juce_audio_basics
     juce::juce_audio_processors

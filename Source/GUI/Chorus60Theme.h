@@ -26,6 +26,8 @@
 //
 // IMPORTANT: ranges/defaults for knob scaling come from Source/Parameters.h, never from a spec
 // table. This file holds *layout* only.
+#include <nf/ParameterReadout.h>
+
 namespace Chorus60Theme
 {
     namespace Colour
@@ -618,22 +620,37 @@ namespace Chorus60Theme
     // panel (section 5). Hz -> 2 decimals ("0.45 Hz"), % -> whole numbers ("38 %"), ms -> 1 decimal
     // ("6.4 ms"), dB -> 1 decimal explicitly signed ("+0.0 dB"), and the IMAGE switch through its
     // own MONO/STEREO strings.
-    inline juce::String formatParameterValue(const juce::RangedAudioParameter& param, double value)
-    {
-        const auto label = param.getLabel();
-        if (label == "Hz")
-            return juce::String(value, 2) + " Hz";
-        // roundToInt, NOT juce::String(value, 0): JUCE treats a decimal-place count of 0 as "use the
-        // default conversion" rather than "round to a whole number", so that spelling prints the
-        // full value (a Depth of 68.5916 rendered as "68.5916 %"). It only looked correct while the
-        // displayed values happened to land on whole numbers, which every factory program's do.
-        if (label == "%")
-            return juce::String(juce::roundToInt(value)) + " %";
-        if (label == "ms")
-            return juce::String(value, 1) + " ms";
-        if (label == "dB")
-            return (value >= 0.0 ? "+" : "") + juce::String(value, 1) + " dB";
+    /** **How this panel spells the LCD parameter readout.**
 
-        return param.getText(param.convertTo0to1((float) value), 0);
+        A presentation decision, so it lives with the other presentation constants - and that
+        placement is load-bearing for the test: ProgramHeader.h reaches PluginProcessor.h, which
+        needs JucePlugin_* macros that only exist in the plugin target, so a test reading the format
+        from there could not link. The test must read the SHIPPING format rather than a copy, or it
+        asserts against itself.
+
+        `asAuthored`: the value is left in whatever case its parameter produced. The IMAGE switch's
+        MONO/STEREO already arrive upper-case from its own stringFromValue, which is where that
+        decision belongs - re-casing it here would make the panel and the host's automation lane
+        disagree, which is the failure this whole extraction exists to prevent.
+
+        The revert is core's 900 ms, which is what this panel already used. */
+    inline nf::ReadoutFormat readoutFormat()
+    {
+        nf::ReadoutFormat f;
+        f.nameCharacterBudget = Layout::lcdCharacterBudget;
+        return f;
     }
+
+    /* formatParameterValue is GONE, and this note is here so its absence reads as deliberate.
+
+       It formatted a value by switching on the parameter's LABEL - "Hz" to two places, "%" through
+       roundToInt, "ms" to one, "dB" with an explicit sign - which is a SECOND formatting convention
+       sitting beside the parameter's own. That is precisely the arrangement that lets a panel and a
+       host's automation lane print the same control two different ways, and it is what hid a
+       missing formatter in Elmer and shipped one in TapeRot.
+
+       All four rules moved verbatim onto the parameters themselves, as stringFromValueFunctions on
+       the four shared attribute sets in Parameters.h. The output is identical and the host now
+       agrees with the panel. nf::describeParameter joins value and label.
+    */
 }

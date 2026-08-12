@@ -228,7 +228,21 @@ window plus SAVE/DELETE. Clicking anywhere in the *window* opens the dropdown, d
 own width. The name cell shows `NN NAME`, plus a trailing ` *` while the loaded Program is edited,
 and a chevron affordance at the right - drawn, not baked, because it is hidden during name entry and
 during a parameter readout. While a control is dragged the cell shows `NAME: VALUE UNIT` in `#FFD9A0`,
-centred, reverting 900 ms after release. **The caller guards that on the control's own drag state**
+centred, reverting 900 ms after release — `nf::describeParameter` and `nf::ReadoutFormat::revertMs`
+from `neon-foundry-core`.
+
+**`Chorus60Theme::formatParameterValue` is gone, and its four rules moved onto the parameters.** It
+formatted by switching on the parameter's *label* — `Hz` to two places, `%` through `roundToInt`,
+`ms` to one, `dB` with an explicit sign — which is a second formatting convention sitting beside the
+parameter's own. That is exactly the arrangement that lets a panel and a host's automation lane
+print the same control two different ways. All four are `stringFromValueFunction`s on the four
+shared attribute sets in `Parameters.h` now; the output is identical and the host agrees.
+
+`Chorus60Theme::readoutFormat()` holds the spelling, **not `ProgramHeader`** — `ProgramHeader.h`
+reaches `PluginProcessor.h`, which needs `JucePlugin_*` macros that exist only in the plugin target,
+so a test reading the format from there cannot link, and a test declaring its own copy would assert
+against itself. `ValueCase::asAuthored`: the IMAGE switch's MONO/STEREO already arrive upper-case
+from its own `stringFromValue`, which is where that decision belongs. **The caller guards that on the control's own drag state**
 (`Chorus60EditorContent::attachReadout`): a `SliderAttachment` also fires when a Program is applied
 and on every host automation step, and without the guard the display latches onto whichever parameter
 was written last and flickers for the length of a song.

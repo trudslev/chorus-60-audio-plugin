@@ -116,8 +116,13 @@ private:
     HeaderButton pressedButton = HeaderButton::none;
 
     // Section 5's live parameter readout. Empty = showing the program name.
-    juce::String liveReadout;
-    juce::uint32 readoutRevertAtMs = 0;
+    // The parameter takeover: what to show, and until when. The deadline is core's; the font, the
+    // cell and every pixel of the paint stay here.
+    nf::ReadoutTimer readout { Chorus60Theme::readoutFormat() };
+
+    // Whether the takeover was up at the last poll, so the timer repaints on the EDGE rather than
+    // every tick. The deadline itself lives in `readout`.
+    bool readoutWasShowing = false;
 
     // Dresses the dropdown as an extension of the PROGRAM glass. Owned here so it outlives every
     // menu this component opens.
