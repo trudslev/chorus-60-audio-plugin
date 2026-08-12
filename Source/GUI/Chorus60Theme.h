@@ -122,7 +122,22 @@ namespace Chorus60Theme
     {
         // The exported plate, border included. Everything else is measured from inside it.
         constexpr float canvasWidth = 1282.0f;
-        constexpr float canvasHeight = 777.0f;
+        /** **776, and it came down by one with the 2026-08-11 plate.** The plate is blitted
+            stretchToFit into canvasWidth x canvasHeight, so a 776-tall image in a 777 canvas
+            resamples the whole panel - a 0.129% vertical stretch that blurs every baked edge and
+            puts every coordinate progressively out toward the bottom. Nothing looks broken; it
+            simply stops being 1:1, which is the point at which measurements off a capture start
+            lying.
+
+            Safe to move because the plate's content below the header did not move: correlating the
+            old 1554-tall export against the new 1552 one over everything below the header band
+            gives a best offset of exactly 0, so the two pixels came off the bottom. Every absolute
+            Y in this file stays valid.
+
+            Fifth Member's plate was cut the same way in the same bundle. Two castings, one
+            revision - so if another plate is ever re-exported, check its height against this
+            constant before anything else. */
+        constexpr float canvasHeight = 776.0f;
         constexpr float borderInset = 1.0f;
         constexpr float contentWidth = 1280.0f;
         constexpr float contentHeight = 775.0f;
