@@ -3,7 +3,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <vector>
 
-// Bundles BBD-TECHNICAL-NOTES.md's "nonlinearities" section into one class: Drift (slow random
+// Bundles the missing BBD notes' "nonlinearities" section into one class: Drift (slow random
 // delay-time/rate wander - audible as tiny delay jitter, so it has to perturb the actual tap
 // position via advanceDrift(), not just color the audio afterward), Saturation (tiny soft-clip),
 // Noise (BBD hiss floor, -70 to -75dB per the notes, never complete silence), and a small gain-

@@ -3,7 +3,7 @@
 #include <array>
 #include <juce_dsp/juce_dsp.h>
 
-// Shared per-channel delay buffer modeling the bucket-brigade itself, per BBD-TECHNICAL-NOTES.md's
+// Shared per-channel delay buffer modeling the bucket-brigade itself, per the missing BBD notes'
 // frequency-response section: an input pre-filter (band-limiting before "storage") and a fixed
 // reconstruction-filter rolloff (~6-8kHz) applied per tap read. No feedback path - real BBD chorus
 // is "essentially feed-forward."

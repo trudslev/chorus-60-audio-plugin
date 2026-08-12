@@ -6,7 +6,7 @@ namespace
 {
     // Deliberately not 50/50: real analog integrator/comparator LFO circuits don't have a
     // perfectly symmetric rise/fall, and a flat asymmetry stops the modulation from feeling
-    // mechanically repetitive (see BBD-TECHNICAL-NOTES.md's "tiny imperfections" note).
+    // mechanically repetitive (the missing BBD notes' "tiny imperfections" - see CLAUDE.md).
     constexpr float riseFraction = 0.55f;
 
     // Corner-rounding time constant - short relative to the LFO period, just enough to remove the

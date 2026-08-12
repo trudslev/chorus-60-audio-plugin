@@ -1,7 +1,7 @@
 #pragma once
 
 // The chorus LFO: Rate drives a rounded/asymmetric waveform (never a pure sine, per
-// BBD-TECHNICAL-NOTES.md - "rounded triangle / slightly asymmetric sine / analog integrator with
+// The missing BBD notes - "rounded triangle / slightly asymmetric sine / analog integrator with
 // tiny imperfections"), Depth scales how far the resulting delay-time offset swings. This class
 // owns only the LFO and the offset calculation, not a delay line; PluginProcessor adds the returned
 // offset to that configuration's Delay Center and the shared Drift offset before asking

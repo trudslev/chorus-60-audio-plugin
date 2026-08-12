@@ -2,7 +2,7 @@
 
 #include <juce_dsp/juce_dsp.h>
 
-// Applies genuine L/R difference to the wet signal - per BBD-TECHNICAL-NOTES.md, the real circuit
+// Applies genuine L/R difference to the wet signal - per the missing BBD notes, the real circuit
 // achieves stereo width through decorrelation (differing delay/phase, partial polarity difference
 // between channels), not panning or a generic stereo-widener. Left stays the reference channel;
 // Right gets a small additional delay offset plus a partial polarity blend, both scaled by

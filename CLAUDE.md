@@ -13,20 +13,33 @@ component grammar), then this file for CHORUS-60's own conventions and status.
 ported from Gatecrasher. Bundles no longer ship a `design/CLAUDE.md`; a repo-owned filename inside a
 handoff reads as authority while being a snapshot of whatever the designers held when they cut it.
 
-**`design/BBD-TECHNICAL-NOTES.md` never existed in this repo and has been removed.** It was a
-0-byte file from the initial commit onward, and seven places still cite it as the authority for the
-circuit behaviour the DSP models — `BBDDelayLine.h`, `CharacterStage.h`, `ModulationEngine.h/.cpp`,
-`StereoDecorrelationStage.h`, `BUILDING.md` and this file. Those citations are not wrong about where
-the reasoning came from; the document simply was never committed, and an empty file that seven
-comments call authoritative is the worst version of that — it reads as present.
+**The BBD technical notes do not exist anywhere, and the search is closed.** `design/BBD-TECHNICAL-NOTES.md`
+was a 0-byte file from the initial commit until it was removed on 2026-08-12. Five DSP headers cite
+it — `BBDDelayLine.h`, `CharacterStage.h`, `ModulationEngine.h/.cpp`, `StereoDecorrelationStage.h` —
+and those citations now say "the missing BBD notes" rather than naming a filename that resolves to
+nothing.
 
-What the repo does hold is `design/BBD-TECHNICAL-NOTES-ADDENDUM.md`, which *quotes* the original
-("The original `BBD-TECHNICAL-NOTES.md` described I+II as…") and corrects exactly one claim: I+II is
-a third distinct fast/narrow/mono mode, not a sum of I and II. It does **not** carry the
-nonlinearities, tiny-imperfections or LFO-shape material the other five citations point at, so those
-have deliberately not been repointed at it — that would attribute content to a document that does
-not contain it. Requested from the designers; until it arrives, the addendum plus the linked
-Juno60 source are the only written record.
+**Where it went, so nobody searches again.** The Chorus-60 designer searched their whole project on
+2026-08-12: no notes, no addendum, no draft, and the only BBD string anywhere is a status-line label.
+It was never on that side. Git says why — `design/BBD-TECHNICAL-NOTES-ADDENDUM.md` arrived in
+`dc43d50` (2026-08-06), *this* repo, in the same commit that reworked the modulation engine. The
+addendum was written here, quoting an original that whoever wrote it had open at the time and never
+committed. Two days after the initial commit, in a session that left no other trace.
+
+**What survives is enough to work from, and it is not the addendum alone.** The addendum corrects one
+claim — I+II is a third fast/narrow/mono mode (~9.75 Hz, ~3.3–3.7 ms, no phase inversion), not a sum
+of I and II — and cites its own source, which is public and readable:
+<https://github.com/pendragon-andyh/Juno60/blob/master/Chorus/README.md>. That URL is the nearest
+thing to ground truth this casting has. The five topics the headers cite (nonlinearities, tiny
+imperfections, LFO shapes, the L/R difference, the bucket-brigade model) are **not** in the addendum,
+which is why they were not repointed at it.
+
+**A reconstruction was offered and declined.** The designer proposed writing a fresh
+`BBD-CIRCUIT-NOTES.md`, dated and labelled as authored-now rather than recovered. It was the right
+offer to make and the right one to refuse: a document written today from the addendum plus the public
+source adds no information over reading those two directly, and once it sits in `design/` under a
+plausible name the next person reads it as the thing the headers cite. **A confident reconstruction
+of a lost source is worse than an acknowledged gap** — the gap is legible, the reconstruction is not.
 
 ## Commands
 
