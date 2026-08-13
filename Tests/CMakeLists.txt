@@ -1,6 +1,7 @@
 juce_add_console_app(Chorus60Tests PRODUCT_NAME "Chorus60Tests")
 
 target_sources(Chorus60Tests PRIVATE
+    RealtimeSafetyTests.cpp
     TestMain.cpp
     ReadoutConformanceTests.cpp
     MenuMetricsTests.cpp
@@ -58,6 +59,9 @@ target_compile_definitions(Chorus60Tests PRIVATE
     NF_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 
 target_link_libraries(Chorus60Tests PRIVATE
+    # The bug sweep's measurement drivers. TEST target only — never the plugin, which must not
+    # carry an operator new override. See nf/testing/ProcessorHarness.h.
+    nf::testing
     # ProgramManager.cpp is compiled into both targets and calls into core, so both link it.
     nf::core
     # Chorus60BinaryData, because ReadoutConformanceTests includes Chorus60Theme.h to read
