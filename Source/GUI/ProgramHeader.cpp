@@ -153,13 +153,13 @@ void ProgramHeader::showProgramMenu()
         if (id.bank == ProgramBank::factory && ! std::exchange(factoryHeaderDone, true))
         {
             menu.addSeparator();
-            menu.addSectionHeader("Factory");
+            menu.addSectionHeader("FACTORY");
         }
 
         if (id.bank == ProgramBank::user && ! std::exchange(userHeaderDone, true))
         {
             menu.addSeparator();
-            menu.addSectionHeader("User");
+            menu.addSectionHeader("USER");
         }
 
         menu.addItem((int) i + 1, manager.displayLabelFor(id), true, id == current);
@@ -171,7 +171,7 @@ void ProgramHeader::showProgramMenu()
     if (! userHeaderDone)
     {
         menu.addSeparator();
-        menu.addSectionHeader("User");
+        menu.addSectionHeader("USER");
         menu.addItem(-1, juce::String::charToString((juce::juce_wchar) 0x2014)
                           + " none saved "
                           + juce::String::charToString((juce::juce_wchar) 0x2014), false, false);
