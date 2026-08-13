@@ -239,95 +239,95 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
     // Independent latches. Both engaged is the real hardware's I+II trick and selects a distinct
     // configuration - it is not a blend of I and II.
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::engine1, 1}, "Chorus I", true));
+        juce::ParameterID{ParamIDs::engine1, 1}, "CHORUS I", true));
 
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::engine2, 1}, "Chorus II", false));
+        juce::ParameterID{ParamIDs::engine2, 1}, "CHORUS II", false));
 
     // ---- Configuration I -------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::rate1, 1}, "Rate I",
+        juce::ParameterID{ParamIDs::rate1, 1}, "RATE I",
         Chorus60Ranges::rate(), 0.45f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::depth1, 1}, "Depth I",
+        juce::ParameterID{ParamIDs::depth1, 1}, "DEPTH I",
         Chorus60Ranges::percent(), 38.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::center1, 1}, "Delay Center I",
+        juce::ParameterID{ParamIDs::center1, 1}, "DELAY CENTER I",
         Chorus60Ranges::delayCentreMs(), 5.6f, msAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::decorr1, 1}, "Decorrelation I",
+        juce::ParameterID{ParamIDs::decorr1, 1}, "DECORRELATION I",
         Chorus60Ranges::percent(), 52.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::image1, 1}, "Image I", false, imageAttrs));
+        juce::ParameterID{ParamIDs::image1, 1}, "IMAGE I", false, imageAttrs));
 
     // ---- Configuration II ------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::rate2, 1}, "Rate II",
+        juce::ParameterID{ParamIDs::rate2, 1}, "RATE II",
         Chorus60Ranges::rate(), 2.90f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::depth2, 1}, "Depth II",
+        juce::ParameterID{ParamIDs::depth2, 1}, "DEPTH II",
         Chorus60Ranges::percent(), 64.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::center2, 1}, "Delay Center II",
+        juce::ParameterID{ParamIDs::center2, 1}, "DELAY CENTER II",
         Chorus60Ranges::delayCentreMs(), 4.2f, msAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::decorr2, 1}, "Decorrelation II",
+        juce::ParameterID{ParamIDs::decorr2, 1}, "DECORRELATION II",
         Chorus60Ranges::percent(), 66.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::image2, 1}, "Image II", false, imageAttrs));
+        juce::ParameterID{ParamIDs::image2, 1}, "IMAGE II", false, imageAttrs));
 
     // ---- Configuration I+II ----------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::rateB, 1}, "Rate I+II",
+        juce::ParameterID{ParamIDs::rateB, 1}, "RATE I+II",
         Chorus60Ranges::rate(), 1.20f, hzAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::depthB, 1}, "Depth I+II",
+        juce::ParameterID{ParamIDs::depthB, 1}, "DEPTH I+II",
         Chorus60Ranges::percent(), 52.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::centerB, 1}, "Delay Center I+II",
+        juce::ParameterID{ParamIDs::centerB, 1}, "DELAY CENTER I+II",
         Chorus60Ranges::delayCentreMs(), 6.4f, msAttrs));
 
     // Live and adjustable even though it is inaudible while this page is Mono - the page defaults
     // to Mono, but the switch is exposed, and the knob becomes meaningful the moment it is flipped.
     // Deliberately not disabled or greyed out.
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::decorrB, 1}, "Decorrelation I+II",
+        juce::ParameterID{ParamIDs::decorrB, 1}, "DECORRELATION I+II",
         Chorus60Ranges::percent(), 44.0f, percentAttrs));
 
     // The one configuration that defaults to Mono, matching the real circuit, which applies no
     // phase inversion in this mode.
     params.push_back(std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ParamIDs::imageB, 1}, "Image I+II", true, imageAttrs));
+        juce::ParameterID{ParamIDs::imageB, 1}, "IMAGE I+II", true, imageAttrs));
 
     // ---- Global ----------------------------------------------------------------------------
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::drift, 1}, "Drift",
+        juce::ParameterID{ParamIDs::drift, 1}, "DRIFT",
         Chorus60Ranges::percent(), 22.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::saturation, 1}, "Saturation",
+        juce::ParameterID{ParamIDs::saturation, 1}, "SATURATION",
         Chorus60Ranges::percent(), 30.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::noise, 1}, "Noise",
+        juce::ParameterID{ParamIDs::noise, 1}, "NOISE",
         Chorus60Ranges::percent(), 14.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::mix, 1}, "Mix",
+        juce::ParameterID{ParamIDs::mix, 1}, "MIX",
         Chorus60Ranges::percent(), 50.0f, percentAttrs));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ParamIDs::trim, 1}, "Output Trim",
+        juce::ParameterID{ParamIDs::trim, 1}, "OUTPUT TRIM",
         juce::NormalisableRange<float>(-12.0f, 12.0f), 0.0f, dbAttrs));
 
     // New parameters are appended below this line, never inserted above, to keep existing

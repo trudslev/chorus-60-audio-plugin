@@ -108,6 +108,26 @@ public:
                                     + " characters: \"" + text + "\"");
                     }
         }
+
+        beginTest ("Case is authored at the source, so no display site re-cases");
+        {
+            // **The guard on BRAND.md's "case belongs at the source".** Core stopped upper-casing
+            // the parameter name on 2026-08-13, so a parameter added with a Title-Case name makes
+            // this panel print one row of its LCD in a different case from every other row - and
+            // the host's automation lane shows the same mixed set. Nothing else fails.
+            //
+            // Asserted on getName() rather than on the literal, because that is what the readout
+            // and the host both actually read.
+            LayoutHost host;
+
+            for (auto* raw : host.getParameters())
+                if (auto* p = dynamic_cast<juce::AudioProcessorParameterWithID*> (raw))
+                {
+                    const auto name = p->getName (128);
+                    expect (name == name.toUpperCase(),
+                            p->paramID + " is named \"" + name + "\", which is not authored in caps");
+                }
+        }
     }
 };
 
