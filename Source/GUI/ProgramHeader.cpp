@@ -328,8 +328,8 @@ void ProgramHeader::enterNamingMode()
 
 void ProgramHeader::commitStore()
 {
-    // Empty name -> ProgramManager's own "NEW PROGRAM" fallback handles it (section 6) - not
-    // duplicated here.
+    // Empty name -> the store's own TAKE n fallback handles it, inside nf::UserProgramStore, so no
+    // future caller can write a nameless file. Not duplicated here.
     processorRef.saveNewUserProgram(typedName.trim());
 
     namingMode = false;

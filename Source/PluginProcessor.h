@@ -8,6 +8,7 @@
 #include "DSP/ProgramManager.h"
 #include "DSP/StereoDecorrelationStage.h"
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <nf/UserEditGate.h>
 
 class Chorus60AudioProcessor final : public juce::AudioProcessor
 {
@@ -62,11 +63,21 @@ public:
     /** The Program model. The panel talks to this directly, in ProgramIds. */
     ProgramManager& getProgramManager() noexcept { return programManager; }
 
-    /** Clears the stale-replay guard. Called from the editor when a change is USER-originated. */
-    void noteUserEdit() noexcept { justRestoredState.store(false, std::memory_order_relaxed); }
     bool isCurrentProgramModified() const { return programManager.isModifiedFromLoadedProgram(); }
     void saveNewUserProgram(const juce::String& name) { programManager.saveNewUserProgram(name); }
     void deleteUserProgram(const ProgramId& id) { programManager.deleteUserProgram(id); }
+
+    /** **Guards a host replaying a stale program index over a just-restored session.** Armed by
+        setStateInformation, consumed by the next setCurrentProgram (which ignores it only when the
+        index matches what getCurrentProgram already reports — the shape of a replay), disarmed by
+        the first USER-originated edit. **Automation must not disarm it**: a host may write
+        automation on load before replaying, and that would reopen the hole.
+
+        Public because the editor hands it to `nf::connectUserEdit` for every control, which is the
+        point of it living in core: Reflect-84 once shipped this guard with zero call sites for its
+        disarm, and coupling the disarm to the LCD hand-off is what makes that omission
+        inexpressible. See nf/UserEditGate.h. */
+    nf::UserEditGate userEdits;
 
     juce::AudioProcessorValueTreeState apvts;
 
@@ -101,11 +112,6 @@ public:
     ActiveConfiguration resolveActiveConfiguration() const;
 
 private:
-    /** **Guards a host replaying a stale program index over a just-restored session.** Armed by
-        setStateInformation, disarmed by the first setCurrentProgram (itself ignored only when it
-        matches what getCurrentProgram reports) or the first USER-originated edit. Automation must
-        not disarm it: a host may write automation on load before replaying. */
-    std::atomic<bool> justRestoredState { false };
 
     ProgramManager programManager;
 

@@ -222,7 +222,7 @@ void Chorus60AudioProcessor::setCurrentProgram(int index)
 
     // The stale-replay guard, disarmed by this call whether or not it is honoured. A replay carries
     // the position we last reported, so a matching index right after a restore is ignored.
-    if (justRestoredState.exchange(false, std::memory_order_relaxed) && index == getCurrentProgram())
+    if (userEdits.consumeRestore() && index == getCurrentProgram())
         return;
 
     programManager.requestProgramChange(ProgramManager::factoryIdAt(index));
@@ -307,7 +307,7 @@ void Chorus60AudioProcessor::setStateInformation(const void* data, int sizeInByt
             programManager.setCurrentProgramWithoutApplying(restored);
 
             // **Armed AFTER replaceState**, or the restore's own writes would disarm it.
-            justRestoredState.store(true, std::memory_order_relaxed);
+            userEdits.armRestore();
         }
 }
 

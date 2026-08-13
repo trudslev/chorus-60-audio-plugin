@@ -66,9 +66,14 @@ public:
 
 
 
-    // Always creates a new file and switches to it - never overwrites. Name is defensively
-    // uppercased and capped at 22 characters here (not just enforced by the GUI's name-entry
-    // field), falling back to "NEW PROGRAM" if empty, per GUI-SPEC.md section 6.
+    // Always creates a new file and switches to it - never overwrites. Trimming, upper-casing, the
+    // maxProgramNameLength cap and the empty-name fallback are all nf::UserProgramStore::resolveName
+    // now, so they apply on every path rather than only where a caller remembered them.
+    //
+    // The fallback is TAKE n, not GUI-SPEC.md section 6's "NEW PROGRAM": a suite ruling replaced six
+    // different strings with the one that is better rather than merely different, since consecutive
+    // empty saves give TAKE 3, TAKE 4 instead of leaning on getNonexistentSibling for
+    // "NEW PROGRAM (2)". The spec predates the ruling.
     /** Where this instance stores User Programs, and the real per-OS location regardless of it. */
     juce::File getUserProgramDirectory() const;
     static juce::File getDefaultUserProgramDirectory();

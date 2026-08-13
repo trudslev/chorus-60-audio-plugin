@@ -269,18 +269,13 @@ void Chorus60EditorContent::attachReadout(juce::Slider& knob, const juce::String
     if (param == nullptr)
         return;
 
-    // The drag guard also disarms the processor's stale-replay flag, because this is the only
-    // place that knows a change came from a PERSON. It deliberately does not fire for automation: a
-    // host may write automation on session load before replaying its remembered program index, and
-    // disarming there would let that replay land on the restored state.
-    knob.onValueChange = [this, raw, param]
-    {
-        if (raw->isMouseButtonDown())
-        {
-            processorRef.noteUserEdit();
-            programHeader.showParameter(*param);
-        }
-    };
+    // The same guard disarms the processor's stale-replay gate, because this is the only place that
+    // knows a change came from a PERSON. It deliberately does not fire for automation: a host may
+    // write automation on session load before replaying its remembered program index, and disarming
+    // there would let that replay land on the restored state. One call rather than two adjacent
+    // ones, so the disarm cannot be written without the hand-off - see nf/UserEditGate.h.
+    nf::connectUserEdit(*raw, processorRef.userEdits,
+                        [this, param] { programHeader.showParameter(*param); });
     knob.onDragEnd = [this] { programHeader.releaseParameter(); };
 }
 
