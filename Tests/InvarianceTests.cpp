@@ -19,6 +19,32 @@
     So nothing here is believed until the processor is shown to be reproducible against itself, and
     the comparison is shown able to fail. Both are asserted below rather than assumed.
 */
+/*  ## The second cause: what it HAS to be, stated before it is bisected for
+
+    Silencing the unseeded generator leaves the warmed comparison differing by 0.508 — larger than
+    with the generator running. That last part is evidence, not noise: the hiss was partially
+    MASKING the difference, so whatever remains is signal-dependent rather than a fixed offset.
+
+    Combined with "survives prepareToPlay" and "first divergence at sample 0", the candidates are a
+    short list, and naming them first is the point — Reflect-84's equivalent took three wrong
+    diagnoses precisely because each was reached for after the measurement rather than before:
+
+      1. The BBD line's own contents. Not cleared on prepare would give sample-0 divergence and
+         signal dependence, and is the most direct fit.
+      2. The modulation LFO phase. ModulationEngine::prepare calls reset() which zeroes phase and
+         smoothedLfo (ModulationEngine.cpp:44-55), so this one is ALREADY ruled out by reading —
+         recorded so nobody re-derives it.
+      3. A filter's history in CharacterStage or the decorrelation stage.
+      4. A smoother carrying a value across prepare. CharacterStage::prepare resets driftSmoothed
+         and gainWobbleSmoothed with `reset (sampleRate, seconds)` (CharacterStage.cpp:32-33) —
+         which is `setCurrentAndTargetValue (target)`, so each snaps to whatever target it last
+         held rather than to a known value. **This is exactly Reflect-84's pre-delay defect**, in a
+         casting that has two of them rather than one, and it is named here as a candidate rather
+         than arrived at after three wrong turns.
+
+    Candidate 4 is the one to test first: it is the same defect the suite has already found once,
+    and the two smoothers are drift and gain wobble — both signal-shaping, which fits the masking.
+*/
 class InvarianceTests final : public juce::UnitTest
 {
 public:
