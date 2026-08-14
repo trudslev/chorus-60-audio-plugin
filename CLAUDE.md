@@ -160,6 +160,29 @@ chose. The genuinely global parameters (Drift, Saturation, Noise, Mix, Output Tr
 across every combination; every configuration
 carries its own complete set, so switching pages never inherits a value from the page before it.
 
+### Silence in, silence out — a DECLARED property
+
+**Measured 2026-08-14, not inferred.** Silence in, NOISE at 100 %:
+
+| State | Output |
+|---|---|
+| **Neither engine latched** (the panel's OFF / BYPASS - SETTINGS RETAINED) | **peak 0.000000000 — silent** |
+| One engine latched | peak 0.0089, −41.0 dB |
+
+**So this casting generates a noise floor when engaged, and nothing at all when bypassed**, and both
+halves of that are deliberate. `CharacterStage` is where the noise lives, and `processBlock`'s
+disengaged branch copies `dryBuffer` straight to the output rather than running it — a true bypass,
+not a wet path muted to silence.
+
+**The question that settled it was not "is the noise floor deliberate".** It was whether the floor
+runs while disengaged: a chorus emitting noise in its OFF state is a defect whatever the noise is
+for, and a chorus that goes quiet has simply made a character choice. It goes quiet.
+
+Written down because a suite-wide sweep found that Chorus-60 never falls silent at defaults and had
+no way to tell whether that was intended — only TapeRot's generating was documented anywhere. This is
+the answer stated in advance rather than rediscovered, and `Tests/NumericalRobustnessTests.cpp`
+asserts it so the bypass cannot start emitting without a test failing.
+
 The LCD numbers the bank 1-based (`01 EIGHTY-TWO`), continuing past the factory entries for user
 programs - the code's own indices remain 0-based.
 

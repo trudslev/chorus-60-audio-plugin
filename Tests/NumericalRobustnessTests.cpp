@@ -104,6 +104,65 @@ public:
                     "ScopedNoDenormals is not covering processBlock. Every decaying path in this "
                     "plugin depends on it, and nothing else guards them: " + guard.describe());
         }
+
+        beginTest ("SILENCE IN with NEITHER engine latched — the bypass state");
+        {
+            // **Category 3's silence-in/silence-out question, and the one that settles this casting's
+            // ruling.** Category 2 found that Chorus-60 never falls silent — at defaults or fully
+            // wet. Across the six only TapeRot was expected to, and its docs say so; Chorus-60 has a
+            // noise floor in CharacterStage and nothing anywhere says whether that is intended.
+            //
+            // But "is the noise floor deliberate" is not the question that decides it. **This is:
+            // does the noise floor run when NEITHER engine is latched?** That is the panel's OFF
+            // state — it reads BYPASS - SETTINGS RETAINED — and a chorus emitting noise while
+            // disengaged is a defect regardless of whether the noise itself is a character choice.
+            //
+            // PluginProcessor.cpp's disengaged branch copies dryBuffer straight to the output rather
+            // than running CharacterStage, so a code read says it stops. Reading is not measuring,
+            // which is this sweep's whole discipline, so it is measured.
+            const auto levelWith = [this] (float e1, float e2, float noise) -> double
+            {
+                Chorus60AudioProcessor processor;
+                set (processor, ParamIDs::engine1, e1);
+                set (processor, ParamIDs::engine2, e2);
+                set (processor, ParamIDs::noise, noise);
+
+                nf::testing::RenderSpec spec;
+                spec.numBlocks = 64;
+                spec.fillInput = [] (juce::AudioBuffer<float>& b, int) { b.clear(); };   // silence in
+
+                const auto out = nf::testing::render (processor, spec);
+
+                double peak = 0.0;
+                for (const auto& channel : out)
+                    for (auto v : channel)
+                        peak = juce::jmax (peak, (double) std::abs (v));
+
+                logMessage ("  engine1=" + readBack (processor, ParamIDs::engine1)
+                                + " engine2=" + readBack (processor, ParamIDs::engine2)
+                                + " noise=" + readBack (processor, ParamIDs::noise)
+                                + " -> peak " + juce::String (peak, 9)
+                                + (peak > 0.0 ? " (" + juce::String (juce::Decibels::gainToDecibels (peak), 1)
+                                                    + " dB)"
+                                              : " (silent)"));
+                return peak;
+            };
+
+            const double bypassed  = levelWith (0.0f, 0.0f, 1.0f);   // OFF, noise at maximum
+            const double oneEngine = levelWith (1.0f, 0.0f, 1.0f);   // engaged, same noise
+
+            // **The finding either way.** If the bypass is silent, the noise is a character choice
+            // and the ruling is to document it. If it is not, that is a defect: a disengaged chorus
+            // must not emit anything a bypassed one would not.
+            expectEquals (bypassed, 0.0,
+                          "the noise floor RUNS with neither engine latched — the panel's OFF state "
+                          "reads BYPASS - SETTINGS RETAINED, and a bypassed chorus emitting noise is "
+                          "a defect whatever the noise is for");
+
+            expectGreaterThan (oneEngine, 0.0,
+                               "with an engine latched and noise at maximum the output is silent, so "
+                               "the comparison above proves nothing");
+        }
     }
 
 private:
