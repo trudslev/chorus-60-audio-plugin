@@ -1,5 +1,6 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/Parameters.h"
+#include "../Source/DSP/CharacterStage.h"
 
 #include <nf/testing/ProcessorHarness.h>
 
@@ -108,6 +109,101 @@ public:
             if (! ab.sampleExact)
                 logMessage ("  NOTE: a first-run-only difference is itself a finding — an instance's "
                             "first playback differs from every later one. Reported, not asserted.");
+            }
+        }
+
+        beginTest ("CharacterStage: two fresh instances, identical input, different output");
+        {
+            // **The earlier conclusion here was wrong and this corrects it.** It read: the unseeded
+            // generator is real but insufficient, because silencing NOISE left the difference
+            // LARGER — so a second cause must sit behind it.
+            //
+            // Silencing NOISE never silenced the generator. `CharacterStage` holds ONE
+            // default-constructed juce::Random (CharacterStage.h:29), which JUCE seeds from the
+            // clock, and it has THREE consumers:
+            //
+            //   :51  the drift retarget          -> moves the BBD read position, so it changes the
+            //                                       delay TIME, not a noise floor
+            //   :51  the gain-wobble retarget    -> runs unconditionally, no parameter gates it
+            //   :91  the hiss                    -> the only one NOISE scales
+            //
+            // The NOISE parameter scales the hiss's gain and nothing else, and it does not even
+            // stop `random.nextFloat()` being called. So that arm removed one consumer of three and
+            // was read as removing the generator.
+            //
+            // Candidate 4 is dead too, and by measurement rather than argument: the suite-wide
+            // smoother grep was re-run classifying each site by whether its set is a real value or
+            // `setCurrentAndTargetValue(getTargetValue())`, and CharacterStage::reset sets both
+            // driftSmoothed and gainWobbleSmoothed to a literal 0.0f. This casting has ZERO
+            // unguarded sites; the suite total falls from fourteen to eleven.
+            //
+            // ## Why this is at class level
+            //
+            // Two freshly-constructed CharacterStage instances, prepared identically, given
+            // byte-identical input. **Every other member of that class has a deterministic
+            // initialiser**, so if the two outputs differ, the clock-seeded Random is the only
+            // thing they can differ by. No parameter drive can confound it and no other stage is
+            // in the path.
+            //
+            // KNOWN CASE: TapeRot generates too, from a SEEDED per-channel Random, and category 3
+            // measured it reproducible when warmed. Same feature, opposite reproducibility — that
+            // is the cross-casting control for what this test claims.
+            const juce::dsp::ProcessSpec spec { 48000.0, 512, 2 };
+
+            juce::AudioBuffer<float> reference (2, 512);
+            {
+                juce::Random r (4321);
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int i = 0; i < 512; ++i)
+                        reference.setSample (ch, i, r.nextFloat() * 2.0f - 1.0f);
+            }
+
+            const auto runFresh = [&spec, &reference] (float noisePercent)
+            {
+                CharacterStage stage;
+                stage.prepare (spec.sampleRate);
+
+                juce::AudioBuffer<float> b (2, 512);
+
+                // Several blocks, so the 0.6 s retarget counters have had chances to fire.
+                for (int block = 0; block < 60; ++block)
+                {
+                    b.makeCopyOf (reference);
+                    stage.advanceDrift (512, 100.0f);
+                    stage.process (b, 50.0f, noisePercent);
+                }
+
+                std::vector<float> out;
+                for (int i = 0; i < 512; ++i)
+                    out.push_back (b.getSample (0, i));
+
+                return out;
+            };
+
+            for (float noise : { 0.0f, 100.0f })
+            {
+                const auto a = runFresh (noise);
+                const auto b = runFresh (noise);
+
+                double worst = 0.0, peak = 0.0;
+                for (size_t i = 0; i < a.size(); ++i)
+                {
+                    worst = juce::jmax (worst, (double) std::abs (a[i] - b[i]));
+                    peak  = juce::jmax (peak,  (double) std::abs (b[i]));
+                }
+
+                logMessage ("  NOISE " + juce::String (noise, 0) + "% -> two fresh instances differ by "
+                                + juce::String (worst, 9) + " against peak " + juce::String (peak, 6)
+                                + " = " + juce::String (peak > 0.0 ? 20.0 * std::log10 (worst / peak) : -99.0, 1)
+                                + " dB");
+
+                expect (worst < 1.0e-9,
+                        "two freshly-constructed CharacterStage instances given identical input "
+                        "produced different output at NOISE " + juce::String (noise, 0) + "%. Every "
+                        "other member of that class has a deterministic initialiser, so the "
+                        "clock-seeded juce::Random at CharacterStage.h:29 is the only thing they "
+                        "can differ by — and at NOISE 0 the hiss is scaled away, so this is the "
+                        "generator reaching the output through drift and gain wobble.");
             }
         }
 
