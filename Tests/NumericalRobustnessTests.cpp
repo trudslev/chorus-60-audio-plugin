@@ -77,6 +77,33 @@ public:
 
             expect (report.clean(), "output not clean at defaults: " + report.describe());
         }
+
+        beginTest ("The denormal guard is ACTIVE — the one line the whole suite rests on");
+        {
+            // **RULING TAKEN: assert the processor-level guard rather than putting a floor in one
+            // filter.** ScopedNoDenormals is one line in one file per casting, and category 2's
+            // survey established that no DSP stage in the suite carries its own guard. So every
+            // decaying path in this plugin — including the control paths no output scan can reach —
+            // is covered by a single statement that, until this test, nothing asserted.
+            //
+            // Mechanism: feed SUBNORMAL input and see whether it survives. Flush-to-zero also treats
+            // subnormal inputs as zero, so a subnormal cannot survive a guarded processBlock while
+            // an unguarded one passes it through. This therefore fails if the guard is REMOVED,
+            // NARROWED to part of the function, or a path is SCOPED PAST it — the three ways one
+            // line stops covering what it appears to.
+            //
+            // Core's own tests prove the checker can tell guarded from unguarded (1024 in -> 1024
+            // out against 1024 in -> 0 out). Without that proof this assertion would be worthless,
+            // because "no subnormals survived" is also what a checker that measures nothing reports.
+            Chorus60AudioProcessor processor;
+            const auto guard = nf::testing::probeDenormalGuard (processor);
+
+            logMessage ("  " + guard.describe());
+
+            expect (guard.guardActive,
+                    "ScopedNoDenormals is not covering processBlock. Every decaying path in this "
+                    "plugin depends on it, and nothing else guards them: " + guard.describe());
+        }
     }
 
 private:
