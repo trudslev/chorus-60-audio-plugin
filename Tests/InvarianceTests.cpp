@@ -1,6 +1,9 @@
 #include "../Source/PluginProcessor.h"
 #include "../Source/Parameters.h"
+#include "../Source/DSP/BBDDelayLine.h"
 #include "../Source/DSP/CharacterStage.h"
+#include "../Source/DSP/ModulationEngine.h"
+#include "../Source/DSP/StereoDecorrelationStage.h"
 
 #include <nf/testing/ProcessorHarness.h>
 
@@ -20,31 +23,32 @@
     So nothing here is believed until the processor is shown to be reproducible against itself, and
     the comparison is shown able to fail. Both are asserted below rather than assumed.
 */
-/*  ## The second cause: what it HAS to be, stated before it is bisected for
+/*  ## CLOSED — the second cause was CharacterStage::random, and none of the four candidates
 
-    Silencing the unseeded generator leaves the warmed comparison differing by 0.508 — larger than
-    with the generator running. That last part is evidence, not noise: the hiss was partially
-    MASKING the difference, so whatever remains is signal-dependent rather than a fixed offset.
+    Kept rather than deleted, because how the candidate list went wrong is the reusable part.
 
-    Combined with "survives prepareToPlay" and "first divergence at sample 0", the candidates are a
-    short list, and naming them first is the point — Reflect-84's equivalent took three wrong
-    diagnoses precisely because each was reached for after the measurement rather than before:
+    Four candidates were named before the bisection, on the reasoning that the difference survives
+    `prepareToPlay`, starts at sample 0 and is signal-dependent: (1) the BBD line's contents,
+    (2) the modulation LFO phase — excluded by reading `ModulationEngine::reset`, (3) a filter
+    history, (4) a smoother carrying a value across prepare, in the shape of Reflect-84's pre-delay
+    defect. Candidate 4 was called the one to test first.
 
-      1. The BBD line's own contents. Not cleared on prepare would give sample-0 divergence and
-         signal dependence, and is the most direct fit.
-      2. The modulation LFO phase. ModulationEngine::prepare calls reset() which zeroes phase and
-         smoothedLfo (ModulationEngine.cpp:44-55), so this one is ALREADY ruled out by reading —
-         recorded so nobody re-derives it.
-      3. A filter's history in CharacterStage or the decorrelation stage.
-      4. A smoother carrying a value across prepare. CharacterStage::prepare resets driftSmoothed
-         and gainWobbleSmoothed with `reset (sampleRate, seconds)` (CharacterStage.cpp:32-33) —
-         which is `setCurrentAndTargetValue (target)`, so each snaps to whatever target it last
-         held rather than to a known value. **This is exactly Reflect-84's pre-delay defect**, in a
-         casting that has two of them rather than one, and it is named here as a candidate rather
-         than arrived at after three wrong turns.
+    **It is none of them, and candidate 4 was excluded by measurement before this bisection ran:**
+    the suite-wide smoother grep, re-run classifying each site by what its set writes, found
+    `CharacterStage::reset` sets both smoothers to a literal `0.0f`. This casting has zero unguarded
+    sites. Candidates 1 and 3 are excluded by the stage bisection below — `BBDDelayLine` and
+    `StereoDecorrelationStage` are both sample-exact across `prepare()`.
 
-    Candidate 4 is the one to test first: it is the same defect the suite has already found once,
-    and the two smoothers are drift and gain wobble — both signal-shaping, which fits the masking.
+    The answer was `random`, a member of the same class as candidate 4, sitting four lines above the
+    smoothers the candidate named. **The list was built from a mechanism — "what carries a value
+    across prepare" — and a PRNG carries a POSITION rather than a value**, so nothing phrased that
+    way could reach it. What reached it was reading `reset()` and asking which members it does not
+    mention, which is a question with no vocabulary in it.
+
+    Same lesson as the suite's other name-based scan: an earlier exclusion said the seed could not
+    explain the premise failure because that check is warmed and single-instance while a seed
+    difference needs two instances. True of the seed VALUE, false of the stream POSITION — two
+    different defects wearing one member, and only the first had been excluded.
 */
 class InvarianceTests final : public juce::UnitTest
 {
@@ -94,26 +98,288 @@ public:
                                                 : cd.sampleExact ? "FIRST-RUN-ONLY state — see the note below"
                                                                  : "ONGOING carry across prepareToPlay"));
 
-            // The warmed comparison is what every driver below depends on. A cold difference is a
-            // finding in its own right and is reported rather than asserted, because the drivers
-            // warm before measuring; a warmed difference means no invariance result is readable.
-            if (noisePercent == 0.0f)
-                expect (cd.sampleExact,
-                        "this processor is not reproducible even warmed WITH THE GENERATOR OFF, so "
-                        "a second cause sits behind the unseeded noise: " + cd.describe());
-            else
-                expect (! cd.sampleExact,
-                        "the generator at 100% produced a reproducible render, so the silent arm "
-                        "proved nothing — a comparison never shown able to fail");
+            // The warmed comparison is what every driver below depends on: a warmed difference
+            // means no invariance result in this file is readable. **Both NOISE settings are now
+            // asserted exact, and that is an inversion rather than a relaxation.** The NOISE 100
+            // arm used to assert `! cd.sampleExact` — that the generator running made the processor
+            // irreproducible — which existed to prove the silent arm was not vacuous. It encoded
+            // the DEFECT as the property. Once `CharacterStage::reset` seeds its generator that
+            // assertion is backwards, so it is inverted to what should hold and the vacuity it
+            // guarded against is closed by the positive control below instead.
+            expect (cd.sampleExact,
+                    "this processor is not reproducible warmed at NOISE "
+                        + juce::String (noisePercent, 0) + "%: " + cd.describe());
 
             if (! ab.sampleExact)
                 logMessage ("  NOTE: a first-run-only difference is itself a finding — an instance's "
                             "first playback differs from every later one. Reported, not asserted.");
             }
+
+            /*  **The positive control, and it is load-bearing now that every row above is exact.**
+                Five arms reporting sample-exact is indistinguishable from a comparison that cannot
+                report anything else, which is the same shape as a suite that ran and proved
+                nothing. So one deliberate difference, and `compareRenders` must see it.
+
+                NOISE is the axis because it is the one this file spent the whole hunt on: at NOISE
+                0 the hiss floor is `minNoiseFloorDb` = -75 dB rather than silence, so the two
+                renders differ by a small but guaranteed amount. A control that came back exact
+                would mean the seed had frozen something it should not have. */
+            {
+                Chorus60AudioProcessor processor;
+
+                nf::testing::RenderSpec spec;
+                spec.blockSize = 512;
+                spec.numBlocks = 16;
+
+                setNoise (processor, 0.0f);
+                const auto quiet = nf::testing::render (processor, spec);
+
+                setNoise (processor, 100.0f);
+                const auto loud = nf::testing::render (processor, spec);
+
+                const auto control = nf::testing::compareRenders (quiet, loud);
+                logMessage ("  CONTROL NOISE 0 vs 100 -> " + control.describe());
+
+                expect (! control.sampleExact,
+                        "the comparison reported two deliberately different renders as identical, so "
+                        "every sample-exact row above is a comparison never shown able to fail");
+            }
         }
 
-        beginTest ("CharacterStage: two fresh instances, identical input, different output");
+        beginTest ("BISECT BY STAGE — which stage carries state across prepare()");
         {
+            /*  **Bisect by stage before bisecting by construction.** The suite's own record is the
+                argument: TapeRot's equivalent hunt spent four construction hypotheses and produced
+                four refutations and no exclusions, then one stage bisection partitioned the space
+                in a single run. This is that run, and each arm is decisive rather than suggestive —
+                a stage given the same input twice, with a `prepare()` between, is either exact or
+                it is a carrier.
+
+                It mirrors what the premise check does: `nf::testing::render` calls `prepareToPlay`
+                on every invocation, so two renders of one processor ARE two prepares of every
+                stage inside it.
+
+                ## The prediction, stated before the run
+
+                | Stage | Predicted | Why |
+                |---|---|---|
+                | `ModulationEngine` | exact | `reset()` zeroes `phase` and `smoothedLfo`, its only two members |
+                | `BBDDelayLine` | exact | `reset()` clears the buffer, both write indices and every filter |
+                | `StereoDecorrelationStage` | exact | `reset()` resets its one delay line |
+                | `CharacterStage` | **DIFFERS** | `reset()` clears both smoothers and both counters and **omits `random`**, and `prepare` does not seed it either |
+
+                `OutputMixStage` is not in the table and is not a fifth clean row: it holds **no
+                state at all** — `prepare` and `reset` are both empty bodies. It is structurally
+                unable to carry anything, which is a different claim from having been measured and
+                found not to, and the sweep's rule is to say which kind each negative is.
+
+                ## Both directions, which is what makes the clean rows mean anything
+
+                Three arms are predicted exact and one is predicted to fail, in one fixture. A
+                fixture that reported DIFFERS everywhere would be measuring itself, and one that
+                reported exact everywhere would have been unable to fail. The assertion below is
+                written as the property that should hold **after** a fix — all four exact — so this
+                block is RED today and its CharacterStage row is the thing that turns it green.
+            */
+            const juce::dsp::ProcessSpec spec { 48000.0, 512, 2 };
+            constexpr int blocks = 64;   // 32768 samples = 0.68 s. Both retarget counters start at
+                                         // 0.0, so each fires on the first sample of every prepare.
+
+            juce::AudioBuffer<float> reference (2, 512);
+            {
+                juce::Random r (4321);
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int i = 0; i < 512; ++i)
+                        reference.setSample (ch, i, r.nextFloat() * 2.0f - 1.0f);
+            }
+
+            const auto report = [this] (const juce::String& name, auto&& pass)
+            {
+                const auto a = pass();
+                const auto b = pass();
+
+                double worst = 0.0, peak = 0.0;
+                for (size_t i = 0; i < a.size(); ++i)
+                {
+                    worst = juce::jmax (worst, (double) std::abs (a[i] - b[i]));
+                    peak  = juce::jmax (peak,  (double) std::abs (b[i]));
+                }
+
+                logMessage ("  " + (name + juce::String::repeatedString (" ", 28)).substring (0, 28)
+                                 + (worst == 0.0 ? juce::String ("exact")
+                                                 : "DIFFERS by " + juce::String (worst, 9))
+                                 + "   (peak " + juce::String (peak, 6) + ")");
+                return worst;
+            };
+
+            ModulationEngine modulation;
+            const auto modulationDiff = report ("ModulationEngine", [&]
+            {
+                modulation.prepare (spec.sampleRate);
+                std::vector<float> out;
+                for (int block = 0; block < blocks; ++block)
+                {
+                    out.clear();
+                    for (int i = 0; i < 512; ++i)
+                        out.push_back (modulation.getNextOffsetMs (0.6f, 55.0f));
+                }
+                return out;
+            });
+
+            BBDDelayLine bbd;
+            const auto bbdDiff = report ("BBDDelayLine", [&]
+            {
+                bbd.prepare (spec);
+                std::vector<float> out;
+                for (int block = 0; block < blocks; ++block)
+                {
+                    out.clear();
+                    for (int i = 0; i < 512; ++i)
+                    {
+                        bbd.pushSample (0, reference.getSample (0, i));
+                        bbd.pushSample (1, reference.getSample (1, i));
+                        out.push_back (bbd.readTap (0, 0, 8.0f));
+                    }
+                }
+                return out;
+            });
+
+            StereoDecorrelationStage decorrelation;
+            const auto decorrelationDiff = report ("StereoDecorrelationStage", [&]
+            {
+                decorrelation.prepare (spec);
+                juce::AudioBuffer<float> b (2, 512);
+                for (int block = 0; block < blocks; ++block)
+                {
+                    b.makeCopyOf (reference);
+                    decorrelation.process (b, 60.0f);
+                }
+
+                std::vector<float> out;
+                for (int i = 0; i < 512; ++i)
+                    out.push_back (b.getSample (1, i));   // right is the decorrelated channel
+                return out;
+            });
+
+            /*  CharacterStage twice, because `random` has THREE consumers and they are not the
+                same size. Splitting the drift return from the audio return costs one extra pass and
+                separates the one that moves a delay TIME from the two that colour a signal — which
+                is the decomposition the magnitude question below needs. */
+            CharacterStage characterDrift;
+            const auto driftDiff = report ("CharacterStage / drift ms", [&]
+            {
+                characterDrift.prepare (spec.sampleRate);
+                juce::AudioBuffer<float> b (2, 512);
+                std::vector<float> out;
+                for (int block = 0; block < blocks; ++block)
+                {
+                    b.makeCopyOf (reference);
+                    for (int i = 0; i < 512; ++i)
+                        out.push_back (characterDrift.nextDriftMs (22.0f));   // 22 % is the default
+                    characterDrift.process (b, 30.0f, 0.0f);
+                }
+                return out;
+            });
+
+            CharacterStage characterAudio;
+            const auto audioDiff = report ("CharacterStage / audio", [&]
+            {
+                characterAudio.prepare (spec.sampleRate);
+                juce::AudioBuffer<float> b (2, 512);
+                for (int block = 0; block < blocks; ++block)
+                {
+                    b.makeCopyOf (reference);
+                    for (int i = 0; i < 512; ++i)
+                        characterAudio.nextDriftMs (22.0f);
+                    characterAudio.process (b, 30.0f, 0.0f);
+                }
+
+                std::vector<float> out;
+                for (int i = 0; i < 512; ++i)
+                    out.push_back (b.getSample (0, i));
+                return out;
+            });
+
+            logMessage ("  OutputMixStage              structurally stateless — prepare and reset "
+                        "are empty bodies, so it is unable to carry rather than measured not to");
+
+            expect (modulationDiff == 0.0,
+                    "ModulationEngine differs across prepare() — this was predicted exact from its "
+                    "own reset() body, so either the reading is wrong or the fixture is");
+            expect (bbdDiff == 0.0,
+                    "BBDDelayLine differs across prepare() — predicted exact from its reset() body");
+            expect (decorrelationDiff == 0.0,
+                    "StereoDecorrelationStage differs across prepare() — predicted exact");
+
+            expect (driftDiff == 0.0,
+                    "CharacterStage::nextDriftMs returns a different value stream on a second "
+                    "prepare() of the SAME instance. reset() clears driftSmoothed, gainWobbleSmoothed "
+                    "and both retarget counters and omits `random` (CharacterStage.h:29), which "
+                    "prepare does not seed either — so render 2 continues the stream render 1 left "
+                    "off and retargetIfDue draws different values. This moves a delay TIME, not a "
+                    "noise floor.");
+            expect (audioDiff == 0.0,
+                    "CharacterStage::process produces different audio on a second prepare() of the "
+                    "same instance, at NOISE 0. Same cause, reaching the output through the gain "
+                    "wobble and the -75 dB hiss floor that NOISE 0 does not silence.");
+        }
+
+        beginTest ("MAGNITUDE — does the drift path account for the premise figure?");
+        {
+            /*  **An unrestored PRNG explains that two renders differ without explaining by how
+                much**, and 0.159 / 0.357 / 0.542 is a large number to leave unaccounted. A
+                candidate that explains the fact and not the size is a candidate, not an answer.
+
+                DRIFT gates one of the three consumers and nothing else: `nextDriftMs` returns
+                `driftSmoothed.getNextValue() * driftPercent * 0.01 * maxDriftMs`, so DRIFT 0
+                zeroes the tap perturbation while still drawing from `random` at the same rate. The
+                other two consumers — the gain wobble and the hiss — have no parameter that gates
+                them at all.
+
+                ## Predicted before the run, from the constants rather than from a previous log
+
+                | DRIFT | Tap displacement | Predicted divergence |
+                |---|---|---|
+                | 0 % | none | the wobble and the hiss alone: ±0.1 dB is ±1.16 % of the wet, so order 1e-2 |
+                | 22 % (default) | 0.033 ms = **1.58 samples** at 48 k | order of the wet signal itself — a displacement of more than a sample decorrelates broadband material |
+                | 100 % | 0.15 ms = **7.2 samples** | the same or larger |
+
+                And a floor underneath all three, which is the arithmetic rather than an estimate:
+                `minNoiseFloorDb` is **-75 dB**, so NOISE 0 does not silence the hiss — it sets it
+                to a gain of 1.78e-4. Two independent draws differ by up to 3.56e-4 before the mix.
+                **If the DRIFT 0 row comes back at exactly zero, this fixture is wrong**, because
+                the code guarantees a generator is still running there.
+            */
+            for (float driftPercent : { 0.0f, 22.0f, 100.0f })
+            {
+                Chorus60AudioProcessor processor;
+                setParam (processor, ParamIDs::noise, 0.0f);
+                setParam (processor, ParamIDs::drift, driftPercent);
+
+                nf::testing::RenderSpec spec;
+                spec.blockSize = 512;
+                spec.numBlocks = 16;
+
+                nf::testing::render (processor, spec);   // discarded: spends first-run state
+
+                const auto cd = nf::testing::compareRenders (nf::testing::render (processor, spec),
+                                                             nf::testing::render (processor, spec));
+
+                logMessage ("  DRIFT " + juce::String (driftPercent, 0).paddedLeft (' ', 3) + "%  -> "
+                                + cd.describe());
+            }
+
+            logMessage ("  (reported, not asserted — the premise check above is what asserts "
+                        "reproducibility. This block exists to account for the SIZE of its failure.)");
+        }
+
+        beginTest ("CharacterStage: two fresh instances, identical input, identical output");
+        {
+            // **FIXED, and this arm is now the pin.** `CharacterStage::reset` seeds `random` from a
+            // literal, so both defects this member carried are closed by one line: the clock seed
+            // (which this arm catches) and the unrestored stream position (which the premise check
+            // catches). Both directions of the same member, and they needed the same fix.
+            //
             // **The earlier conclusion here was wrong and this corrects it.** It read: the unseeded
             // generator is real but insufficient, because silencing NOISE left the difference
             // LARGER — so a second cause must sit behind it.
@@ -169,7 +435,8 @@ public:
                 for (int block = 0; block < 60; ++block)
                 {
                     b.makeCopyOf (reference);
-                    stage.advanceDrift (512, 100.0f);
+                    for (int i = 0; i < 512; ++i)
+                        stage.nextDriftMs (100.0f);
                     stage.process (b, 50.0f, noisePercent);
                 }
 
@@ -232,10 +499,113 @@ public:
                     "the self-comparison failed, so the other rows measured non-determinism rather "
                     "than block dependence");
 
+            /*  **The sweep must be shown to have swept.** Now that every row here is sample-exact,
+                a driver that quietly prepared at one size four times would look identical to a
+                processor that is genuinely invariant — the same shape as a suite that ran and proved
+                nothing. `InvarianceResult::actualBlockSize` is read back off the processor rather
+                than echoed from the loop, exactly so a collapsed sweep is visible; asserting it is
+                what makes that live rather than a figure in a log nobody reads. */
+            const std::vector<int> requested { 64, 128, 511, 2048 };
+            expect (results.size() == requested.size(), "the sweep returned a different number of rows than it was asked for");
+
+            for (size_t i = 0; i < juce::jmin (results.size(), requested.size()); ++i)
+                expect (results[i].actualBlockSize == requested[i],
+                        "the processor prepared at " + juce::String (results[i].actualBlockSize)
+                            + " when the sweep asked for " + juce::String (requested[i])
+                            + ", so this row is not the block size it claims to be");
+
             for (const auto& r : results)
                 expect (r.sampleExact,
                         "block-size invariance failed — the same sample stream cut differently "
                         "produced different output: " + r.describe());
+        }
+
+        beginTest ("BISECT THE BLOCK DEPENDENCE BY STAGE — neutral, then one stage at a time");
+        {
+            /*  **Readable for the first time.** These rows existed at baseline as 0.733 / 0.725 /
+                0.340 / 0.704 and were measuring the unseeded generator; with the premise check green
+                they are block dependence and nothing else. Making the drift per-sample moved two of
+                the three a long way and barely touched the third:
+
+                | Arm | per-block drift | per-sample drift |
+                |---|---|---|
+                | 128  | 0.004488230 | 0.000176609 |
+                | 511  | 0.167634130 | **0.165607147** |
+                | 2048 | 0.086103246 | 0.028221250 |
+
+                511 barely moving is the evidence that a second contributor dominates, and it is
+                also why bisecting by CONSTRUCTION would be the wrong move: TapeRot's equivalent
+                spent four hypotheses that way and produced four refutations and no exclusions.
+
+                This partitions instead. Every arm drives the same block-size sweep; each restores
+                one stage on top of the one before it, so the first arm that stops being exact names
+                the stage rather than narrowing to it.
+
+                **The known case is stated before the run, and it is the first two arms.** Both
+                engines off is this casting's true bypass — `processBlock` copies the dry buffer
+                straight out — and MIX 0 is dry-only through the mix stage. Neither can be block
+                dependent for any reason, so if either is not exactly zero the fixture is measuring
+                itself and no later row means anything.
+
+                **And the neutral arm must still produce OUTPUT**, which is the other half of that
+                rule: a configuration that silences the plugin reports sample-exact for the trivial
+                reason and looks like a result. Peak is logged for every arm.
+            */
+            struct Arm { const char* name; std::vector<std::pair<const char*, float>> params; };
+
+            // Cumulative: each arm is the one above it plus one stage restored.
+            const std::vector<Arm> arms
+            {
+                { "both engines OFF (bypass)",  { { ParamIDs::engine1, 0.0f }, { ParamIDs::engine2, 0.0f } } },
+                { "MIX 0 (dry only)",           { { ParamIDs::engine1, 1.0f }, { ParamIDs::mix, 0.0f } } },
+                { "wet, everything neutral",    { { ParamIDs::mix, 100.0f }, { ParamIDs::depth1, 0.0f },
+                                                  { ParamIDs::drift, 0.0f }, { ParamIDs::decorr1, 0.0f },
+                                                  { ParamIDs::saturation, 0.0f }, { ParamIDs::noise, 0.0f } } },
+                { "+ LFO depth",                { { ParamIDs::depth1, 55.0f } } },
+                { "+ drift",                    { { ParamIDs::drift, 22.0f } } },
+                { "+ decorrelation",            { { ParamIDs::decorr1, 60.0f } } },
+                { "+ saturation",               { { ParamIDs::saturation, 30.0f } } },
+                { "+ noise",                    { { ParamIDs::noise, 14.0f } } },
+            };
+
+            std::vector<std::pair<const char*, float>> applied;
+
+            for (const auto& arm : arms)
+            {
+                for (const auto& p : arm.params)
+                    applied.push_back (p);
+
+                Chorus60AudioProcessor processor;
+                for (const auto& p : applied)
+                    setParam (processor, p.first, p.second);
+
+                nf::testing::RenderSpec spec;
+                spec.blockSize = 512;
+                spec.numBlocks = 64;
+
+                const auto results = nf::testing::blockSizeInvariance (processor, spec,
+                                                                       { 64, 128, 511, 2048 });
+
+                double worst = 0.0;
+                for (size_t i = 1; i < results.size(); ++i)          // [0] is the self-comparison
+                    worst = juce::jmax (worst, results[i].maxAbsDifference);
+
+                // The peak this arm actually produces — an arm that silences the plugin reports
+                // exact for the trivial reason and looks like a result.
+                double peak = 0.0;
+                for (const auto& channel : nf::testing::render (processor, spec))
+                    for (auto v : channel)
+                        peak = juce::jmax (peak, (double) std::abs (v));
+
+                logMessage ("  " + (juce::String (arm.name) + juce::String::repeatedString (" ", 28)).substring (0, 28)
+                                 + (worst == 0.0 ? juce::String ("exact")
+                                                 : "worst " + juce::String (worst, 9))
+                                 + "   (self " + juce::String (results.front().maxAbsDifference, 9)
+                                 + ", peak " + juce::String (peak, 6) + ")");
+            }
+
+            logMessage ("  (reported, not asserted — the Block size suite below is what asserts the "
+                        "property. This block exists to say WHICH stage it is.)");
         }
 
         beginTest ("Offline against real-time");
@@ -260,11 +630,15 @@ public:
     }
 
 private:
-    /** One discarded render, so any first-run-only state is spent before a driver measures. */
+    static void setParam (Chorus60AudioProcessor& p, const juce::String& id, float value)
+    {
+        if (auto* param = dynamic_cast<juce::RangedAudioParameter*> (p.apvts.getParameter (id)))
+            param->setValueNotifyingHost (param->getNormalisableRange().convertTo0to1 (value));
+    }
+
     static void setNoise (Chorus60AudioProcessor& p, float percent)
     {
-        if (auto* param = dynamic_cast<juce::RangedAudioParameter*> (p.apvts.getParameter (ParamIDs::noise)))
-            param->setValueNotifyingHost (param->getNormalisableRange().convertTo0to1 (percent));
+        setParam (p, ParamIDs::noise, percent);
     }
 
     /** Silences the unseeded generator as well as spending any first-run state: with it running,

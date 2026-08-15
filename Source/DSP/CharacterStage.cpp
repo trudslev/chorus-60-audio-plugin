@@ -34,32 +34,63 @@ void CharacterStage::prepare(double newSampleRate)
     reset();
 }
 
+/*  Restores every member, and the generator is a member.
+
+    **This line is what made every other Chorus-60 measurement in the bug sweep unreadable.** The
+    four below were always here and are the site root CLAUDE.md cites as a *correct* smoother guard;
+    `random` was not, and neither `prepare` nor `reset` seeded it. So a second render of one
+    instance continued the stream the first left off, `retargetIfDue` drew different values, and the
+    processor was not reproducible against itself even warmed with NOISE at zero. Its block-size
+    rows, its offline-against-real-time row and its reset-energy figure were all measuring that.
+
+    **It is a delay TIME the stream moves, which is why the magnitude was so large.** `advanceDrift`
+    feeds the BBD tap position, and at the default DRIFT of 22 % that is 1.58 samples at 48 k -
+    enough to decorrelate broadband material completely. Measured: the divergence is 0.000273 at
+    DRIFT 0 and 0.177544 at DRIFT 22, a factor of 650. The 0.159-0.542 spread across runs was never
+    a range to explain - an uncorrelated drift stream makes each run one draw from a distribution.
+
+    **Seeded in `reset()` rather than in `prepare()`, and that is the suite's ruling rather than a
+    preference.** TapeRot's `FailureEngine::reset()` clears six members and omits its `random` in
+    exactly this shape, and the ruling recorded for it is to seed the *reset*. `prepare` calls this,
+    so the reproducibility the premise check needs follows either way; restoration belongs in the
+    function whose whole job is restoration, which is where the next reader looks for it.
+
+    The suite's other four generators - TapeRot's `NoiseSource` and `WowFlutter`, Reflect-84's
+    `LfoBank`, Fifth Member's `CharacterEngine` - are seeded in `prepare()` only, so a host `reset()`
+    does not rewind them. That is a difference rather than a defect: what a plugin owes a reset is a
+    cleared tail, not a rewound hiss. Noted here because stage 1c gave all six an
+    `AudioProcessor::reset()` and this is the first place the two conventions meet.
+*/
 void CharacterStage::reset()
 {
+    driftRandom = juce::Random (driftSeed);
+    wobbleRandom = juce::Random (wobbleSeed);
+    for (int ch = 0; ch < maxChannels; ++ch)
+        hissRandom[(size_t) ch] = juce::Random (hissSeed + ch);
+
     driftSmoothed.setCurrentAndTargetValue(0.0f);
     gainWobbleSmoothed.setCurrentAndTargetValue(0.0f);
     driftRetargetCounter = 0.0;
     gainWobbleRetargetCounter = 0.0;
 }
 
-void CharacterStage::retargetIfDue(double& counterSamples, double retargetSeconds, juce::SmoothedValue<float>& smoothed)
+void CharacterStage::retargetIfDue(double& counterSamples, double retargetSeconds,
+                                   juce::SmoothedValue<float>& smoothed, juce::Random& generator)
 {
     counterSamples -= 1.0;
     if (counterSamples <= 0.0)
     {
         counterSamples = retargetSeconds * sampleRate;
-        smoothed.setTargetValue(random.nextFloat() * 2.0f - 1.0f);
+        smoothed.setTargetValue(generator.nextFloat() * 2.0f - 1.0f);
     }
 }
 
-float CharacterStage::advanceDrift(int numSamples, float driftPercent)
+float CharacterStage::nextDriftMs(float driftPercent)
 {
-    for (int i = 0; i < numSamples; ++i)
-        retargetIfDue(driftRetargetCounter, driftRetargetSeconds, driftSmoothed);
-    driftSmoothed.skip(numSamples);
+    retargetIfDue(driftRetargetCounter, driftRetargetSeconds, driftSmoothed, driftRandom);
 
     const float driftAmount = juce::jlimit(0.0f, 1.0f, driftPercent * 0.01f);
-    return driftSmoothed.getCurrentValue() * driftAmount * maxDriftMs;
+    return driftSmoothed.getNextValue() * driftAmount * maxDriftMs;
 }
 
 void CharacterStage::process(juce::AudioBuffer<float>& buffer, float saturationPercent, float noisePercent)
@@ -77,18 +108,24 @@ void CharacterStage::process(juce::AudioBuffer<float>& buffer, float saturationP
     wobbleGainScratch.resize((size_t) numSamples);
     for (int i = 0; i < numSamples; ++i)
     {
-        retargetIfDue(gainWobbleRetargetCounter, gainWobbleRetargetSeconds, gainWobbleSmoothed);
+        retargetIfDue(gainWobbleRetargetCounter, gainWobbleRetargetSeconds, gainWobbleSmoothed, wobbleRandom);
         const float wobbleDb = gainWobbleSmoothed.getNextValue() * maxGainWobbleDb;
         wobbleGainScratch[(size_t) i] = juce::Decibels::decibelsToGain(wobbleDb);
     }
 
+    // **Per channel, and that is what makes the hiss buffer-size independent.** This loop is
+    // channel-major, so one shared generator would hand a given (channel, sample) whichever value
+    // fell at `ch * numSamples + i` in the stream - a position that moves with the host's block
+    // size. A generator per channel indexes by `i` alone, which does not.
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
         auto* data = buffer.getWritePointer(ch);
+        auto& generator = hissRandom[(size_t) (ch % maxChannels)];
+
         for (int i = 0; i < numSamples; ++i)
         {
             const float driven = std::tanh(data[i] * driveGain) * makeupGain;
-            const float hiss = noiseGain * (random.nextFloat() * 2.0f - 1.0f);
+            const float hiss = noiseGain * (generator.nextFloat() * 2.0f - 1.0f);
             data[i] = driven * wobbleGainScratch[(size_t) i] + hiss;
         }
     }

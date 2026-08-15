@@ -159,26 +159,19 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (int ch = 0; ch < numChannels; ++ch)
         dryBuffer.copyFrom(ch, 0, mainIO, ch, 0, numSamples);
 
-    // Drift is a single slow-moving value per span (retargets every ~0.6s - see CharacterStage),
-    // shared by both engines' tap-position calculations.
+    // Drift perturbs the actual tap position - it has to move the delay TIME rather than colour the
+    // audio afterward, per the missing BBD notes' "tiny delay jitter".
     //
-    // **INSIDE, and it is span-invariant rather than merely convenient.** advanceDrift's retarget
-    // counter steps per SAMPLE, so N spans summing to numSamples retarget at exactly the samples one
-    // call would have; and SmoothedValue::skip over the spans reaches the same value as one skip of
-    // the total. Nothing about the drift trajectory changes.
+    // **Read PER SAMPLE, inside the loop below, and it used to be read once here.** The per-block
+    // form was the fourth member of stage 1a's per-block-stepped family and it is the reason this
+    // casting's block-size rows failed: a value applied flat across a block makes the output depend
+    // on the host's buffer size. Fixed as part of stage 0.5, which is when this casting could be
+    // measured again - the figures are in CharacterStage.h beside the function.
     //
-    // **What DOES change is that this is a fourth member of the per-block-stepped family, and it
-    // was not in stage 1a's table.** skip(numSamples) then getCurrentValue() applied flat to the
-    // whole block is the identical construction to TapeRot's genSmoothed and Reflect-84's LfoBank —
-    // the drift value a span uses is where the smoother LANDED, not where it travelled. Chunking
-    // makes that staircase finer without fixing it, which is precisely what 1a's ordering constraint
-    // exists to prevent.
-    //
-    // **It is accepted here only because Chorus-60 has nothing readable to mask.** Its premise check
-    // fails, so no figure of its is a measurement yet; there is no magnitude for chunking to reduce
-    // and no before/after to corrupt. The site is recorded rather than fixed, and it belongs with
-    // stage 0.5's work when this casting can be measured again.
-    const float driftOffsetMs = characterStage.advanceDrift(numSamples, driftParam->load());
+    // Nothing about chunking is involved either way. `nf::processInChunks` never fires unless the
+    // host over-delivers past the prepared size, and the retarget counter steps per sample, so N
+    // spans summing to numSamples retarget at exactly the samples one call would have.
+    const float driftPercent = driftParam->load();
 
     const auto active = resolveActiveConfiguration();
 
@@ -193,12 +186,17 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     // (~86Hz at 512 samples / 44.1kHz) carrying almost none of the input. Audibly that is a low
     // rumble that survives at Mix 100% while the actual chorus does not.
     float lastOffset = 0.0f;
+    float driftOffsetMs = 0.0f;
     for (int i = 0; i < numSamples; ++i)
     {
         // The LFO advances whether or not anything is engaged, so returning from bypass - or
         // switching pages - never phase-jumps.
         const float offset = modulationEngine.getNextOffsetMs(active.rateHz, active.depthPercent);
         lastOffset = offset;
+
+        // Same contract as the LFO above: drift advances whether or not anything is engaged, so its
+        // slow wander does not jump when an engine is latched back on.
+        driftOffsetMs = characterStage.nextDriftMs(driftPercent);
 
         for (int ch = 0; ch < numChannels; ++ch)
         {

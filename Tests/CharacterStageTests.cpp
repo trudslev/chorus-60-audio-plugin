@@ -19,12 +19,15 @@ public:
             const int blockSize = 512;
             const int numBlocks = 200;
             float maxAbs = 0.0f;
+            // Per sample since drift became per sample - the block loop is kept only so the total
+            // advancement (200 x 512 samples) still covers several 0.6 s retarget cycles.
             for (int b = 0; b < numBlocks; ++b)
-            {
-                const float offset = stage.advanceDrift(blockSize, 100.0f);
-                expect(std::isfinite(offset), "Drift offset must stay finite");
-                maxAbs = juce::jmax(maxAbs, std::abs(offset));
-            }
+                for (int i = 0; i < blockSize; ++i)
+                {
+                    const float offset = stage.nextDriftMs(100.0f);
+                    expect(std::isfinite(offset), "Drift offset must stay finite");
+                    maxAbs = juce::jmax(maxAbs, std::abs(offset));
+                }
 
             expect(maxAbs <= 0.16f, "Drift should stay within its small capped range even at 100%");
         }
@@ -35,7 +38,8 @@ public:
             stage.prepare(sampleRate);
 
             for (int b = 0; b < 50; ++b)
-                expectWithinAbsoluteError(stage.advanceDrift(512, 0.0f), 0.0f, 1.0e-6f);
+                for (int i = 0; i < 512; ++i)
+                    expectWithinAbsoluteError(stage.nextDriftMs(0.0f), 0.0f, 1.0e-6f);
         }
 
         beginTest("Saturation = 0, Noise = 0 stays close to unity gain on a moderate-level sine");

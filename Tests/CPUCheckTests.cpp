@@ -47,10 +47,11 @@ public:
                         bbdLine.pushSample(ch, dry[i]);
                 }
 
-                const float driftMs = character.advanceDrift(blockSize, 40.0f);
-
                 for (int i = 0; i < blockSize; ++i)
                 {
+                    // Inside the loop because drift is per sample now, which is also the cost the
+                    // shipping processBlock pays - a per-block call here would under-report it.
+                    const float driftMs = character.nextDriftMs(40.0f);
                     const float offset1 = engine1.getNextOffsetMs(0.55f, 25.0f);
                     const float offset2 = engine2.getNextOffsetMs(1.0f, 55.0f);
                     for (int ch = 0; ch < numChannels; ++ch)

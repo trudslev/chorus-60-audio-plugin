@@ -73,7 +73,7 @@ mark it `SHIPPED` with the date it shipped, instead of leaving it as a bare, imp
 ```
 Input (dry tap) ──┬────────────────────────────────────────────────────────► BBDDelayLine.pushSample
                    │                                                                    │
-                   │                                        CharacterStage.advanceDrift ┤ (once/block)
+                   │                                        CharacterStage.nextDriftMs ┤ (per sample)
                    │                                                                    │
                    │        ModulationEngine I (if Chorus I on): LFO → offset1 ─────────┤
                    │        ModulationEngine II (if Chorus II on): LFO → offset2 ───────┤
@@ -94,11 +94,18 @@ each with its own full parameter set, exactly one of which is resolved per block
 `resolveActiveConfiguration()`. An earlier draft of this file described two engines summing two taps,
 which the `BBD-TECHNICAL-NOTES-ADDENDUM.md` rework superseded. Delay Center and Decorrelation are
 per-configuration too (`center1/2/B`, `decorr1/2/B`), not single global values. Engine LFO phase keeps advancing even while that engine is
-disengaged, so re-engaging it never phase-jumps. Drift is a single slow-moving value recomputed
-once per block (not per-sample - it retargets on a ~0.6s cycle, far slower than the audio rate) and
-added into both engines' tap-position calculations before `BBDDelayLine` is read - it has to
+disengaged, so re-engaging it never phase-jumps. Drift is a single slow-moving value read **per
+sample** and added into the tap-position calculation before `BBDDelayLine` is read - it has to
 perturb the actual delay time, not just color the audio afterward, per the technical notes'
 "tiny delay jitter" description.
+
+**This paragraph said "once per block (not per-sample - it retargets on a ~0.6s cycle, far slower
+than the audio rate)" until 2026-08-15, and the parenthesis is the part worth keeping as a warning.**
+Every word of it was true and none of it was the relevant rate: the *retarget* fires every 0.6 s, but
+the *smoother it retargets* ramps over 0.3 s continuously, and reading a continuous ramp once per
+block quantises it to the host's buffer size. That made the output depend on the buffer size, which
+is the fourth member of the suite's per-block-stepped family (TapeRot's `genSmoothed`, its
+`transportGateSmoothed`, Reflect-84's `LfoBank`). A correct sentence carried a wrong design.
 
 Each DSP stage (`Source/DSP/`) is a self-contained class with a `prepare()`/`reset()`/`process()`-
 shaped interface taking plain floats/bools read from the APVTS by the processor - no DSP stage reads
@@ -159,6 +166,37 @@ engine must never produce silence, a stale value from the previous program, or a
 chose. The genuinely global parameters (Drift, Saturation, Noise, Mix, Output Trim) apply unchanged
 across every combination; every configuration
 carries its own complete set, so switching pages never inherits a value from the page before it.
+
+### `CharacterStage`'s generator — four defects in one member, closed 2026-08-15
+
+**This casting was the worst of the six at the bug sweep's baseline — nine failing assertions — and
+it was one member.** `CharacterStage` held a single default-constructed `juce::Random`, and every one
+of those nine traces back to it. Worth reading before touching that class, because the four defects
+are genuinely different from each other and only two of them are about determinism.
+
+| | The defect | What it broke |
+|---|---|---|
+| 1 | **Clock-seeded.** `juce::Random`'s default constructor seeds from the system clock | Two instances of the plugin were different instruments |
+| 2 | **Not restored.** Neither `prepare` nor `reset` re-seeded it | A second render of ONE instance continued the first's stream, so the processor was not reproducible against itself even warmed with NOISE at zero |
+| 3 | **Shared across consumers.** Drift retarget, wobble retarget and hiss all drew from it | The value a retarget got depended on how many hiss draws preceded it — a buffer-size question |
+| 4 | **Channel-major hiss.** One stream feeding a `for ch { for i }` loop | The hiss landing on a given (channel, sample) sat at position `ch * numSamples + i`, which moves with the block size |
+
+1 and 2 are closed by seeding in `reset()`; 3 and 4 by splitting into `driftRandom`, `wobbleRandom`
+and a `hissRandom` per channel. The reasoning for each is in `CharacterStage.h` and `.cpp` beside the
+code.
+
+**Why 2 hid the other eight failures.** A processor that cannot reproduce itself makes every
+comparison unreadable, so Chorus-60's block-size rows (0.733 / 0.725 / 0.340 / 0.704) and its
+offline-against-real-time row (0.497) were measuring non-determinism rather than what they claimed.
+They were never four defects and a fifth — they were **one unknown reported five times**. Offline
+against real-time turned out to be sample-exact and was never a defect at all.
+
+**And 3 is why the drift fix looked like it had failed.** Making drift per-sample (the family fix
+above) took the 128 row from 0.004488230 to 0.000176609 and the 2048 row from 0.086103246 to
+0.028221250 — but left 511 at 0.165607147, essentially unmoved. That was the evidence for a second
+contributor, and a stage bisection found it in one run where reading for a candidate would not have:
+restoring drift on top of an otherwise neutral wet path took the divergence from 0.000354871 to
+0.201515645, while the LFO arm before it changed nothing.
 
 ### Silence in, silence out — a DECLARED property
 
