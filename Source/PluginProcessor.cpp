@@ -69,6 +69,26 @@ void Chorus60AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBloc
     outputMeterDb.store(-100.0f, std::memory_order_relaxed);
 }
 
+//==============================================================================
+/** A host's reset - a transport locate, a buffer clear - propagated to the DSP.
+
+    **JUCE's base implementation is a no-op, and none of the six castings overrode it**, so until
+    stage 1c a host asking every plugin in the session to clear itself was answered by nothing
+    anywhere. Measured tails surviving a reset: Gatecrasher 0.679, Chorus-60 0.429, Reflect-84 0.111.
+
+    Routed to the same per-stage `reset()` calls `prepareToPlay` already makes, and deliberately NOT
+    to `prepareToPlay` itself: re-preparing would also re-run whatever a prepare re-arms, and this
+    suite has a measured example of that being audible.
+*/
+void Chorus60AudioProcessor::reset()
+{
+    modulationEngine.reset();
+    bbdDelayLine.reset();
+    stereoDecorrelationStage.reset();
+    characterStage.reset();
+    outputMixStage.reset();
+}
+
 void Chorus60AudioProcessor::releaseResources()
 {
 }
