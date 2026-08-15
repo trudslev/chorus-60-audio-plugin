@@ -1,5 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+
+#include <nf/BlockChunking.h>
 #include <cmath>
 
 Chorus60AudioProcessor::Chorus60AudioProcessor()
@@ -114,7 +116,22 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
 {
     juce::ScopedNoDenormals noDenormals;
 
-    auto mainIO = getBusBuffer(buffer, true, 0);
+    // **The over-delivery policy.** dryBuffer.setSize grows when a host sends more samples than it
+    // declared. Chunking removes it: no span exceeds the prepared size, so the growth path is never
+    // reached.
+    //
+    // **THE BUS QUESTION, AND THIS CASTING IS THE THIRD ANSWER OF THREE.** Gatecrasher moved its
+    // getBusBuffer calls inside because it has a sidechain; Fifth Member and Reflect-84 had none to
+    // move because they read the buffer directly. **Chorus-60 calls getBusBuffer for its MAIN bus
+    // and has no second one** — exactly the case that makes the bus COUNT the wrong thing to reason
+    // from. Asking once outside would hand every span the whole block's length: the spans would
+    // exist, every assertion would pass, and the chunking would be undone. So it moves inside, per
+    // span, on the same reasoning as Gatecrasher's and for a different reason.
+    //
+    // ScopedNoDenormals stays OUTSIDE — it is scoped, so once per call is correct and cheaper.
+    nf::processInChunks(buffer, getBlockSize(), [&](juce::AudioBuffer<float>& span)
+    {
+    auto mainIO = getBusBuffer(span, true, 0);
     const int numSamples = mainIO.getNumSamples();
     const int numChannels = mainIO.getNumChannels();
 
@@ -122,8 +139,25 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     for (int ch = 0; ch < numChannels; ++ch)
         dryBuffer.copyFrom(ch, 0, mainIO, ch, 0, numSamples);
 
-    // Drift is a single slow-moving value per block (retargets every ~0.6s - see CharacterStage),
+    // Drift is a single slow-moving value per span (retargets every ~0.6s - see CharacterStage),
     // shared by both engines' tap-position calculations.
+    //
+    // **INSIDE, and it is span-invariant rather than merely convenient.** advanceDrift's retarget
+    // counter steps per SAMPLE, so N spans summing to numSamples retarget at exactly the samples one
+    // call would have; and SmoothedValue::skip over the spans reaches the same value as one skip of
+    // the total. Nothing about the drift trajectory changes.
+    //
+    // **What DOES change is that this is a fourth member of the per-block-stepped family, and it
+    // was not in stage 1a's table.** skip(numSamples) then getCurrentValue() applied flat to the
+    // whole block is the identical construction to TapeRot's genSmoothed and Reflect-84's LfoBank —
+    // the drift value a span uses is where the smoother LANDED, not where it travelled. Chunking
+    // makes that staircase finer without fixing it, which is precisely what 1a's ordering constraint
+    // exists to prevent.
+    //
+    // **It is accepted here only because Chorus-60 has nothing readable to mask.** Its premise check
+    // fails, so no figure of its is a measurement yet; there is no magnitude for chunking to reduce
+    // and no before/after to corrupt. The site is recorded rather than fixed, and it belongs with
+    // stage 0.5's work when this casting can be measured again.
     const float driftOffsetMs = characterStage.advanceDrift(numSamples, driftParam->load());
 
     const auto active = resolveActiveConfiguration();
@@ -208,6 +242,7 @@ void Chorus60AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     const float currentOut = outputMeterDb.load(std::memory_order_relaxed);
     inputMeterDb.store(newInDb > currentIn ? newInDb : currentIn + 0.3f * (newInDb - currentIn), std::memory_order_relaxed);
     outputMeterDb.store(newOutDb > currentOut ? newOutDb : currentOut + 0.3f * (newOutDb - currentOut), std::memory_order_relaxed);
+    });
 }
 
 juce::AudioProcessorEditor* Chorus60AudioProcessor::createEditor()
