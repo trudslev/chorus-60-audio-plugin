@@ -520,6 +520,46 @@ public:
                         "produced different output: " + r.describe());
         }
 
+        beginTest ("Reproducible across reset() ALONE, with the generator driven");
+        {
+            /*  **A path nothing in this suite could reach until `nf::testing::renderBlocks` existed.**
+                `render` calls `prepareToPlay` on every invocation, so every premise check anywhere —
+                including the one at the top of this file — is a *prepare* check by construction.
+                Prepare once, then `reset()`, render, `reset()`, render is a different question, and a
+                host asks it on every transport locate.
+
+                **Chorus-60 is the casting that can assert it**, because stage 0.5 put the seeding in
+                `reset()`. The other four generators in the suite are seeded in `prepare()` only, so
+                they continue their streams here; whether that is a defect or the correct contract is
+                a ruling those castings' rows are measured for. This one is not waiting on it.
+
+                **NOISE and DRIFT at 100, not at defaults.** A generator inaudible in the arm's
+                configuration reports reset-clean whatever `reset()` does — which is exactly how
+                Fifth Member's and Elmer's energy-after-reset rows came back 0.000 twice for a
+                coincidence rather than a property. Driving both consumers is what makes a pass here
+                mean the generator was restored rather than that it was never running. */
+            Chorus60AudioProcessor processor;
+            setParam (processor, ParamIDs::noise, 100.0f);
+            setParam (processor, ParamIDs::drift, 100.0f);
+
+            nf::testing::RenderSpec spec;
+            spec.blockSize = 512;
+            spec.numBlocks = 16;
+
+            const auto r = nf::testing::reproducibleAcrossReset (processor, spec);
+            logMessage ("  " + r.describe());
+
+            expect (r.premiseHeld(),
+                    "this processor is not reproducible across prepare, so its reset row means "
+                    "nothing: " + r.acrossPrepare.describe());
+
+            expect (r.acrossReset.sampleExact,
+                    "reset() did not return this processor to the same state — with NOISE and DRIFT "
+                    "driven, two renders separated by nothing but reset() differed. CharacterStage "
+                    "seeds all three generators in reset() precisely so this holds: "
+                        + r.acrossReset.describe());
+        }
+
         beginTest ("BISECT THE BLOCK DEPENDENCE BY STAGE — neutral, then one stage at a time");
         {
             /*  **Readable for the first time.** These rows existed at baseline as 0.733 / 0.725 /
