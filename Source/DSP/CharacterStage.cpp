@@ -31,7 +31,32 @@ void CharacterStage::prepare(double newSampleRate)
     sampleRate = newSampleRate;
     driftSmoothed.reset(sampleRate, 0.3);
     gainWobbleSmoothed.reset(sampleRate, 0.4);
+    seedGenerators();
     reset();
+}
+
+/*  **Called from `prepare` and NOT from `reset`, which is a ruling rather than a preference.**
+
+    A `reset()` owes a cleared tail, not a rewound generator. It is a transport event rather than an
+    instantiation, and "no audio bleeds across the locate" is the whole of its contract; a generator
+    rewound by it produces identical hiss on every lap of a loop, which is an artefact rather than a
+    feature. Reproducibility of a bounce is a *prepare* property and is covered here, which is where
+    it belongs.
+
+    **This used to be inside `reset()`, and that placement arrived as a side effect rather than as a
+    decision.** The defect it fixes — a stream continuing across a re-prepare — needed a restore
+    somewhere and got two, which made this the only casting of six that rewound on a host reset.
+    `nf::testing::reproducibleAcrossReset` measured the asymmetry across all six before it was ruled
+    on: this casting sample-exact, Reflect-84 at 0.007206813, Fifth Member at 0.001057396, TapeRot at
+    0.702730507. The other four generators in the suite seed in `prepare` and nowhere else, and now
+    so does this one.
+*/
+void CharacterStage::seedGenerators()
+{
+    driftRandom = juce::Random (driftSeed);
+    wobbleRandom = juce::Random (wobbleSeed);
+    for (int ch = 0; ch < maxChannels; ++ch)
+        hissRandom[(size_t) ch] = juce::Random (hissSeed + ch);
 }
 
 /*  Restores every member, and the generator is a member.
@@ -49,25 +74,13 @@ void CharacterStage::prepare(double newSampleRate)
     DRIFT 0 and 0.177544 at DRIFT 22, a factor of 650. The 0.159-0.542 spread across runs was never
     a range to explain - an uncorrelated drift stream makes each run one draw from a distribution.
 
-    **Seeded in `reset()` rather than in `prepare()`, and that is the suite's ruling rather than a
-    preference.** TapeRot's `FailureEngine::reset()` clears six members and omits its `random` in
-    exactly this shape, and the ruling recorded for it is to seed the *reset*. `prepare` calls this,
-    so the reproducibility the premise check needs follows either way; restoration belongs in the
-    function whose whole job is restoration, which is where the next reader looks for it.
-
-    The suite's other four generators - TapeRot's `NoiseSource` and `WowFlutter`, Reflect-84's
-    `LfoBank`, Fifth Member's `CharacterEngine` - are seeded in `prepare()` only, so a host `reset()`
-    does not rewind them. That is a difference rather than a defect: what a plugin owes a reset is a
-    cleared tail, not a rewound hiss. Noted here because stage 1c gave all six an
-    `AudioProcessor::reset()` and this is the first place the two conventions meet.
+    **The restore is in `seedGenerators()`, called from `prepare` and deliberately NOT from here.**
+    It briefly lived in this function, which fixed the defect and made this the only casting of six
+    that rewound its generator on a host reset. See that function for the ruling and the figures it
+    was ruled on. A `reset()` owes a cleared tail — everything below — and nothing else.
 */
 void CharacterStage::reset()
 {
-    driftRandom = juce::Random (driftSeed);
-    wobbleRandom = juce::Random (wobbleSeed);
-    for (int ch = 0; ch < maxChannels; ++ch)
-        hissRandom[(size_t) ch] = juce::Random (hissSeed + ch);
-
     driftSmoothed.setCurrentAndTargetValue(0.0f);
     gainWobbleSmoothed.setCurrentAndTargetValue(0.0f);
     driftRetargetCounter = 0.0;

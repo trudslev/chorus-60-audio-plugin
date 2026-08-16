@@ -528,16 +528,23 @@ public:
                 Prepare once, then `reset()`, render, `reset()`, render is a different question, and a
                 host asks it on every transport locate.
 
-                **Chorus-60 is the casting that can assert it**, because stage 0.5 put the seeding in
-                `reset()`. The other four generators in the suite are seeded in `prepare()` only, so
-                they continue their streams here; whether that is a defect or the correct contract is
-                a ruling those castings' rows are measured for. This one is not waiting on it.
+                **RULED: a reset owes a cleared tail, not a rewound generator.** So this arm asserts
+                that the streams DO continue — and that inversion is the ruling landing, not a
+                relaxation. `CharacterStage` briefly seeded in `reset()` as well as in `prepare`,
+                which made this the only casting of six that rewound on a host locate; the driver
+                measured the asymmetry across all six before it was ruled on, and the seeding moved to
+                `prepare` alone. All six behave the same way now.
+
+                **Both halves are asserted, which is what keeps it an invariant rather than an
+                observation.** The premise pins reproducibility from a fresh prepare — the property
+                that actually matters for a bounce — and the reset row catches a generator that
+                becomes accidentally rewound, which is how this casting got here in the first place.
 
                 **NOISE and DRIFT at 100, not at defaults.** A generator inaudible in the arm's
                 configuration reports reset-clean whatever `reset()` does — which is exactly how
                 Fifth Member's and Elmer's energy-after-reset rows came back 0.000 twice for a
-                coincidence rather than a property. Driving both consumers is what makes a pass here
-                mean the generator was restored rather than that it was never running. */
+                coincidence rather than a property. Driving both consumers is what makes this row
+                mean the generator was running at all. */
             Chorus60AudioProcessor processor;
             setParam (processor, ParamIDs::noise, 100.0f);
             setParam (processor, ParamIDs::drift, 100.0f);
@@ -553,11 +560,12 @@ public:
                     "this processor is not reproducible across prepare, so its reset row means "
                     "nothing: " + r.acrossPrepare.describe());
 
-            expect (r.acrossReset.sampleExact,
-                    "reset() did not return this processor to the same state — with NOISE and DRIFT "
-                    "driven, two renders separated by nothing but reset() differed. CharacterStage "
-                    "seeds all three generators in reset() precisely so this holds: "
-                        + r.acrossReset.describe());
+            expect (! r.acrossReset.sampleExact,
+                    "reset() rewound this casting's generators. RULED: a reset owes a cleared tail, "
+                    "not a rewound generator — it is a transport event rather than an instantiation, "
+                    "and a rewound stream replays identical hiss on every lap of a loop. "
+                    "CharacterStage::seedGenerators is called from prepare and must not be called "
+                    "from reset: " + r.acrossReset.describe());
         }
 
         beginTest ("BISECT THE BLOCK DEPENDENCE BY STAGE — neutral, then one stage at a time");

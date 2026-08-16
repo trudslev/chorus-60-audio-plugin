@@ -38,6 +38,9 @@ private:
     void retargetIfDue(double& counterSamples, double retargetSeconds, juce::SmoothedValue<float>& smoothed,
                        juce::Random& generator);
 
+    // Called from prepare() and NOT from reset() — the ruling is beside the definition.
+    void seedGenerators();
+
     static constexpr int maxChannels = 2;   // isBusesLayoutSupported admits stereo in/out only
 
     double sampleRate = 44100.0;
@@ -48,7 +51,8 @@ private:
         That member carried FOUR defects, which is why it is worth naming the shape rather than just
         the fix. Two were about its seed and its position: it was clock-seeded, so two instances were
         different instruments, and neither `prepare` nor `reset` restored it, so a second render of
-        one instance continued the first's stream. Both are closed by seeding in `reset()`.
+        one instance continued the first's stream. Both are closed by seeding in **`prepare`** — see
+        `seedGenerators()`, and note the restore is deliberately not also in `reset()`.
 
         The other two are why the generators are SPLIT, and they are block-size defects rather than
         determinism ones. A single stream shared by three consumers couples them:
