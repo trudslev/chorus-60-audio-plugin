@@ -117,8 +117,8 @@ set(CHORUS60_PRODUCT_NAME "CHORUS-60")
 juce_add_plugin(Chorus60
     PRODUCT_NAME "${CHORUS60_PRODUCT_NAME}"
     COMPANY_NAME "${CHORUS60_COMPANY_NAME}"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-1024.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/design/assets/icon/chorus60-icon-256.png"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/design/icons/chorus60-icon-1024.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/design/icons/chorus60-icon-256.png"
     BUNDLE_ID "com.neonfoundry.chorus60"
     # Without this the Standalone cannot get audio INPUT on macOS, and fails silently doing it.
     # An app with no NSMicrophoneUsageDescription is never granted capture access - the OS does not
