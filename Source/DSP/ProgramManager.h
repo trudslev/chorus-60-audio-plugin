@@ -60,6 +60,20 @@ public:
     const juce::StringArray& getUnloadableProgramReports() const noexcept { return unloadableReports; }
     // Safe to call from any thread (see class comment) - actual application happens async.
     void requestProgramChange(const ProgramId& id);
+
+    /*  **The pending-program handshake, and it is public so a test can reach it.**
+
+        These two functions ARE the critical section: everything between taking `pendingLock` and
+        releasing it happens inside them, and nothing else touches `pendingProgram`. An allocation
+        sentinel is not lock-aware, so a probe around `requestProgramChange` cannot distinguish heap
+        work under the lock from heap work beside it — the totals are identical either way. Arming
+        it around a function that is exactly the locked region is the only honest way to assert the
+        property, and that is worth the two names on this class.
+
+        See their definitions for what moved out of the lock and why 0.12 us was never the argument. */
+    ProgramId exchangePendingProgram (ProgramId incoming);
+    bool takePendingProgram (ProgramId& out);
+
     /** Raw, unnumbered - what the HOST's list wants, since a host renders its own numbering. */
     juce::String getProgramName(int factoryPosition) const;
 
@@ -127,6 +141,7 @@ private:
     ProgramId currentId;
     juce::StringArray unloadableReports;
     juce::SpinLock pendingLock;
+
     bool hasPendingProgram = false;
     ProgramId pendingProgram;
 

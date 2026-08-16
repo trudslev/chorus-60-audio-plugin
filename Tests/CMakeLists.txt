@@ -6,6 +6,7 @@ target_sources(Chorus60Tests PRIVATE
     InvarianceTests.cpp
     AutomationLatencyTests.cpp
     ChannelLayoutTests.cpp
+    PendingProgramLockTests.cpp
     TestMain.cpp
     ReadoutConformanceTests.cpp
     MenuMetricsTests.cpp
