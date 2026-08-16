@@ -393,6 +393,34 @@ namespace Chorus60Theme
         // noise sits well above it, so anything lower is silence.
         constexpr float meterFloorDb = -60.0f;
 
+    /*  The READOUT's upper bound, and it is a different quantity from any bar ceiling. Suite ruling
+        2026-08-14 — the widest string the well can be asked to draw is five characters, as a
+        guarantee. Without this the numerals were bounded only by how loud the signal got. */
+    inline constexpr float meterCeilingDb = 99.9f;
+
+    /*  **The IN/OUT readout's string, and it lives HERE rather than in ProgramHeader.cpp.**
+
+        Same reason the parameter readout format does: `ProgramHeader.h` reaches `PluginProcessor.h`,
+        whose `JucePlugin_*` macros exist only in the plugin target, so a test reading the format
+        from there cannot link — and a test that declares its own copy asserts against itself and
+        passes while the panel prints something else.
+
+        Suite ruling 2026-08-14: floor sentinel, +99.9 ceiling, one decimal always, an explicit sign
+        decision. The widest string is then FIVE characters as a guarantee rather than as a range. */
+    inline juce::String formatMeterDb (float db)
+    {
+        if (db <= meterFloorDb)
+            return "-INF";
+
+        /*  **`> 0.0f`, and this casting printed `>= 0.0f`.** One value, two castings, no reason: at
+            exactly 0.0 dB this read "+0.0" where Gatecrasher read "0.0". The plus means ABOVE unity
+            and 0.0 dB is not, so `>=` printed a sign claiming something false. */
+        const float clamped = juce::jlimit (meterFloorDb, meterCeilingDb, db);
+
+        return (clamped > 0.0f ? "+" : "") + juce::String (clamped, 1);
+    }
+
+
         // ---- Scope internals --------------------------------------------------------------------
         constexpr float scopeHistorySeconds = 2.0f;
         constexpr float scopeFps = 60.0f;

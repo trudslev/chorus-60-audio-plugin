@@ -9,14 +9,7 @@ namespace
     // Below the floor the number stops meaning anything and starts overflowing the 54px window
     // ("-100.0" is six glyphs of 13px mono, wider than the well), so it collapses to -INF. Same
     // convention as Gatecrasher's own IN/OUT windows, and as this panel's scope annotations.
-    juce::String formatMeterDb(float db)
-    {
-        if (db <= Chorus60Theme::Layout::meterFloorDb)
-            return "-INF";
-
-        return (db >= 0.0f ? "+" : "") + juce::String(db, 1);
     }
-}
 
 ProgramHeader::ProgramHeader(Chorus60AudioProcessor& processor) : processorRef(processor)
 {
@@ -510,9 +503,9 @@ void ProgramHeader::paint(juce::Graphics& g)
     // IN / OUT LED windows: signed dBFS to one decimal, numeric only (section 6).
     const auto meterFont = monoFont(monoFontHeightForCssPx(13.0f));
     const float meterTracking = trackingPxForEm(0.06f, 13.0f);
-    drawTrackedText(g, formatMeterDb(processorRef.getInputMeterDb()), meterFont, meterTracking,
+    drawTrackedText(g, Layout::formatMeterDb(processorRef.getInputMeterDb()), meterFont, meterTracking,
                      inWindowRect, juce::Justification::centred, Colour::ledWindowText);
-    drawTrackedText(g, formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
+    drawTrackedText(g, Layout::formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
                      outWindowRect, juce::Justification::centred, Colour::ledWindowText);
 
     // SAVE / STORE and DELETE / CANCEL, per section 13.
