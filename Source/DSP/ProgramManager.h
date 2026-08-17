@@ -28,7 +28,7 @@ public:
     /** **Public so a test can bind it to the panel's copy.** This header is compiled into targets
         with no GUI, so it cannot read `Chorus60Theme`; the duplication is structural and
         `DisplayBudgetTests` asserting the two equal is the only thing that stops them drifting. */
-    static constexpr int maxProgramNameLength = 31;   // mirrored by Layout::maxProgramNameLength
+    static constexpr int maxProgramNameLength = 47;   // §5's cap on the shared face   // mirrored by Layout::maxProgramNameLength
 
     /** @param userDirectoryOverride  where User Programs live. Defaults to the real per-OS
                                       location; a test passes a temporary directory so it never

@@ -230,8 +230,12 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     // hitTest to the program window and the two buttons, and JUCE stops searching a component's
     // children once its own hitTest rejects the point - so a list parented there would be dead
     // everywhere except the cell it drops from.
+    // **The foot is the chassis inset now, not the panel's edge.** The shared contract runs the
+    // list to 16 px above the bottom — the same frame the header block observes on every other side
+    // — rather than flush, so the list closes on the chassis instead of running off it.
     const int hostTop = ProgramHeader::menuHostTop();
-    menuHost.setBounds(0, hostTop, getWidth(), getHeight() - hostTop);
+    const int hostBottom = ProgramHeader::menuHostBottom(getHeight());
+    menuHost.setBounds(0, hostTop, getWidth(), hostBottom - hostTop);
     menuHost.setInterceptsMouseClicks(false, true);
     addAndMakeVisible(menuHost);
     menuHost.toFront(false);

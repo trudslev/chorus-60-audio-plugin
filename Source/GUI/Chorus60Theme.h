@@ -26,6 +26,7 @@
 //
 // IMPORTANT: ranges/defaults for knob scaling come from Source/Parameters.h, never from a spec
 // table. This file holds *layout* only.
+#include <nf/HeaderPart.h>
 #include <nf/ParameterReadout.h>
 
 namespace Chorus60Theme
@@ -322,12 +323,33 @@ namespace Chorus60Theme
         //
         // The whole LCD moved 36px LEFT this revision: the tag cell 594 -> 558 and the name cell
         // 654 -> 618, both by exactly 36.
-        constexpr float programWindowX = 557.0f, programWindowY = 32.0f;
-        constexpr float programWindowW = 414.0f, programWindowH = 34.0f;
-        constexpr float programTagCellX = 558.0f, programTagCellY = 33.0f;
-        constexpr float programTagCellW = 59.0f, programTagCellH = 32.0f;
-        constexpr float programNameCellX = 618.0f, programNameCellY = 33.0f;
-        constexpr float programNameCellW = 352.0f, programNameCellH = 32.0f;
+        /*  **THE HEADER IS `nf::HeaderPart` NOW, AND THESE ARE ALIASES.**
+
+            Every figure here was a literal, and the same figure was held in five sibling panels, in
+            `HEADER-PART.md`, and again in the parts strip. Aliasing rather than renaming the call
+            sites is the choice `FactoryPrograms.h` already made for `ProgramId`: several hundred
+            references read the unqualified names, and renaming them would bury the change in noise.
+
+            **The cell's own geometry moved substantially, and the LCD is where it shows.** The
+            window was 414 wide at x 557; the part's is **641 at 357**. The tag cell was 59 and is
+            **72**; the name cell was 352 and the part's name area is **538.00**. Those are not
+            nudges — the shared band is a different size of part, and this casting's band had been
+            built to its own canvas. */
+        constexpr float programWindowX = (float) nf::HeaderGeometry::lcdX;
+        constexpr float programWindowY = (float) nf::HeaderGeometry::bandY;
+        constexpr float programWindowW = (float) nf::HeaderGeometry::lcdW;
+        constexpr float programWindowH = (float) nf::HeaderGeometry::bandH;
+
+        /** The bank cell and the name cell, both terms of the character budget — see below. The
+            1 px divider between them is `nf::LcdCell::dividerW`. */
+        constexpr float programTagCellX = programWindowX;
+        constexpr float programTagCellY = programWindowY;
+        constexpr float programTagCellW = nf::LcdCell::bankCellW;
+        constexpr float programTagCellH = programWindowH;
+        constexpr float programNameCellX = programTagCellX + programTagCellW + nf::LcdCell::dividerW;
+        constexpr float programNameCellY = programWindowY;
+        constexpr float programNameCellW = nf::LcdCell::nameAreaW;
+        constexpr float programNameCellH = programWindowH;
 
         /*  **ONE RUN, ONE SOURCE. This carried THREE figures for one quantity.**
 
@@ -356,11 +378,24 @@ namespace Chorus60Theme
             holds 49 and the shared cap is 47, so 47 + 2 fits precisely, while trimming 26 again
             leaves a 47-character run for a 47-character cap and no room for the marker. A cap may
             never shrink, so that is the one figure here that cannot be corrected after the fact. */
-        constexpr float lcdCssPx = 15.0f, lcdTrackingEm = 0.10f;
+        constexpr float lcdCssPx = 17.0f, lcdTrackingEm = 0.10f;   // §8 / the part's LCD
 
         /** The name cell, and the padding that clears the chevron. */
         constexpr float lcdNameCellW_ = programNameCellW;
-        constexpr float lcdNameRightPadding = 26.0f;
+        /*  **ZERO NOW, and this is the figure that could not be undone if it were wrong.**
+
+            It was 26 = the 11 px chevron + its 10 px inset + 5. That cleared the chevron out of a
+            name cell which contained it. The part's name area does not: `nf::LcdCell::nameAreaW` is
+            641 − 72 bank − 1 divider − **30 chevron trim**, so the chevron is already excluded
+            before this constant is applied. Keeping 26 would subtract the same affordance twice.
+
+            The arithmetic is exact and leaves no slack either way. 538.00 holds **49**; the shared
+            cap is **47**; 47 + the 2-character dirty marker is 49, which fits precisely. Trim 26
+            again and the run holds 47 for a 47-character cap, so an edited Program's " *" has
+            nowhere to go — and **a cap may never shrink**, so that could not be corrected after
+            anyone had saved against it. `DisplayBudgetTests` asserts the run against cap + marker
+            rather than against the cap, which is the comparison that catches exactly this. */
+        constexpr float lcdNameRightPadding = 0.0f;
 
         /** **The run the panel actually draws into** — every path uses this, including naming. */
         constexpr float lcdDrawnRunW = lcdNameCellW_ - lcdNameRightPadding;
@@ -368,25 +403,22 @@ namespace Chorus60Theme
         /** The trailing " *" on an edited Program. The cap must leave room for it. */
         constexpr int lcdDirtyMarkerChars = 2;
 
-        /** Stated: Share Tech Mono at 15 px with .10 em tracking. `DisplayBudgetTests` measures
-            both off the face the paint path draws, so the stated pair is checkable rather than
-            trusted — the advance is the one term that belongs to the font. */
-        constexpr float lcdTrackingPx = lcdCssPx * lcdTrackingEm;      // 1.5
-        constexpr float lcdGlyphAdvance = 8.1f;                        // 9.6 per character less it
+        /** The part's terms. `DisplayBudgetTests` still measures the advance off the face the paint
+            path draws, because that is the one term belonging to the font rather than to the cell —
+            so the two sides of the assertion keep coming from different places. */
+        constexpr float lcdTrackingPx = nf::LcdCell::tracking;         // 1.700 at 17 px
+        constexpr float lcdGlyphAdvance = nf::LcdCell::glyphAdvance;   // 9.180
 
-        /** **By exact fit, not division** — the last glyph pays no trailing gap, so the two
-            questions come apart within one tracking step of a boundary. */
-        constexpr int charactersFitting (float runW)
-        {
-            int n = 0;
-            while ((float) (n + 1) * lcdGlyphAdvance + (float) n * lcdTrackingPx <= runW)
-                ++n;
-            return n;
-        }
+        /*  **49 and 47 FROM CORE, where this computed its own from a 352 px cell.**
 
-        constexpr int lcdCharacterBudget = charactersFitting (lcdDrawnRunW);
+            §11's type-adoption gate: a casting does not take the shared budget until its own
+            `fonts/` holds Share Tech Mono. It does — the face has been embedded here since before
+            the round — so the gate is satisfied rather than waived, and with the cell now the
+            part's there is nothing left to compute locally.
 
-        constexpr int maxProgramNameLength = 31; // mirrors ProgramManager::maxProgramNameLength
+            The cap rises **31 → 47**, which is the only direction it may move. */
+        constexpr int lcdCharacterBudget = nf::LcdCell::characterBudget();
+        constexpr int maxProgramNameLength = nf::LcdCell::userNameCap();
 
         // Held after the gesture ends before the program name returns (section 5).
         constexpr int lcdReadoutHoldMs = 900;

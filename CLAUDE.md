@@ -289,12 +289,30 @@ partially migrated; it is entirely unbuilt.
 reason the table is here rather than left to the spec's element list — the spec says what the panel
 should show, and only this says what stopped being drawn for it.
 
+**"The plate is the single source of truth for where a mark sits" is now an OBITUARY, not
+guidance.** That sentence appears below and was true; the thing it names is being deleted, and the
+mark positions exist nowhere else in this repo. So **§3.1 is the only authority for them, not a
+reference to check authoring against** — there is nothing left to check against.
+
+**RATE is what makes that load-bearing.** Its fractions are catalogue §10's and are **not derivable
+by even spacing**, so inferring them produces a plausible ring that nothing catches: the pointer
+lands on marks, the marks look deliberate, and every value between them is wrong. Same trap as
+Reflect-84's DAMPING HF, which *gained* a minor at .8333 that no amount of reasoning from the
+dropped numerals would have produced. Author every mark from §3.1; infer none of them.
+
 `PanelChrome` and `WordmarkComponent` are **deleted**, not adapted - everything they drew is
 silkscreen now. So is `KnobValueLabel`, the standing value under every knob, and the drag-time popup:
 revision 2 removed all standing readouts, and the LCD is the only numeric display on the panel. The
 knob tick ring went the same way: revision 1 drew it at even angular spacing, and the plate now prints
 every tick at its *labelled* value, which on the skewed Rate knob is not evenly spaced. **There is no
 mark table in the code** - the plate is the single source of truth for where a mark sits.
+
+**SUPERSEDED BY `682ac84` — the paragraph below describes the coordinate system this panel used
+until 2026-08-17, and it gets rewritten with the body layout rather than now.** Coordinates are the
+CANVAS's; the content component sits at (0, 0) at full size; `borderInset` and `contentWidth/Height`
+are gone. It is left standing deliberately: correcting a comment ahead of the work it describes
+documents intent rather than what was done, which is the failure this suite records separately from
+a stale comment. Read it as a deferral, not an oversight.
 
 **Coordinates are inside-border.** The exported plate is 1282 x 777 including a 1 px frame, and both
 design documents measure from the first pixel of panel material inside it. `PluginEditor` draws the

@@ -1,4 +1,7 @@
 #include "../Source/GUI/Chorus60MenuLookAndFeel.h"
+#include "../Source/GUI/ProgramHeader.h"
+
+#include <nf/HeaderPart.h>
 
 #include <nf/MenuMetrics.h>
 
@@ -30,6 +33,65 @@ public:
         logMessage ("  caption " + juce::String (m.sectionHeaderHeight)
                     + "px, row " + juce::String (m.rowHeight)
                     + "px, separator " + juce::String (m.separatorHeight) + "px");
+
+        beginTest ("The PopupMenu seam — core supplies the figures, the casting keeps the mechanism");
+        {
+            /*  **This casting is the half of the header seam Reflect-84 could not exercise.**
+
+                Reflect-84's Program list is a `juce::Component`, which sets its own bounds, so it
+                DELETED the whole `PopupMenu` apparatus — the anchor strip, the host, the lead.
+                Chorus-60's is an ordinary `PopupMenu` and KEEPS all of it. Neither made core change,
+                which is exactly what the seam was drawn for: a part that owned "open the list" would
+                have forced one of the two to give up its mechanism.
+
+                **What this arm can and cannot do, stated because the first version overclaimed.**
+                It asserts the four figures AGREE with core's. It cannot distinguish a derivation
+                from a literal that happens to equal it — verified by causing exactly that: replacing
+                the anchor's body with `return 95;` fires nothing, because 95 is what the derivation
+                gives today.
+
+                What it does catch is the moment that difference starts to matter: **if core's figure
+                moves and this casting does not follow, the arm fires.** A re-typed literal is
+                invisible until then and unmissable after, which is the only window in which the two
+                are actually different. The binding itself is guaranteed by reading the source, and
+                that is stated here rather than implied by an assertion that cannot carry it.
+
+                The foot IS distinguishable and was shown so: restoring the pre-contract flush list
+                fires three of the assertions below. */
+            expectEquals (ProgramHeader::menuAnchorY(),
+                          nf::HeaderGeometry::bandY + nf::HeaderGeometry::bandH,
+                          "the anchor must BE the band's bottom edge, not a figure equal to it");
+            expectEquals (ProgramHeader::menuAnchorY(), 95);
+
+            // The 8 px lead is derived from the anchor and belongs to the casting: it exists because
+            // JUCE clamps to jmax(parentArea.getY() + 1, ...), which is a property of PopupMenu
+            // rather than of the shared part.
+            expectEquals (ProgramHeader::menuHostTop(), ProgramHeader::menuAnchorY() - 8);
+            expectGreaterThan (ProgramHeader::menuAnchorY(), ProgramHeader::menuHostTop(),
+                               "the host must start ABOVE the anchor or JUCE's clamp puts the list "
+                               "one pixel below it, leaving a hairline of panel between the two");
+
+            // The list opens at the display's width, which is the part's LCD.
+            expectEquals ((int) Chorus60Theme::Layout::programWindowW, nf::HeaderGeometry::lcdW);
+            expectEquals ((int) Chorus60Theme::Layout::programWindowW, 641);
+
+            // And its foot is the chassis inset above the panel bottom — the shared contract, not
+            // this casting's own figure, and not flush to the edge.
+            const int panelH = (int) Chorus60Theme::Layout::canvasHeight;
+            expectEquals (ProgramHeader::menuHostBottom (panelH),
+                          nf::HeaderGeometry::programListFootY (panelH));
+            expectEquals (ProgramHeader::menuHostBottom (812), 796);
+
+            expectLessThan (ProgramHeader::menuHostBottom (panelH), panelH,
+                            "a flush list is the pre-contract behaviour — the foot must sit inside "
+                            "the chassis, on the same frame the header block observes");
+
+            logMessage ("  anchor " + juce::String (ProgramHeader::menuAnchorY())
+                        + ", host top " + juce::String (ProgramHeader::menuHostTop())
+                        + ", width " + juce::String ((int) Chorus60Theme::Layout::programWindowW)
+                        + ", foot " + juce::String (ProgramHeader::menuHostBottom (panelH))
+                        + " of " + juce::String (panelH));
+        }
 
         beginTest ("The caption is its padding plus its own type's line box");
         {

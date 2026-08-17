@@ -2,6 +2,8 @@
 
 #include "../PluginProcessor.h"
 #include "Chorus60MenuLookAndFeel.h"
+#include <nf/HeaderPart.h>
+
 #include "Chorus60Theme.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -50,22 +52,46 @@ public:
         a long bank overhangs the panel. See ../../CLAUDE.md, "The Program dropdown". */
     void setMenuParent(juce::Component* parent) noexcept { menuParent = parent; }
 
-    /** The row the list's top edge lands on: the program window's own bottom edge, so the two read
-        as one object rather than a bar with a list floating under it. */
+    /*  **THE MENU'S FOUR FIGURES ARE CORE'S; THE MECHANISM IS THIS CASTING'S.**
+
+        That split is the header seam, and this casting is the half Reflect-84 could not exercise.
+        Its Program list is a `juce::Component`, which sets its own bounds, so it **deleted** all of
+        this. Chorus-60's is an ordinary `PopupMenu` and **keeps every line of it** — `showMenuAsync`,
+        the `menuHost` sibling, `withParentComponent`, the 1 px anchor strip and the 8 px lead.
+
+        Neither casting made core change, which is what the seam was drawn for: a part that owned
+        "open the list" would have forced one of the two to give up its mechanism.
+
+        What core supplies is geometry and nothing else:
+
+          - the anchor row — the band's bottom edge, `bandY + bandH`
+          - the width the list opens at — `lcdW`
+          - where its foot lands — `programListFootY`, the chassis-inset contract
+
+        and the 8 px lead is derived from the anchor here, because it is a property of JUCE's
+        clamping rather than of the part. */
+
+    /** The row the list's top edge lands on: the display's own bottom edge, so the two read as one
+        object rather than a bar with a list floating under it. */
     static int menuAnchorY() noexcept
     {
-        return (int) std::floor(Chorus60Theme::Layout::programWindowY
-                                + Chorus60Theme::Layout::programWindowH);
+        return nf::HeaderGeometry::bandY + nf::HeaderGeometry::bandH;
     }
 
-    /** Where menuHost has to start, and it is NOT the anchor: JUCE clamps a menu to
-        `jmax(parentArea.getY() + 1, ...)`, so a host beginning exactly at the anchor can only open
+    /** Where `menuHost` has to start, and it is NOT the anchor: JUCE clamps a menu to
+        `jmax (parentArea.getY() + 1, ...)`, so a host beginning exactly at the anchor can only open
         one pixel below it, leaving a hairline of panel between the bar and its list.
 
         The lead has a floor and a ceiling. Too small and the clamp bites again; too large and the
-        list can grow past the panel, because JUCE sizes it to `parentArea.getHeight() - 24` while
-        the room actually below the anchor is the window's own height less than that. */
+        list grows past the panel, because JUCE sizes it to `parentArea.getHeight() - 24` while the
+        room actually below the anchor is the display's own height less than that. */
     static int menuHostTop() noexcept { return menuAnchorY() - 8; }
+
+    /** The list's foot — the chassis inset above the panel's bottom, per the shared contract. */
+    static int menuHostBottom (int panelHeight) noexcept
+    {
+        return nf::HeaderGeometry::programListFootY (panelHeight);
+    }
 
     void mouseDown(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;
