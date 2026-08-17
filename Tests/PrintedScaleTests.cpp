@@ -114,6 +114,56 @@ public:
             logMessage ("  standard rings keep 5 marks and print 3 — the quarters hold their ticks");
         }
 
+        beginTest ("§3's knob geometry — checked one at a time, because the row is not uniform");
+        {
+            using namespace Chorus60Theme::Layout;
+
+            /*  **Three of five standard knobs stay put and two move, which is the shape that gets
+                missed.** Checked as a group, DRIFT/SATURATION/NOISE landing where they always did
+                makes MIX and OUTPUT TRIM look like transcription slips. Each is asserted against §3
+                individually for that reason. */
+            expectWithinAbsoluteError (modKnobD, 76.0f, 0.01f, "primary class");
+            expectWithinAbsoluteError (globalKnobD, 56.0f, 0.01f, "standard class");
+            expectWithinAbsoluteError (modKnobCentreY, 416.0f, 0.01f, "primary pivot row");
+            expectWithinAbsoluteError (globalKnobCentreY, 660.0f, 0.01f, "standard pivot row");
+
+            const float primaryX[] { 425.0f, 621.0f, 817.0f, 1013.0f };
+            for (size_t i = 0; i < modKnobCentreX.size(); ++i)
+                expectWithinAbsoluteError (modKnobCentreX[i], primaryX[i], 0.01f,
+                                           "primary knob " + juce::String ((int) i));
+
+            struct Row { const char* id; float x; };
+            const Row standard[] { {"drift", 389.0f}, {"saturation", 569.0f}, {"noise", 749.0f},
+                                   {"mix", 1006.0f}, {"trim", 1186.0f} };
+
+            for (const auto& r : standard)
+            {
+                bool found = false;
+
+                for (const auto& k : knobs)
+                    if (juce::String (k.paramID) == r.id)
+                    {
+                        found = true;
+                        expectWithinAbsoluteError (k.cx, r.x, 0.01f,
+                                                   juce::String (r.id) + " is not at §3's x");
+                    }
+
+                expect (found, juce::String (r.id) + " is missing from the knob table");
+            }
+
+            // Every knob carries a ring, and both endpoints of each are numeralled.
+            for (const auto& k : knobs)
+            {
+                expect (k.scale.marks != nullptr && k.scale.count > 1,
+                        juce::String (k.paramID) + " has no printed scale");
+                expect (k.scale.marks[0].isMajor() && k.scale.marks[k.scale.count - 1].isMajor(),
+                        juce::String (k.paramID) + ": an endpoint lost its numeral");
+            }
+
+            for (const auto& s : modKnobScales)
+                expect (s.marks != nullptr && s.count == 5, "a mod ring is missing its marks");
+        }
+
         beginTest ("OUTPUT TRIM keeps its signs, and the minus is U+2212");
         {
             expect (juce::String (trimMarks[4].printed).startsWith ("+"),

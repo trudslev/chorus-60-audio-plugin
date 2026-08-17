@@ -202,19 +202,34 @@ namespace Chorus60Theme
         // Section 7's cells are 176 x 164 (mod, knob centre at 88,82) and 158 x 144 (global, centre
         // at 79,72). Only the centres are needed here: the cell exists to place the printed scale,
         // and the printed scale is baked.
-        constexpr float modKnobD = 84.0f;
-        constexpr float globalKnobD = 68.0f;
+        /*  **§3's two classes: primary Ø76, standard Ø56.** These were Ø84 and Ø68 — this casting's
+            own diameters, chosen per panel, which call 3 replaces with the suite's pair.
 
-        constexpr float modKnobCentreY = 376.0f;
-        inline constexpr std::array<float, 4> modKnobCentreX{{402.0f, 598.0f, 794.0f, 990.0f}};
+            The rows moved differently and it is worth stating, because one of them is uniform and
+            the other is not. **The primary row shifts +23 across all four.** The standard row does
+            not: DRIFT, SATURATION and NOISE stay exactly where they were, while **MIX and OUTPUT
+            TRIM move +33** — the two lower boxes absorbing call 1's +58 of width. Three of five
+            staying put makes the two that move look like transcription slips when the row is checked
+            as a group, so they are checked one at a time against §3. */
+        constexpr float modKnobD = 76.0f;
+        constexpr float globalKnobD = 56.0f;
+
+        constexpr float modKnobCentreY = 416.0f;
+        inline constexpr std::array<float, 4> modKnobCentreX{{425.0f, 621.0f, 817.0f, 1013.0f}};
 
         // Control label row: "below the cell, 6 px gap". The mod cell's top is centre - 82 = 294,
         // so its bottom is 458 and the label row starts at 464. Only the mod-engine labels are drawn
         // (their suffix is page-dependent); the five global labels are baked.
-        constexpr float modLabelRowY = 464.0f, modLabelRowH = 15.0f;
+        /** **Follows its knob rather than being re-invented.** The pivot moved 376 → 416, so this
+            moves by the same 40: the spec does not restate this casting's mod cell, and holding the
+            label's gap to the pivot is the relationship the old figure encoded (centre − 82 = cell
+            top, + 6 below its bottom). A figure computed from a cell nobody restated would be an
+            invention wearing arithmetic. */
+        constexpr float modLabelRowY = 504.0f, modLabelRowH = 15.0f;
         constexpr float modCellW = 176.0f;
 
-        constexpr float globalKnobCentreY = 620.0f;
+        constexpr float globalKnobCentreY = 660.0f;
+
 
         /*  **THE PRINTED SCALES, AUTHORED FROM §3.1 — there is nothing left to check them against.**
 
@@ -281,20 +296,46 @@ namespace Chorus60Theme
             return juce::String (printed).replaceCharacter ('-', juce::juce_wchar (0x2212));
         }
 
+        /** A ring: the marks, how many, and the unit that prints in the arc's bottom gap.
+            `unit == nullptr` means the scale is bare — §3.1 gives six of the nine a unit. */
+        struct KnobScale
+        {
+            const ScaleMark* marks;
+            int count;
+            const char* unit;
+        };
+
         struct KnobSpec
         {
             const char* paramID;
             float cx, cy, diameter;
             KnobFilmstripSize size;
+            KnobScale scale;
         };
+
+        /** The mod row's four rings, in slot order — RATE, DEPTH, DELAY CENTER, DECORRELATION.
+            They are a separate table from `knobs` because their PARAMETER is page-dependent while
+            their ring is not: the page moves the pointer, never the marks. §2.1 is explicit that
+            selecting a page moves pointers rather than adding or removing controls. */
+        inline constexpr std::array<KnobScale, 4> modKnobScales{{
+            { rateMarks,           5, "Hz" },
+            { percentPrimaryMarks, 5, "%"  },
+            { delayCentreMarks,    5, "ms" },
+            { percentPrimaryMarks, 5, "%"  },
+        }};
 
         // The five genuinely global knobs. Their names are baked, so no displayName here.
         inline constexpr std::array<KnobSpec, 5> knobs{{
-            {"drift",       389.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
-            {"saturation",  569.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
-            {"noise",       749.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
-            {"mix",         973.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
-            {"trim",       1153.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global},
+            {"drift",       389.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+                 { percentStandardMarks, 5, "%" }},
+            {"saturation",  569.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+                 { percentStandardMarks, 5, "%" }},
+            {"noise",       749.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+                 { percentStandardMarks, 5, "%" }},
+            {"mix",        1006.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+                 { percentStandardMarks, 5, "%" }},
+            {"trim",       1186.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+                 { trimMarks, 5, "dB" }},
         }};
 
         // ---- Section 7.2: the IMAGE switch ------------------------------------------------------
