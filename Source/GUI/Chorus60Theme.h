@@ -1050,6 +1050,7 @@ namespace Chorus60Theme
             it is one of the rows the plate survey added to this casting's enumeration. */
         constexpr float footerLeftX = 24.0f;
         constexpr float footerRight = 1324.0f;
+        constexpr float footerCssPx = 10.0f, footerTrackingEm = 0.10f;   // §8's footer row
 
         /** `CH-60 · SN 0061`. Middle dot from a codepoint, never a UTF-8 literal — see
             `modelLineText`. The serial is the prototype's and is the hardware conceit, not a real

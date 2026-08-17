@@ -92,6 +92,46 @@ public:
                                "the unclamped construction did not exceed the guarantee over these "
                                "probes, so the sweep above proves nothing about the clamp");
         }
+
+        beginTest ("Five characters FIT the well — measured in the face the panel draws");
+        {
+            /*  **The suite's meter ruling makes two claims and this file only checked one.** It
+                says the widest string is five characters *and* that "64 px of well holds on all
+                six". Everything above counts CHARACTERS, which is a claim about the format; whether
+                they fit is a claim about the face, the size and the tracking, and nothing measured
+                it.
+
+                That gap was harmless while the meters were set at 13 CSS px — comfortably small —
+                and stopped being harmless the moment the type pass moved them to §8's **17 / .10
+                em**, the LCD's own row. A size change that a character count cannot see is exactly
+                what this arm is for. */
+            using namespace Chorus60Theme;
+
+            const auto font = monoFont (monoFontHeightForCssPx (Layout::lcdCssPx));
+            const float tracking = trackingPxForEm (Layout::lcdTrackingEm, Layout::lcdCssPx);
+
+            // Both five-character extremes the ruling names, plus the sentinel.
+            for (const auto* s : { "-99.9", "+99.9", "-INF" })
+            {
+                const float w = trackedTextWidth (juce::String (s), font, tracking);
+                logMessage ("  \"" + juce::String (s) + "\" measures " + juce::String (w, 2)
+                            + " px in a " + juce::String (Layout::inWindowW, 0) + " px well");
+
+                expectLessThan (w, Layout::inWindowW,
+                                juce::String (s) + " does not fit the meter well at §8's 17 px");
+            }
+
+            /*  And the complementary direction, so a well that grew would not make this vacuous:
+                the same run at a size the well genuinely cannot hold must fail to fit. Without it
+                this arm passes for any well wider than the string, including one nobody checked. */
+            const auto tooBig = monoFont (monoFontHeightForCssPx (Layout::lcdCssPx * 2.0f));
+            const float tooWide = trackedTextWidth ("-99.9", tooBig,
+                                                     trackingPxForEm (Layout::lcdTrackingEm,
+                                                                      Layout::lcdCssPx * 2.0f));
+            expectGreaterThan (tooWide, Layout::inWindowW,
+                               "at twice the type size five characters still fit, so this arm "
+                               "cannot distinguish a well that holds from one that does not");
+        }
     }
 };
 

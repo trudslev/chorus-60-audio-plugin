@@ -93,19 +93,28 @@ public:
 
         beginTest ("The caption is its padding plus its own type's line box");
         {
-            const auto captionFont = Chorus60Theme::monoFont (11.0f);
+            /*  **THIS ARM BUILT ITS FONT THE SAME WRONG WAY THE CODE DID, SO IT AGREED WITH THE
+                DEFECT.** It read `monoFont (11.0f)` — a raw JUCE height where a CSS px belongs —
+                which is exactly what the dropdown's three drawing sites were doing. Both sides made
+                the same mistake, the comparison passed, and it pinned **18**.
+
+                The file's own header says this caption "comes out 19". It was documenting what the
+                construction should give while the assertion below recorded what it did give, and
+                the two sat four lines apart for a revision.
+
+                It is the recorded shape of a test that derives its input from the thing it checks:
+                a second copy of the construction cannot disagree with the first. The font comes
+                from the panel's own converter now, so the arm measures what the dropdown draws
+                rather than what a test-local rebuild produces. */
+            const auto captionFont =
+                Chorus60Theme::monoFont (Chorus60Theme::monoFontHeightForCssPx (11.0f));
 
             expectEquals (m.sectionHeaderHeight, nf::captionHeight (captionFont, 3, 4));
 
             // The line box is LOGGED rather than pinned to a literal, because the castings do not
-            // all build fonts the same way: most pass a CSS px through withPointHeight, so the
-            // height is the face's own line box (Share Tech Mono 1.127 em, Plex Mono 1.300), while
-            // Chorus-60's monoFont takes a JUCE height directly and has a separate
-            // monoFontHeightForCssPx converter. Asserting one ratio here would fail on a casting
-            // whose caption is correctly a different size.
-            //
-            // What matters is that the caption is built from the font the panel DRAWS, whatever
-            // that font's construction - which is what the assertion above checks.
+            // all build fonts the same way and a ratio asserted here would fail on a casting whose
+            // caption is correctly a different size. What matters is that the caption is built from
+            // the font the panel DRAWS - which is what the assertion above now checks.
             logMessage ("  caption line box " + juce::String (captionFont.getHeight(), 3) + "px");
         }
 

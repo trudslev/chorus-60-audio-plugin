@@ -85,8 +85,10 @@ void ModScope::paint(juce::Graphics& g)
     const juce::String divText = "250 ms / DIV";
 
     // Section 3: Share Tech Mono 11 px, .06em, in the caption grey.
-    const auto readoutFont = monoFont(monoFontHeightForCssPx(11.0f));
-    const float readoutTracking = trackingPxForEm(0.06f, 11.0f);
+    // §8 gives these the scope-annotation row, which is the same 11 / .06 em the three
+    // annotations inside the well use — so they read the same constants rather than repeating 11.
+    const auto readoutFont = monoFont(monoFontHeightForCssPx(scopeAnnotationCssPx));
+    const float readoutTracking = trackingPxForEm(scopeAnnotationTrackingEm, scopeAnnotationCssPx);
 
     // §4's title, at the caption row's left. Barlow Condensed **700**, where the status readouts
     // beside it are Share Tech Mono — §8 gives the scope title its own row, one weight above the

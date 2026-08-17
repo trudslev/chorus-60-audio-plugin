@@ -492,7 +492,8 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
     // The footer's LEFT string. Static — it was baked, and the revision-4 plate does not carry it.
     // Same face, size and tracking as the right one; §8 gives the footer one row, not two.
     drawTrackedText(g, Layout::footerLeftText(),
-                     monoFont(monoFontHeightForCssPx(10.0f)), trackingPxForEm(0.10f, 10.0f),
+                     monoFont(monoFontHeightForCssPx(Layout::footerCssPx)),
+                     trackingPxForEm(Layout::footerTrackingEm, Layout::footerCssPx),
                      juce::Rectangle<float>(Layout::footerLeftX, Layout::footerY, 400.0f,
                                              Layout::footerLineBox),
                      juce::Justification::centredLeft, Colour::captionTertiary);
@@ -512,6 +513,7 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
                               + " " + midDot + " v" NF_VERSION_SHORT;
     const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerY,
                                              400.0f, Layout::footerLineBox);
-    drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(10.0f)), trackingPxForEm(0.10f, 10.0f),
+    drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(Layout::footerCssPx)),
+                     trackingPxForEm(Layout::footerTrackingEm, Layout::footerCssPx),
                      footerRect, juce::Justification::right, Colour::captionTertiary);
 }

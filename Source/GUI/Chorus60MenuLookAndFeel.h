@@ -43,7 +43,7 @@ protected:
 public:
     juce::Font getPopupMenuFont() override
     {
-        return Chorus60Theme::monoFont (itemTextSize);
+        return Chorus60Theme::monoFont (Chorus60Theme::monoFontHeightForCssPx (itemTextSize));
     }
 
     void drawPopupMenuBackground (juce::Graphics& g, int width, int height) override
@@ -114,7 +114,8 @@ public:
         // the moment a caption comes from data, the site that re-cases it is the site that
         // gets it wrong. Re-arguing the exception each time costs more than the rule.
         Chorus60Theme::drawTrackedText (g, sectionName,
-                                         Chorus60Theme::monoFont (headerTextSize), headerTracking,
+                                         Chorus60Theme::monoFont (Chorus60Theme::monoFontHeightForCssPx (headerTextSize)),
+                                         headerTracking,
                                          r.withTrimmedLeft ((float) tickColumn),
                                          juce::Justification::left,
                                          // **Opaque.** BRAND.md permits opacity for STATE and
@@ -132,10 +133,32 @@ private:
     /** The well's own border, reused as the menu's rule. */
     const juce::Colour rule  { 0xFF363C41 };
 
-    static constexpr float itemTextSize   = 15.0f;
-    static constexpr float tracking       = 1.0f;
-    static constexpr float headerTextSize = 11.0f;
-    static constexpr float headerTracking = 1.6f;
+    /*  **THESE ARE CSS px AND WERE BEING PASSED AS JUCE HEIGHTS — the type-scale finding, fixed.**
+
+        Every other size in this casting goes through `monoFontHeightForCssPx` or
+        `labelFontHeightForCssPx`, because a spec's `font-size` is an **em** size and
+        `FontOptions(h)` sets **ascent + descent**. These three sites passed the constant straight
+        to `monoFont`, so the same nominal number meant CSS px on the panel and a JUCE height in the
+        dropdown. Measured through this casting's own converter (ratio 1.12700), the caption was
+        rendering at **9.76** effective CSS px and the rows at **13.31** — the caption under
+        BRAND.md's ~9-10 px functional floor, in a list a user reads to pick a Program.
+
+        **The diagnosis was already written down, one function below, and the fix was not made.**
+        `metrics()`'s comment says in terms that "this casting builds its mono type from a JUCE
+        height, where those two pass a CSS px through withPointHeight, so the same constant produces
+        a smaller line box", having predicted 19 for the caption line box and measured 18. Knowing
+        why a figure is wrong is not the same as it being right, and the correction waited for the
+        type pass because it moves the dropdown's whole scale.
+
+        **The trackings stay ABSOLUTE PX and are not converted to em**, deliberately. They were
+        chosen against the rendered size, and the rendered size is what changes here — so their
+        ratio to the type does drop. No spec states a menu tracking, and inventing an em figure to
+        preserve a ratio nobody authored would be a figure with nothing behind it. Left as measured
+        values with this note, for the designers rather than for a refactor. */
+    static constexpr float itemTextSize   = 15.0f;   // CSS px
+    static constexpr float tracking       = 1.0f;    // absolute px, see above
+    static constexpr float headerTextSize = 11.0f;   // CSS px
+    static constexpr float headerTracking = 1.6f;    // absolute px
     /** **This panel's dropdown sizes, stated rather than inherited.**
 
         `sectionHeaderHeight` is 36 because that is what this panel has ALWAYS drawn - JUCE's
@@ -168,7 +191,8 @@ private:
         // 3px above and 4px below is the suite's ADOPTED default, not a derived figure: only
         // Elmer and Reflect-84 have designer-authored caption padding and they disagree (3/4
         // against 9/4), so there is no suite constant to derive. See BRAND.md.
-        m.sectionHeaderHeight = nf::captionHeight (Chorus60Theme::monoFont (headerTextSize), 3, 4);
+        m.sectionHeaderHeight = nf::captionHeight (Chorus60Theme::monoFont (
+                                              Chorus60Theme::monoFontHeightForCssPx (headerTextSize)), 3, 4);
         m.separatorHeight = 9;
         m.leadingColumn = tickColumn;
         m.horizontalPadding = 26;

@@ -565,9 +565,20 @@ void ProgramHeader::paint(juce::Graphics& g)
                                                     juce::PathStrokeType::square));
     }
 
-    // IN / OUT LED windows: signed dBFS to one decimal, numeric only (section 6).
-    const auto meterFont = monoFont(monoFontHeightForCssPx(13.0f));
-    const float meterTracking = trackingPxForEm(0.06f, 13.0f);
+    /*  IN / OUT LED windows: signed dBFS to one decimal, numeric only.
+
+        **§8 puts these on the LCD's own row — "LCD / meter value, 17 / 22, .10 em" — and this read
+        13 / .06.** A size predating the spec, and a large one: the meters were rendering at 76 % of
+        the value beside them, in the same face, in wells of the same height, three inches apart.
+
+        Nothing looked broken. Two numerals in a small well read as a small readout, and the LCD it
+        should match is far enough away that the eye does not carry the comparison. That is the type
+        pass's whole shape: a size is wrong by a quarter and the panel still looks deliberate.
+
+        The suite's meter ruling makes the widest string **five** characters, so the fit is not a
+        matter of opinion — `MeterReadoutBudgetTests` measures it against this well. */
+    const auto meterFont = monoFont(monoFontHeightForCssPx(Layout::lcdCssPx));
+    const float meterTracking = trackingPxForEm(Layout::lcdTrackingEm, Layout::lcdCssPx);
     drawTrackedText(g, Layout::formatMeterDb(processorRef.getInputMeterDb()), meterFont, meterTracking,
                      inWindowRect, juce::Justification::centred, Colour::ledWindowText);
     drawTrackedText(g, Layout::formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
