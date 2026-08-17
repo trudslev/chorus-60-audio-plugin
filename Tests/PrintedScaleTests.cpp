@@ -294,6 +294,36 @@ public:
                 so there is nothing that could disagree. */
         }
 
+        beginTest ("The nameplate stack closes on the shared descriptor anchor");
+        {
+            /*  Three lines in core's 303 x 84 zone, and the middle one is the anchor all six
+                castings share. This casting's wordmark height and leading are its own — §I keeps
+                the nameplate per casting, because six metaphors are six paint routines — so what is
+                checkable is that its own stack *lands* where §4 says.
+
+                **The model line is core's `modelLineY`, and the derivation that used to define it is
+                the arm.** `descriptorY + descriptorH` is 95 and so is core's constant; having both
+                as definitions would be two sources for one figure, which is the defect this
+                casting's LCD budget spent a round removing. As an assertion it costs nothing and
+                fires the moment §4 moves one without the other. */
+            using namespace Chorus60Theme::Layout;
+
+            expect (nf::HeaderGeometry::landsOnDescriptorAnchor ((int) nameplateY,
+                                                                 (int) wordmarkLineBox,
+                                                                 (int) nameplateLeading),
+                    "the wordmark's line box plus its leading no longer lands the descriptor on "
+                    "§4's shared anchor");
+
+            expectEquals (modelLineY, (float) (nf::HeaderGeometry::descriptorY
+                                                 + nf::HeaderGeometry::descriptorH),
+                          "core's modelLineY and descriptorY + descriptorH have diverged");
+
+            // The wordmark is a literal here and CHORUS60_PRODUCT_NAME in CMakeLists, because
+            // JucePlugin_Name is not defined in this target. Nothing can check the two agree from
+            // inside the test binary, so this only pins the spelling this file draws.
+            expectEquals (juce::String (wordmarkText), juce::String ("CHORUS-60"));
+        }
+
         beginTest ("OUTPUT TRIM keeps its signs, and the minus is U+2212");
         {
             expect (juce::String (trimMarks[4].printed).startsWith ("+"),

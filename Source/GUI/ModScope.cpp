@@ -88,6 +88,14 @@ void ModScope::paint(juce::Graphics& g)
     const auto readoutFont = monoFont(monoFontHeightForCssPx(11.0f));
     const float readoutTracking = trackingPxForEm(0.06f, 11.0f);
 
+    // §4's title, at the caption row's left. Barlow Condensed **700**, where the status readouts
+    // beside it are Share Tech Mono — §8 gives the scope title its own row, one weight above the
+    // box titles, because it heads a display rather than a group of controls.
+    drawTrackedText(g, scopeTitle, labelFontBold(labelFontHeightForCssPx(scopeTitleCssPx)),
+                     trackingPxForEm(scopeTitleTrackingEm, scopeTitleCssPx),
+                     juce::Rectangle<float>(scopeWellX, scopeCaptionRowY, 400.0f, scopeCaptionRowH),
+                     juce::Justification::centredLeft, Colour::engravedHeadingText);
+
     // The caption row is §1's: the well's own x and width, on the row above it at y 136.
     float cursorRight = scopeWellX + scopeWellW;
     const float readoutGap = 26.0f;
@@ -198,13 +206,39 @@ void ModScope::paint(juce::Graphics& g)
 
     g.restoreState();
 
-    // Annotations, Share Tech Mono 9px (section 5).
-    g.setColour(Colour::scopeAnnotation);
-    g.setFont(monoFont(9.0f));
-    g.drawText("DLY MOD", juce::Rectangle<float>(innerRect.getX() + 4.0f, innerRect.getY() + 2.0f, 80.0f, 12.0f),
-               juce::Justification::centredLeft, false);
-    g.drawText("+ MAX", juce::Rectangle<float>(innerRect.getRight() - 50.0f, innerRect.getY() + 2.0f, 46.0f, 12.0f),
-               juce::Justification::centredRight, false);
-    g.drawText("- MAX", juce::Rectangle<float>(innerRect.getRight() - 50.0f, innerRect.getBottom() - 14.0f, 46.0f, 12.0f),
-               juce::Justification::centredRight, false);
+    /*  The three annotations. **These had a drawing site all along and were wrong in four ways at
+        once**, which is a state the plate enumeration has no row for: it tracks *drawn* against
+        *not drawn*, and a row that is drawn wrongly strikes as done.
+
+        What was here: `monoFont (9.0f)` — a raw JUCE height passed where a CSS px belongs, so the
+        recorded `withPointHeight` trap, and §8 says **11** anyway; `drawText` rather than
+        `drawTrackedText`, so §8's **.06 em** was not applied at all; positions at 4 / 2 px inside
+        the well against §4's **12 / 8**; and a `"- MAX"` whose minus is ASCII hyphen where the same
+        file's own ruling is U+2212.
+
+        None of the four is visible as a defect on the panel — each renders a plausible small grey
+        string in roughly the right place, which is exactly why the row read as struck. */
+    const auto annotationFont = monoFont(monoFontHeightForCssPx(scopeAnnotationCssPx));
+    const float annotationTracking = trackingPxForEm(scopeAnnotationTrackingEm, scopeAnnotationCssPx);
+    const float annotationW = 120.0f;
+
+    const auto annotationRect = [&] (bool atTop, juce::Justification::Flags side)
+    {
+        const float x = side == juce::Justification::left
+                          ? innerRect.getX() + scopeAnnotationInsetX
+                          : innerRect.getRight() - scopeAnnotationInsetX - annotationW;
+        const float y = atTop ? innerRect.getY() + scopeAnnotationInsetY
+                              : innerRect.getBottom() - scopeAnnotationInsetY - scopeAnnotationLineBox;
+        return juce::Rectangle<float>(x, y, annotationW, scopeAnnotationLineBox);
+    };
+
+    drawTrackedText(g, scopeAnnotationSignal, annotationFont, annotationTracking,
+                     annotationRect(true, juce::Justification::left),
+                     juce::Justification::centredLeft, Colour::scopeAnnotation);
+    drawTrackedText(g, scopeAnnotationMax(true), annotationFont, annotationTracking,
+                     annotationRect(true, juce::Justification::right),
+                     juce::Justification::centredRight, Colour::scopeAnnotation);
+    drawTrackedText(g, scopeAnnotationMax(false), annotationFont, annotationTracking,
+                     annotationRect(false, juce::Justification::right),
+                     juce::Justification::centredRight, Colour::scopeAnnotation);
 }

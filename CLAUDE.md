@@ -342,16 +342,33 @@ declared, and transcribing it is safe. **Nothing else is on the plate.**
 | CHORUS badge and foot bar | material | 2 | n/a | **stays baked**, §1 |
 | Box frames, fields, heading rules | material | 3 | n/a | **stays baked** |
 | — found by the plate survey, below — | | | | |
-| Header block material | material | 1 | n/a | **no** |
-| Wells: LCD, IN, OUT, and the bank divider | material | 4 | n/a | **no** |
-| SAVE/STORE and DELETE/CANCEL faces | material | 2 | n/a | **no** |
-| Nameplate wordmark `CHORUS-60` | ink | 1 | n/a | **no** — also needs `LibrestileExtBold.ttf` in BinaryData |
-| Nameplate descriptor `BBD CHORUS PROCESSOR` | ink | 1 | n/a | **no** |
-| PROGRAM / IN / OUT captions | ink | 3 | n/a | **no** |
-| Scope title `DELAY MODULATION` | ink | 1 | n/a | **no** |
-| Scope annotations `DLY MOD` / `± MAX` | ink | 3 | n/a | **no** |
-| Footer left `CH-60 · SN 0061` | ink | 1 | n/a | **no** |
-| IMAGE switch composites | material | 2 | n/a | **no** — §7.3's pair; see the travel question |
+| Header block material | material | 1 | n/a | **STRUCK** — `paintHeaderBlock` |
+| Wells: LCD, IN, OUT, and the bank divider | material | 4 | n/a | **STRUCK** — `paintDisplayWell` |
+| SAVE/STORE and DELETE/CANCEL faces | material | 2 | n/a | **STRUCK** — `paintProgramButtonFace` |
+| Nameplate wordmark `CHORUS-60` | ink | 1 | n/a | **STRUCK** — `LibrestileExtBold.ttf` back in BinaryData |
+| Nameplate descriptor `BBD CHORUS PROCESSOR` | ink | 1 | n/a | **STRUCK** |
+| PROGRAM / IN / OUT captions | ink | 3 | n/a | **STRUCK** |
+| Scope title `DELAY MODULATION` | ink | 1 | n/a | **STRUCK** |
+| Scope annotations `DLY MOD` / `± MAX` | ink | 3 | n/a | **drawn all along — see below**; corrected to §8 |
+| Footer left `CH-60 · SN 0061` | ink | 1 | n/a | **STRUCK** |
+| IMAGE switch composites | material | 2 | n/a | **superseded** — §4B keeps the two-part shoe; see `design-asks/chorus60-image-switch-travel.md` |
+
+**A ROW CAN BE DRAWN AND STILL BE WRONG, AND THIS TABLE HAS NO STATE FOR THAT.** The scope
+annotations were listed **no** and they had a drawing site the whole time — the grep run to build
+this table found it (`DLY MOD → 1 hit, ModScope.cpp`) and the row was written anyway, so the table
+disagreed with its own evidence.
+
+They were wrong in four ways at once, none of them visible: `monoFont (9.0f)` — a raw JUCE height
+where a CSS px belongs, and §8 says **11** regardless; `drawText` rather than `drawTrackedText`, so
+§8's **.06 em** was never applied; positions 4 / 2 px inside the well against §4's **12 / 8**; and a
+`"- MAX"` whose minus is an ASCII hyphen where this casting's own ruling is U+2212. Each renders a
+plausible small grey string in roughly the right place.
+
+**So the second column answers "does a drawing site exist", which is not "is it drawn right".** That
+is the right question for this table — it was built to catch *absence*, which is the failure the
+plate inversion introduced — but a row that strikes on existence will read as finished. The type
+pass is where correctness gets checked, and it needs its own list rather than this one's struck
+rows.
 
 **The "Wordmark" row in the first version conflated two different objects.** It read *"stays baked
 — it is the CHORUS badge"*, and the badge genuinely is baked. The header nameplate's `CHORUS-60` is

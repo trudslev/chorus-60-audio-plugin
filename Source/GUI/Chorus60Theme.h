@@ -63,6 +63,21 @@ namespace Chorus60Theme
         // contrast: 7.09-7.38:1 vs plate:modEngineHeadingRow,plate:modEngineStatusNote,plate:footerRow [functional]
         inline const juce::Colour captionTertiary{0xFF9CA2A6};
 
+        /*  **THE HEADER BLOCK'S OWN MATERIAL. §1: `linear-gradient(180deg, #24292c, #171a1c)`.**
+
+            Not on the plate — drawn. It was silkscreen for one revision, which is why these
+            constants did not exist and why `ProgramHeader` had a comment saying the plate provided
+            the wells.
+
+            **This is the ground every header contrast figure in §6 is quoted against**, so it is
+            named rather than inlined: `#24292c` is the block's lightest row and therefore the worst
+            case for anything printed on it, which is the figure §6 publishes. */
+        inline const juce::Colour headerBlockTop{0xFF24292C};
+        inline const juce::Colour headerBlockBottom{0xFF171A1C};
+        inline const juce::Colour headerBlockRing{0xFF0A0C0D};       // inset 0 0 0 1px
+        inline const juce::Colour headerBlockTopLight{0x12FFFFFF};   // inset 0 1px 0 rgba(255,255,255,.07)
+        inline const juce::Colour headerBlockFootShade{0x80000000};  // inset 0 -3px 8px rgba(0,0,0,.5)
+
         // Everything inside a display well.
         inline const juce::Colour ledWindowBg{0xFF07090A};
         inline const juce::Colour ledWindowBorder{0xFF363C41};
@@ -85,24 +100,50 @@ namespace Chorus60Theme
 
         // SAVE / DELETE. Identical to Gatecrasher's and TapeRot's by design, not by accident - the
         // utility surface is shared across the suite.
-        /** **The Program buttons' two legends. There is no face colour here any more** - the
-            plate bakes the face, and section 13 keeps only the legends at runtime, because each of
-            the four lights independently while the face has no state to freeze.
+        /** **The Program buttons' two legends**, and — again — the face they sit on.
 
-            Nine constants went with the old treatment: a pale enabled face (#DBE0E3 -> #AAB1B6)
-            with dark ink, a pressed face, a separate disabled face, and a disabled label that had
-            itself just been rescued from #8B9297 at 1.42:1. **The pale face is what required the
-            lamp-beside-legend form**; backlit legends need a dark face, so the face moved with the
-            treatment, and the disabled state stopped existing rather than getting a better grey. */
+            Nine constants went with the revision-1 treatment: a pale enabled face (#DBE0E3 ->
+            #AAB1B6) with dark ink, a pressed face, a separate disabled face, and a disabled label
+            that had itself just been rescued from #8B9297 at 1.42:1. **The pale face is what
+            required the lamp-beside-legend form**; backlit legends need a dark face, so the face
+            moved with the treatment, and the disabled state stopped existing rather than getting a
+            better grey. That reasoning stands and is why the face below is dark.
+
+            What changed twice is only *who draws it*. Revision 2 baked it, and this file said "there
+            is no face colour here any more". Revision 4's plate does not, so `buttonCapTop` and
+            `buttonCapBottom` below have gone from a documentation record back to live paint. */
         inline const juce::Colour legendLit{0xFFF1EFEA};
         /** Matte, not a dimmer ink - no bloom at all, which is what separates "unlit" from
             "slightly darker". Quoted at the worst case, the lightest part of the face.
             // contrast: 3.55:1 vs buttonCapTop [state] */
         inline const juce::Colour legendUnlit{0xFF757D82};
-        /** Not drawn - the plate carries the face. Declared so the legend ratios above have a
-            named ground to be measured against, and so a future re-cut has the value on record. */
-        inline const juce::Colour buttonCapTop{0xFF23282B};
-        inline const juce::Colour buttonCapBottom{0xFF15181A};
+        /*  **The Program buttons' face, drawn again as of the revision-4 plate — and BOTH VALUES
+            WERE WRONG WHILE NOTHING DREW THEM.**
+
+            They read `#23282B` / `#15181A`; §1 and the delivered prototype both say
+            `#23282C` / `#14181B`. One digit out in each, in a constant whose stated purpose was
+            *"declared so the legend ratios above have a named ground, and so a future re-cut has the
+            value on record"*.
+
+            **A record kept for accuracy, drifting from the thing it recorded, invisibly, because
+            nothing consumed it.** That is correct-by-nobody-looking rather than correct-by-
+            coincidence: there was no line making it right, and no line that would have gone wrong
+            if it moved. A value with no consumer has no way to be checked — which is an argument
+            for deriving such a record from its source or deleting it, not for writing it down more
+            carefully.
+
+            It cost nothing here: the error is below a JND and the ratio it grounds moves in the
+            third decimal. What it demonstrates is the mechanism, on a value that was written down
+            *precisely so it could be trusted later*, and later is now. */
+        inline const juce::Colour buttonCapTop{0xFF23282C};
+        inline const juce::Colour buttonCapBottom{0xFF14181B};
+        inline const juce::Colour buttonCapRing{0xFF0B0D0F};        // inset 0 0 0 1px
+        inline const juce::Colour buttonCapTopLight{0x1AFFFFFF};    // inset 0 1px 0 rgba(255,255,255,.10)
+        inline const juce::Colour buttonCapFootShade{0x8C000000};   // inset 0 -2px 5px rgba(0,0,0,.55)
+
+        /** The recess inside a well: `inset 0 2px 6px rgba(0,0,0,.9)` under the 1 px `#363c41`
+            ring. The LCD and both meter wells carry it. */
+        inline const juce::Colour ledWindowRecess{0xE6000000};
     }
 
     /** Which of the two re-rendered filmstrips a knob uses. */
@@ -583,6 +624,31 @@ namespace Chorus60Theme
         constexpr float programWindowW = (float) nf::HeaderGeometry::lcdW;
         constexpr float programWindowH = (float) nf::HeaderGeometry::bandH;
 
+        /*  **THE BLOCK'S MATERIAL, WHICH THE PLATE STOPPED CARRYING AND NOTHING DREW.**
+
+            `ProgramHeader` painted the LCD's contents, both button legends and the meter values on
+            to a block it assumed was silkscreen — its own comment said so: *"the background plate
+            provides the empty PROGRAM / IN / OUT wells (their frames and recesses)"*. True of the
+            revision-2 plate. The revision-4 plate carries no header at all: a full-width scan across
+            the band's centre line returns **one flat value from x 1 to x 1338**.
+
+            So the block, four wells and two button faces are drawn here now. Geometry is core's —
+            every rect below is `nf::HeaderGeometry`'s — and only the *material* is this casting's,
+            which is the split `HeaderPart.h` §I draws.
+
+            All of it is §1 and the delivered prototype, transcribed once. */
+        constexpr float blockCornerRadius = 5.0f;
+        constexpr float wellCornerRadius = 3.0f;
+        constexpr float buttonCornerRadius = 4.0f;
+
+        /** §8's Program legend row, reused for the three captions above the band — Barlow Condensed
+            600 at 10 / 13. The two trackings differ deliberately; see `ProgramHeader::paint`. */
+        constexpr float headerCaptionCssPx = 10.0f;
+        constexpr float programCaptionTrackingEm = 0.24f;
+        constexpr float meterCaptionTrackingEm = 0.28f;
+        constexpr const char* programCaption = "PROGRAM";
+        constexpr const char* programCaptionNaming = "NAME PROGRAM";
+
         /** The bank cell and the name cell, both terms of the character budget — see below. The
             1 px divider between them is `nf::LcdCell::dividerW`. */
         constexpr float programTagCellX = programWindowX;
@@ -627,13 +693,30 @@ namespace Chorus60Theme
         constexpr float wordmarkCssPx = 28.0f, wordmarkLineBox = 32.0f, wordmarkTrackingEm = 0.02f;
         constexpr float nameplateLeading = 16.0f;
 
+        /** **A literal, NOT `JucePlugin_Name`**, and that is not a style preference. The
+            `JucePlugin_*` macros are defined in the plugin target only, and `ProgramHeader.cpp`
+            compiles into the test target as well — so reading the wordmark from the macro would not
+            link. Same reason the readout format lives in this theme rather than in `ProgramHeader`.
+
+            It matches `CHORUS60_PRODUCT_NAME` in CMakeLists, and `HeaderPartTests` has no way to
+            check that from here: two spellings of one name is the cost of the target split. */
+        constexpr const char* wordmarkText = "CHORUS-60";
+
         constexpr float descriptorY = (float) nf::HeaderGeometry::descriptorY;
         constexpr float descriptorLineBox = (float) nf::HeaderGeometry::descriptorH;
         constexpr float descriptorCssPx = 14.0f, descriptorTrackingEm = 0.26f;
         constexpr const char* descriptorText = "BBD CHORUS PROCESSOR";
 
-        constexpr float modelLineY = descriptorY + descriptorLineBox;
-        constexpr float modelLineBox = 14.0f;
+        /*  **CORE STATES THIS; AN EARLIER VERSION OF THIS FILE DERIVED IT.** It read
+            `descriptorY + descriptorLineBox`, which is 95 and is right — and `nf::HeaderGeometry`
+            already carries `modelLineY = 95` and `modelLineH = 14` as §2 figures. Deriving a value
+            the shared part states is a second source for one quantity, which is the thing this
+            casting spent a whole round removing from its LCD budget.
+
+            The derivation is not lost: it is an assertion in `PrintedScaleTests` now, where it
+            catches the two disagreeing rather than quietly picking one. */
+        constexpr float modelLineY = (float) nf::HeaderGeometry::modelLineY;
+        constexpr float modelLineBox = (float) nf::HeaderGeometry::modelLineH;
         constexpr float modelLineCssPx = 11.0f, modelLineTrackingEm = 0.20f;
 
         /** `MODEL CH-60 · STEREO`. The middle dot is a CODEPOINT, never a UTF-8 literal —
@@ -752,16 +835,52 @@ namespace Chorus60Theme
         constexpr int knobDragPixels = 190;
         constexpr int knobFineDragPixels = 760;
 
-        constexpr float saveButtonX = 977.0f, saveButtonY = 32.0f, saveButtonW = 70.0f, saveButtonH = 34.0f;
-        constexpr float deleteButtonX = 1053.0f, deleteButtonY = 32.0f, deleteButtonW = 70.0f, deleteButtonH = 34.0f;
+        /*  **THE BUTTONS AND THE METER WELLS WERE STILL ON THE PREVIOUS CANVAS, AND ONLY DRAWING
+            THE MATERIAL SHOWED IT.**
 
-        /** Two stacked legends, 10px on a 12px line box. 10px is BRAND.md's floor for functional
-            text and both legends are functional, so neither is set smaller to make the pair fit. */
-        constexpr float legendCssPx = 10.0f, legendTrackingEm = 0.12f, legendLineHeight = 12.0f;
+            The header pass aliased the LCD to `nf::HeaderGeometry` and left these six rects as
+            literals from the old panel:
 
-        // These are text-centring boxes over wells the plate bakes, not wells the build draws.
-        constexpr float inWindowX = 1139.0f, inWindowY = 32.0f, inWindowW = 54.0f, inWindowH = 34.0f;
-        constexpr float outWindowX = 1203.0f, outWindowY = 32.0f, outWindowW = 54.0f, outWindowH = 34.0f;
+                SAVE     977, 32, 70 x 34   ->  core  1006, 61, 62 x 34
+                DELETE  1053, 32, 70 x 34   ->  core  1076, 61, 70 x 34
+                IN      1139, 32, 54 x 34   ->  core  1164, 61, 64 x 34
+                OUT     1203, 32, 54 x 34   ->  core  1238, 61, 64 x 34
+
+            **29 px right and 29 px down**, and two of the four are the wrong width as well.
+
+            Nothing could see it. The plate baked the wells and the faces, so the only consequence
+            was text centred inside a box nobody drew — a legend a few pixels off a printed face
+            reads as kerning, not as a coordinate error. The moment the material had to be painted
+            from these rects, the legends appeared one whole band above their faces.
+
+            **That is what an alias is FOR, and the pass only did half of it.** `programWindow*`
+            moved to core and these did not, so the header held two coordinate systems that agreed
+            about nothing. They are core's now, with no literal left to drift. */
+        constexpr float saveButtonX = (float) nf::HeaderGeometry::saveX;
+        constexpr float saveButtonY = (float) nf::HeaderGeometry::bandY;
+        constexpr float saveButtonW = (float) nf::HeaderGeometry::saveW;
+        constexpr float saveButtonH = (float) nf::HeaderGeometry::bandH;
+        constexpr float deleteButtonX = (float) nf::HeaderGeometry::deleteX;
+        constexpr float deleteButtonY = (float) nf::HeaderGeometry::bandY;
+        constexpr float deleteButtonW = (float) nf::HeaderGeometry::deleteW;
+        constexpr float deleteButtonH = (float) nf::HeaderGeometry::bandH;
+
+        /** Two stacked legends. §8 gives the Program legend **11 on a 13 px line box**; this read
+            10 / 12, which is the previous revision's and is below the pair the shared part sizes
+            its 34 px band for — `HeaderGeometry::bandH`'s own comment says the band is 34 because
+            "two 11 px legends with leading and padding need about 27". So the band was built for a
+            size this casting had stopped using. 11 clears BRAND.md's ~10 px functional floor with
+            room, where 10 sat exactly on it. */
+        constexpr float legendCssPx = 11.0f, legendTrackingEm = 0.12f, legendLineHeight = 13.0f;
+
+        constexpr float inWindowX = (float) nf::HeaderGeometry::inWellX;
+        constexpr float inWindowY = (float) nf::HeaderGeometry::bandY;
+        constexpr float inWindowW = (float) nf::HeaderGeometry::meterWellW;
+        constexpr float inWindowH = (float) nf::HeaderGeometry::bandH;
+        constexpr float outWindowX = (float) nf::HeaderGeometry::outWellX;
+        constexpr float outWindowY = (float) nf::HeaderGeometry::bandY;
+        constexpr float outWindowW = (float) nf::HeaderGeometry::meterWellW;
+        constexpr float outWindowH = (float) nf::HeaderGeometry::bandH;
 
         // Below this the IN/OUT readouts show -INF rather than a number: the plugin's own BBD clock
         // noise sits well above it, so anything lower is silence.
@@ -799,6 +918,32 @@ namespace Chorus60Theme
         constexpr float scopeHistorySeconds = 2.0f;
         constexpr float scopeFps = 60.0f;
         constexpr int scopeNumDivisions = 8;
+
+        /*  §4's title and the three annotations inside the well, all absent from the revision-4
+            plate and drawn now.
+
+            **The annotations are drawn OPAQUE at `#9ba3a8`, 7.52:1.** They were
+            `rgba(160,178,186,.55)` at **3.11** — opacity-driven hierarchy, which BRAND.md forbids —
+            and §10's item 8 replaced the treatment rather than the colour: hierarchy here is carried
+            by position alone. Chorus-60 is the casting whose comment recorded deleting that, and
+            Gatecrasher still carried it at 3.40 afterwards, which is the divergence table's fourth
+            row. Do not reintroduce an alpha on these. */
+        constexpr const char* scopeTitle = "DELAY MODULATION";
+        constexpr float scopeTitleCssPx = 12.0f, scopeTitleTrackingEm = 0.28f;
+
+        constexpr float scopeAnnotationCssPx = 11.0f, scopeAnnotationTrackingEm = 0.06f;
+        constexpr float scopeAnnotationInsetX = 12.0f, scopeAnnotationInsetY = 8.0f;
+        constexpr float scopeAnnotationLineBox = 14.0f;
+        constexpr const char* scopeAnnotationSignal = "DLY MOD";
+
+        /** `+ MAX` and `− MAX`. The minus is U+2212 and is substituted at the draw call for the
+            same reason `withRealMinus` exists — a UTF-8 literal reaches the panel as stray glyphs,
+            because `juce::String`'s `const char*` constructor decodes Latin-1. */
+        inline juce::String scopeAnnotationMax (bool positive)
+        {
+            return (positive ? juce::String ("+")
+                             : juce::String::charToString (juce::juce_wchar (0x2212))) + " MAX";
+        }
         constexpr float scopeAmplitudeFraction = 0.34f;
         constexpr float scopeCentreOffsetFraction = 0.10f;
 
@@ -819,6 +964,14 @@ namespace Chorus60Theme
             it is one of the rows the plate survey added to this casting's enumeration. */
         constexpr float footerLeftX = 24.0f;
         constexpr float footerRight = 1324.0f;
+
+        /** `CH-60 · SN 0061`. Middle dot from a codepoint, never a UTF-8 literal — see
+            `modelLineText`. The serial is the prototype's and is the hardware conceit, not a real
+            unit number; it is the same on every instance. */
+        inline juce::String footerLeftText()
+        {
+            return "CH-60 " + juce::String::charToString (juce::juce_wchar (0x00B7)) + " SN 0061";
+        }
     }
 
     // Angle (degrees, clockwise from 12 o'clock) for a normalised 0..1 value across the knob arc.
@@ -922,8 +1075,12 @@ namespace Chorus60Theme
 
     // Barlow Condensed SemiBold (600 - control labels, captions, scope status) and Bold (700 - group
     // headings, engine button letters), Share Tech Mono Regular (everything inside a display) -
-    // section 3. Librestile is gone with the wordmark, which the plate bakes now. Loaded once per
-    // process via function-local statics, same caching pattern as GatecrasherTheme.h.
+    // section 3. Loaded once per process via function-local statics, same caching pattern as
+    // GatecrasherTheme.h.
+    //
+    // **Librestile is BACK.** It was dropped when the wordmark was baked; this file said so for one
+    // revision. The revision-4 plate carries no nameplate, so the wordmark is drawn again and the
+    // face has to be embedded again with it. It is the only user of this typeface on the panel.
     inline juce::Typeface::Ptr barlowSemiBoldTypeface()
     {
         static const juce::Typeface::Ptr typeface =
@@ -946,9 +1103,34 @@ namespace Chorus60Theme
         return typeface;
     }
 
+    inline juce::Typeface::Ptr librestileTypeface()
+    {
+        static const juce::Typeface::Ptr typeface =
+            juce::Typeface::createSystemTypefaceFor(BinaryData::LibrestileExtBold_ttf,
+                                                      (size_t) BinaryData::LibrestileExtBold_ttfSize);
+        return typeface;
+    }
+
     inline juce::Font labelFont(float heightPx)
     {
         return juce::Font(juce::FontOptions(heightPx).withTypeface(barlowSemiBoldTypeface()));
+    }
+    /*  **The wordmark takes a CSS px directly, via `withPointHeight`, and does NOT get a calibrated
+        ratio like the other two faces.**
+
+        `labelFontHeightForCssPx` and `monoFontHeightForCssPx` exist because a spec's `font-size` is
+        an **em** size while `FontOptions(h)` sets **ascent + descent**; each fits a reference string
+        to a reference width to recover its face's ratio. That machinery needs a measured reference,
+        and there is none for Librestile — this casting has published none, and inventing one would
+        be exactly the figure-with-no-measurement-behind-it this suite keeps finding.
+
+        `withPointHeight (px)` is the call that already means what a spec means, so it needs no
+        reference at all. Root CLAUDE.md says so where it records the trap; the two ratio converters
+        predate that being known and are kept because their calibrations ARE measured. */
+    inline juce::Font wordmarkFont(float cssPx)
+    {
+        return juce::Font(juce::FontOptions().withTypeface(librestileTypeface())
+                                              .withPointHeight(cssPx));
     }
     inline juce::Font labelFontBold(float heightPx)
     {
@@ -1001,6 +1183,92 @@ namespace Chorus60Theme
                  / refCssPx;
         }();
         return cssPx * ratio;
+    }
+
+    /*  **THE HEADER'S MATERIAL. Every one of these was silkscreen for one revision.**
+
+        `HeaderPart.h` §I is explicit that material is the casting's and geometry is core's, so the
+        rects come from `nf::HeaderGeometry` and the treatments come from §1. They are functions
+        rather than a component because three different things draw parts of this header —
+        `ProgramHeader` owns the LCD and the buttons, the block sits behind all of it — and a
+        treatment used three times is one routine or it is three that drift.
+
+        **The shading is CSS `inset` box-shadow, which has no JUCE equivalent**, so each is built
+        from the two pieces JUCE does have: a 1 px ring for a zero-blur inset, and a short vertical
+        gradient clipped to the shape for a blurred one. That approximation is stated rather than
+        hidden — a `blur 8` inset is not a linear ramp — and it is the same construction the group
+        boxes and the scope well already use. */
+    inline void fillRoundedVertical (juce::Graphics& g, juce::Rectangle<float> r, float radius,
+                                     juce::Colour top, juce::Colour bottom)
+    {
+        g.setGradientFill ({ top, r.getX(), r.getY(), bottom, r.getX(), r.getBottom(), false });
+        g.fillRoundedRectangle (r, radius);
+    }
+
+    /** A blurred inset shadow along one horizontal edge, clipped to the rounded shape. `depth` is
+        the CSS blur; `fromTop` picks which edge it hangs from. */
+    inline void insetEdgeShade (juce::Graphics& g, juce::Rectangle<float> r, float radius,
+                                juce::Colour ink, float depth, bool fromTop)
+    {
+        juce::Path shape;
+        shape.addRoundedRectangle (r, radius);
+
+        juce::Graphics::ScopedSaveState saved (g);
+        g.reduceClipRegion (shape);
+
+        const float y0 = fromTop ? r.getY() : r.getBottom();
+        const float y1 = fromTop ? r.getY() + depth : r.getBottom() - depth;
+        g.setGradientFill ({ ink, r.getX(), y0, ink.withAlpha (0.0f), r.getX(), y1, false });
+        g.fillRect (fromTop ? r.withHeight (depth)
+                            : r.withTop (r.getBottom() - depth));
+    }
+
+    /** §1's header block: the material every other header element sits on, and the ground §6's
+        header contrast figures are quoted against. */
+    inline void paintHeaderBlock (juce::Graphics& g)
+    {
+        const auto r = nf::HeaderGeometry::block().toFloat();
+
+        fillRoundedVertical (g, r, Layout::blockCornerRadius,
+                             Colour::headerBlockTop, Colour::headerBlockBottom);
+
+        insetEdgeShade (g, r, Layout::blockCornerRadius, Colour::headerBlockFootShade, 8.0f, false);
+
+        // inset 0 1px 0 rgba(255,255,255,.07) — a hairline, not a ramp.
+        g.setColour (Colour::headerBlockTopLight);
+        g.fillRect (r.withTrimmedLeft (Layout::blockCornerRadius)
+                     .withTrimmedRight (Layout::blockCornerRadius).withHeight (1.0f));
+
+        g.setColour (Colour::headerBlockRing);
+        g.drawRoundedRectangle (r.reduced (0.5f), Layout::blockCornerRadius, 1.0f);
+    }
+
+    /** A display well — the LCD and both meters. `#07090a` glass in a `#363c41` ring, recessed. */
+    inline void paintDisplayWell (juce::Graphics& g, juce::Rectangle<float> r)
+    {
+        g.setColour (Colour::ledWindowBg);
+        g.fillRoundedRectangle (r, Layout::wellCornerRadius);
+
+        insetEdgeShade (g, r, Layout::wellCornerRadius, Colour::ledWindowRecess, 6.0f, true);
+
+        g.setColour (Colour::ledWindowBorder);
+        g.drawRoundedRectangle (r.reduced (0.5f), Layout::wellCornerRadius, 1.0f);
+    }
+
+    /** A Program button's face. Dark, because the legends are backlit — see `legendLit`. */
+    inline void paintProgramButtonFace (juce::Graphics& g, juce::Rectangle<float> r)
+    {
+        fillRoundedVertical (g, r, Layout::buttonCornerRadius,
+                             Colour::buttonCapTop, Colour::buttonCapBottom);
+
+        insetEdgeShade (g, r, Layout::buttonCornerRadius, Colour::buttonCapFootShade, 5.0f, false);
+
+        g.setColour (Colour::buttonCapTopLight);
+        g.fillRect (r.withTrimmedLeft (Layout::buttonCornerRadius)
+                     .withTrimmedRight (Layout::buttonCornerRadius).withHeight (1.0f));
+
+        g.setColour (Colour::buttonCapRing);
+        g.drawRoundedRectangle (r.reduced (0.5f), Layout::buttonCornerRadius, 1.0f);
     }
 
     /*  **§5's IMAGE row is a flex centring, so its x is MEASURED at draw time.**

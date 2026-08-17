@@ -89,7 +89,12 @@ juce_add_binary_data(Chorus60BinaryData
         design/assets/controls/switch-thumb@2x.png
         design/assets/BarlowCondensed-SemiBold.ttf
         design/assets/BarlowCondensed-Bold.ttf
-        design/assets/ShareTechMono-Regular.ttf)
+        design/assets/ShareTechMono-Regular.ttf
+        # Back as of the revision-4 plate. It was dropped when the wordmark was baked; that plate
+        # carries the fascia, the badge and the box frames only, so the nameplate is drawn again.
+        # §8: Librestile Extended 28 / 32, and BRAND.md puts the nameplate outside call 7's split
+        # because it is the metaphor rather than panel lettering.
+        design/assets/LibrestileExtBold.ttf)
 
 # AU is Apple-only; Windows/Linux only ever build VST3 + Standalone. VST3_COPY_DIR/AU_COPY_DIR are
 # only set on Apple - leaving them unset elsewhere lets JUCE apply its own correct per-OS default

@@ -386,25 +386,85 @@ void ProgramHeader::paint(juce::Graphics& g)
     using namespace Chorus60Theme;
     using namespace Chorus60Theme::Layout;
 
-    // The background plate provides the empty PROGRAM / IN / OUT wells (their frames and recesses);
-    // everything inside them, and both buttons, are drawn here.
-    //
-    // An earlier version instead composited design/assets/header-{factory,user,name-entry}@3x.png
-    // over this region as a second bitmap layer, taking the window frames and the SAVE/DELETE faces
-    // from whichever of the three matched the current state. That was abandoned for the same reason
-    // it was in Gatecrasher: those bitmaps' internal coordinate frame isn't calibrated to the panel's
-    // own, so every rect computed from the spec's (correct) coordinates landed slightly off the
-    // bitmap's content, and each one carried a baked example program name and meter reading that had
-    // to be covered before the live values could be drawn. Drawing the whole cluster live needs no
-    // second coordinate system to agree with anything.
-    //
-    // Cell interiors are cleared first so the previous frame's text doesn't accumulate - inset 1px
-    // so the plate's own window borders stay intact.
-    g.setColour(Colour::ledWindowBg);
-    g.fillRect(tagCellRect.reduced(1.0f));
-    g.fillRect(nameCellRect.reduced(1.0f));
-    g.fillRect(inWindowRect.reduced(1.0f));
-    g.fillRect(outWindowRect.reduced(1.0f));
+    /*  **THE WHOLE HEADER IS DRAWN HERE NOW — the plate carries none of it.**
+
+        This used to open by clearing four cell interiors, on the stated ground that *"the background
+        plate provides the empty PROGRAM / IN / OUT wells (their frames and recesses)"*. That was
+        true of the revision-2 plate and false of the revision-4 one, which carries the fascia, the
+        badge, the scope well and the three box frames — measured, not assumed: a full-width scan
+        across this band's centre line returns **one flat value from x 1 to x 1338**.
+
+        So the block, the four wells and the two button faces are painted here, and the clear-first
+        step is gone with them: filling the well *is* the clear.
+
+        An earlier version instead composited design/assets/header-{factory,user,name-entry}@3x.png
+        over this region as a second bitmap layer, taking the window frames and the SAVE/DELETE faces
+        from whichever of the three matched the current state. That was abandoned for the same reason
+        it was in Gatecrasher: those bitmaps' internal coordinate frame isn't calibrated to the panel's
+        own, so every rect computed from the spec's (correct) coordinates landed slightly off the
+        bitmap's content, and each one carried a baked example program name and meter reading that had
+        to be covered before the live values could be drawn. Drawing the whole cluster live needs no
+        second coordinate system to agree with anything — which is now the only way it is done. */
+    paintHeaderBlock(g);
+
+    /*  The nameplate: wordmark, function descriptor, model line. **Three lines, three faces, and
+        the middle one lands on the shared anchor.**
+
+        `HeaderPart.h` §I keeps the nameplate per casting on purpose — six metaphors are six paint
+        routines, not six values of one — while §4 pins the descriptor's y across all six. So the
+        wordmark's own height and leading are this casting's and `descriptorY` is not.
+
+        The model line is drawn by `Chorus60EditorContent` rather than here, because it sits below
+        the descriptor and outside anything this component owns; both read the same core constants.  */
+    drawTrackedText(g, Layout::wordmarkText,
+                     wordmarkFont(Layout::wordmarkCssPx),
+                     trackingPxForEm(Layout::wordmarkTrackingEm, Layout::wordmarkCssPx),
+                     juce::Rectangle<float>(Layout::nameplateX, Layout::nameplateY,
+                                             Layout::nameplateW, Layout::wordmarkLineBox),
+                     juce::Justification::centredLeft, Colour::engravedHeadingText);
+
+    drawTrackedText(g, Layout::descriptorText,
+                     labelFont(labelFontHeightForCssPx(Layout::descriptorCssPx)),
+                     trackingPxForEm(Layout::descriptorTrackingEm, Layout::descriptorCssPx),
+                     juce::Rectangle<float>(Layout::nameplateX, Layout::descriptorY,
+                                             Layout::nameplateW, Layout::descriptorLineBox),
+                     juce::Justification::centredLeft, Colour::engravedHeadingText);
+
+    paintProgramButtonFace(g, nf::HeaderGeometry::saveButton().toFloat());
+    paintProgramButtonFace(g, nf::HeaderGeometry::deleteButton().toFloat());
+
+    // The LCD is one well spanning both cells; the bank/name divider is drawn inside it rather than
+    // as two wells, because §1 gives it a single frame with a 1 px `#2a3035` rule at x 72.
+    paintDisplayWell(g, juce::Rectangle<float>(programWindowX, programWindowY,
+                                                programWindowW, programWindowH));
+    g.setColour(Colour::ledWindowDivider);
+    g.fillRect(tagCellRect.getRight(), tagCellRect.getY(),
+                (float) nf::LcdCell::dividerW, tagCellRect.getHeight());
+
+    paintDisplayWell(g, inWindowRect);
+    paintDisplayWell(g, outWindowRect);
+
+    /*  The three captions above the band, all on `nf::HeaderGeometry::captionY`. PROGRAM tracks at
+        .24 em and the two meter captions at .28 — a real difference, not a transcription slip:
+        PROGRAM is a word and IN / OUT are two- and three-letter stubs that need the extra air to
+        read as labels rather than as fragments. */
+    {
+        const auto captionFont = labelFont(labelFontHeightForCssPx(Layout::headerCaptionCssPx));
+        const float captionY = (float) nf::HeaderGeometry::captionY;
+        const float captionH = (float) nf::HeaderGeometry::captionH;
+
+        drawTrackedText(g, namingMode ? Layout::programCaptionNaming : Layout::programCaption,
+                         captionFont,
+                         trackingPxForEm(Layout::programCaptionTrackingEm, Layout::headerCaptionCssPx),
+                         juce::Rectangle<float>(programWindowX, captionY, programWindowW, captionH),
+                         juce::Justification::centredLeft, Colour::captionSecondary);
+
+        for (const auto& [text, rect] : { std::pair{"IN", inWindowRect}, std::pair{"OUT", outWindowRect} })
+            drawTrackedText(g, text, captionFont,
+                             trackingPxForEm(Layout::meterCaptionTrackingEm, Layout::headerCaptionCssPx),
+                             juce::Rectangle<float>(rect.getX(), captionY, rect.getWidth(), captionH),
+                             juce::Justification::centred, Colour::captionSecondary);
+    }
 
     // Section 5: FACT / USER is set in the SAME face, size, tracking and colour as the program
     // name. It sits inside a display, so it is display text - it is no longer dimmed relative to
