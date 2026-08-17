@@ -14,8 +14,8 @@ DimmableGroup::DimmableGroup(juce::Rectangle<float> regionInPanel)
     // region's negative origin means a control positioned at its panel rect lands where the plate
     // expects it, with no per-component offset arithmetic to get wrong.
     contentLayer.setBounds(-getX(), -getY(),
-                            (int) Chorus60Theme::Layout::contentWidth,
-                            (int) Chorus60Theme::Layout::contentHeight);
+                            (int) Chorus60Theme::Layout::canvasWidth,
+                            (int) Chorus60Theme::Layout::canvasHeight);
     contentLayer.setInterceptsMouseClicks(false, true);
     addAndMakeVisible(contentLayer);
 }
@@ -55,11 +55,12 @@ void DimmableGroup::ContentLayer::paint(juce::Graphics& g)
     const auto& plate = panelBackgroundImage();
     const float scale = (float) plate.getWidth() / Layout::canvasWidth;
 
-    // Source rect in plate pixels. +borderInset converts inside-border panel coordinates to the
-    // exported bitmap's own, which includes the 1 px frame.
+    // Source rect in plate pixels. Panel coordinates are the CANVAS's now and the plate is the
+    // whole canvas, so the two spaces coincide and the old +borderInset conversion is gone with the
+    // inside-border layout it existed for.
     const juce::Rectangle<int> src(
-        (int) std::round((region.getX() + Layout::borderInset) * scale),
-        (int) std::round((region.getY() + Layout::borderInset) * scale),
+        (int) std::round(region.getX() * scale),
+        (int) std::round(region.getY() * scale),
         (int) std::round(region.getWidth() * scale),
         (int) std::round(region.getHeight() * scale));
 

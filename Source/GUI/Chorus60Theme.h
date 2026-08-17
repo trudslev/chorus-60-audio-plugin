@@ -122,27 +122,23 @@ namespace Chorus60Theme
 
     namespace Layout
     {
-        // The exported plate, border included. Everything else is measured from inside it.
-        constexpr float canvasWidth = 1282.0f;
-        /** **776, and it came down by one with the 2026-08-11 plate.** The plate is blitted
-            stretchToFit into canvasWidth x canvasHeight, so a 776-tall image in a 777 canvas
-            resamples the whole panel - a 0.129% vertical stretch that blurs every baked edge and
-            puts every coordinate progressively out toward the bottom. Nothing looks broken; it
-            simply stops being 1:1, which is the point at which measurements off a capture start
-            lying.
+        /*  **1340 × 812, and the coordinate system is the CANVAS's now — not inside-border.**
 
-            Safe to move because the plate's content below the header did not move: correlating the
-            old 1554-tall export against the new 1552 one over everything below the header band
-            gives a best offset of exactly 0, so the two pixels came off the bottom. Every absolute
-            Y in this file stays valid.
+            This was 1282 × 776 with a 1 px frame, `contentWidth/Height` at 1280 × 775, and the
+            content component placed at (1, 1) so every `Layout` constant could be a literal
+            inside-border figure. That was a reasonable trade while the whole panel was this
+            casting's own.
 
-            Fifth Member's plate was cut the same way in the same bundle. Two castings, one
-            revision - so if another plate is ever re-exported, check its height against this
-            constant before anything else. */
-        constexpr float canvasHeight = 776.0f;
-        constexpr float borderInset = 1.0f;
-        constexpr float contentWidth = 1280.0f;
-        constexpr float contentHeight = 775.0f;
+            It stops being one now that the header is the shared part: `HEADER-PART.md` states its
+            coordinates in **canvas** space — block at 16, 16, band at y 61 — so an inside-border
+            layout would need every shared figure carried with a −1 hanging off it. **A one-pixel
+            offset threaded through a coordinate system is exactly the term that survives review and
+            then explains a figure that does not reproduce.** The content component sits at (0, 0) at
+            full canvas size instead, and `borderInset` retires with the offset it existed for.
+
+            The 1 px frame is still there — it is drawn by the plate, which is what it always was. */
+        constexpr float canvasWidth = 1340.0f;
+        constexpr float canvasHeight = 812.0f;
 
         // Rotation range for every knob: pointer at 12 o'clock = centre.
         constexpr float knobArcStartDegrees = -135.0f;
@@ -643,11 +639,15 @@ namespace Chorus60Theme
     // Binary-data-backed images, decoded once per process via function-local statics - the knob
     // filmstrips in particular are tall sheets and must not be re-decoded per repaint.
     //
-    // The background plate carries all the static furniture, glyphs included (handoff section 1).
+    /*  **The plate at 3×, and it carries far less than it did.** §Asset format: it holds the fascia
+        gradient, the CHORUS badge and the box frames — and nothing else. Every label, tick, numeral,
+        knob, lamp and the scope are drawn at runtime now, where the previous plate baked all of
+        them. So a runtime draw that would once have double-printed over baked ink is now the only
+        thing drawing it. */
     inline const juce::Image& panelBackgroundImage()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::chorus60backgroundplate2x_png, (size_t) BinaryData::chorus60backgroundplate2x_pngSize);
+            BinaryData::chorus60backgroundplate3x_png, (size_t) BinaryData::chorus60backgroundplate3x_pngSize);
         return image;
     }
 

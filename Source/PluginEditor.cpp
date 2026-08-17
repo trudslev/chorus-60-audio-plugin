@@ -5,7 +5,6 @@ namespace
     // The exported plate's own size, 1 px outer border included.
     constexpr int referenceWidth = (int) Chorus60Theme::Layout::canvasWidth;
     constexpr int referenceHeight = (int) Chorus60Theme::Layout::canvasHeight;
-    constexpr int inset = (int) Chorus60Theme::Layout::borderInset;
 }
 
 Chorus60AudioProcessorEditor::Chorus60AudioProcessorEditor(Chorus60AudioProcessor& p)
@@ -39,11 +38,10 @@ void Chorus60AudioProcessorEditor::resized()
     panelBackground.setTransform(juce::AffineTransform::scale(scale));
     panelBackground.setBounds(0, 0, referenceWidth, referenceHeight);
 
-    // Design coordinates are measured from the first pixel of panel material inside the border, so
-    // the content is offset by exactly that. The transform is applied about the origin, hence the
-    // scaled translation rather than a scaled setBounds.
-    content.setTransform(juce::AffineTransform::scale(scale)
-                             .translated((float) inset * scale, (float) inset * scale));
-    content.setBounds(0, 0, (int) Chorus60Theme::Layout::contentWidth,
-                       (int) Chorus60Theme::Layout::contentHeight);
+    // **Content sits at the canvas origin now.** It used to be offset by the plate's 1 px border so
+    // that every Layout constant could be an inside-border literal; the shared header part states
+    // its coordinates in canvas space, so that offset would have to be carried through every shared
+    // figure as a −1. The border is the plate's, which is what it always was.
+    content.setTransform(juce::AffineTransform::scale(scale));
+    content.setBounds(0, 0, referenceWidth, referenceHeight);
 }

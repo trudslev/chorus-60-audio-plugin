@@ -92,7 +92,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
                 Layout::modEngineLedD, Layout::modEngineLedD}),
       modScope(p), programHeader(p)
 {
-    setSize((int) Layout::contentWidth, (int) Layout::contentHeight);
+    setSize((int) Layout::canvasWidth, (int) Layout::canvasHeight);
     setLookAndFeel(&lookAndFeel);
 
     // Transparent: PluginEditor draws the plate behind this, and the three groups draw their own
@@ -102,7 +102,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     for (auto* group : {&modEngineGroup, &characterGroup, &outputGroup})
         addAndMakeVisible(*group);
 
-    slotLabels.setBounds(0, 0, (int) Layout::contentWidth, (int) Layout::contentHeight);
+    slotLabels.setBounds(0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
     modEngineGroup.content().addAndMakeVisible(slotLabels);
 
     // --- The five genuinely global knobs (CHARACTER + OUTPUT) ---------------------------------

@@ -77,7 +77,7 @@ FetchContent_MakeAvailable(NeonFoundryCore)
 # everything inside a display (LCD name, parameter readout, IN/OUT, footer).
 juce_add_binary_data(Chorus60BinaryData
     SOURCES
-        design/assets/chorus60-background-plate@2x.png
+        design/assets/chorus60-background-plate@3x.png
         design/assets/knob_mod_84px_128f.png
         design/assets/knob_global_68px_128f.png
         design/assets/controls/button-i@2x.png
