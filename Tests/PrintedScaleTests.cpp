@@ -5,6 +5,8 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
+#include <map>
+
 /**
     The printed scales, against the ranges that actually drive the pointers.
 
@@ -213,6 +215,83 @@ public:
                         juce::String (r.paramID) + ": §3.1 gives five numerals on primary and three "
                         "on standard, and this is neither");
             }
+        }
+
+        beginTest ("The three box layers PARTITION the nine rings — none lost, none drawn twice");
+        {
+            /*  Each box draws its own printed layer now, because §7.2 dims the box and anything
+                painted over it from outside would stay bright. That splits one paint pass into
+                three, and a split is where a ring goes missing while every box still looks
+                populated — so the split is asserted rather than eyeballed.
+
+                **`ringsInBox` filters by containment**, so this is a real check on the geometry and
+                not a restatement of a hand-written assignment: a knob whose box moves out from
+                under it lands in no layer, and that is exactly what this fails on. */
+            const auto all = Chorus60Theme::ringsToDraw();
+
+            std::map<juce::String, int> timesDrawn;
+            for (const auto& r : all)
+                timesDrawn[r.paramID] = 0;
+
+            int total = 0;
+            for (const auto& box : Chorus60Theme::Layout::groupBoxes)
+            {
+                const auto inside = Chorus60Theme::ringsInBox (box);
+                logMessage ("  " + juce::String (box.title) + ": "
+                            + juce::String ((int) inside.size()) + " rings");
+
+                for (const auto& r : inside)
+                    ++timesDrawn[r.paramID];
+
+                total += (int) inside.size();
+                expectGreaterThan ((int) inside.size(), 0,
+                                   juce::String (box.title) + " draws no rings at all");
+            }
+
+            expectEquals (total, (int) all.size(),
+                          "the three layers do not sum to the nine rings the panel paints");
+
+            for (const auto& [id, count] : timesDrawn)
+            {
+                expect (count != 0, id + " falls in NO box, so nothing draws its ring, its numerals, "
+                                         "its unit or its label — and its knob still draws");
+                expect (count <= 1, id + " falls in two boxes and is drawn twice");
+            }
+        }
+
+        beginTest ("The label row is §3's, not the derived figure it replaced");
+        {
+            /*  **THE FIGURE THIS PINS WAS 16 PX OUT, and the arm is here because the derivation
+                that produced it was sound.** `modLabelRowY` was 504: the previous 464 plus the 40
+                the pivot had moved, holding the label's gap to the knob because no spec restated
+                this casting's mod cell. The delivered prototype restates it as an offset inside the
+                knob's own box — `label top: d + 34` — which for the primary row is 488.
+
+                Read this as **catching divergence, not asserting provenance**: a re-typed 488 and
+                `cy + r + 34` are indistinguishable while they agree. What it buys is the moment the
+                offset moves and one of the two rows does not follow. */
+            using namespace Chorus60Theme::Layout;
+
+            expectEquals (knobLabelTop (modKnobCentreY, modKnobD), 488.0f,
+                          "the primary label row moved off 416 + 38 + 34");
+            expectEquals (knobLabelTop (globalKnobCentreY, globalKnobD), 722.0f,
+                          "the standard label row moved off 660 + 28 + 34");
+            expectEquals (knobUnitTop (modKnobCentreY, modKnobD), 474.0f,
+                          "the primary unit row moved off 416 + 38 + 20");
+
+            /*  **SHOWN ABLE TO FAIL, and the failure named the defect exactly.** Perturbing
+                `knobLabelTopOffset` 34 → 50 turned the first two arms red at **504** and **738** —
+                and 504 is precisely the figure this replaced, which places the old derivation's
+                error at 16 px rather than merely somewhere.
+
+                **A FOURTH ARM WAS WRITTEN HERE AND DELETED RATHER THAN KEPT.** It asserted that the
+                two classes share one gap under the cap — `labelTop − (cy + r)` equal on Ø76 and
+                Ø56 — which reads like a real invariant and cannot fail: both sides compute from the
+                single `knobLabelTopOffset`, so it compares that constant with itself. That is this
+                suite's recorded tell for a check whose input comes from the thing it checks, and it
+                survived writing because the property it names IS true and IS load-bearing. What
+                makes it unassertable is that it is true *by construction* — there is one constant,
+                so there is nothing that could disagree. */
         }
 
         beginTest ("OUTPUT TRIM keeps its signs, and the minus is U+2212");

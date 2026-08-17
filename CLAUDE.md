@@ -275,21 +275,91 @@ partially migrated; it is entirely unbuilt.
 different facts: the marks can be authored, asserted and correct while nothing puts them on the
 panel. Tracking them as one column is how "authored" comes to read as "done".
 
-| The old plate printed | Count | Authored | Drawn |
-|---|---|---|---|
-| Tick rings — major and minor | 9 knobs | **yes** — §3.1, `73d3a09` | **STRUCK** — all nine, named individually |
-| Scale numerals | 9 knobs | **yes**, same tables | **STRUCK** — 5 on primary, 3 on standard |
-| Units, in the arc's bottom gap | 6 of 9 | **yes** — on the ring | **STRUCK** with them |
-| Global knob labels | 5 | n/a — strings | **no** |
-| Mod slot labels | 4 | n/a | yes — `ModSlotLabels`, the one part that always was |
-| Group headings — CHARACTER, OUTPUT | 2 | n/a | **no** (MOD ENGINE's is `paintOverChildren`) |
-| Model line | 1 | n/a | **no** |
-| Switch's printed STEREO / MONO | 2 | n/a | **no** |
-| PROGRAM / IN / OUT captions | 3 | n/a | yes — the shared header part |
-| Wordmark | 1 | n/a | stays baked — it is the CHORUS badge, §1 |
-| Wells for scope, LCD, two meters | 4 | n/a | frames stay baked; contents are runtime |
+### THIS TABLE WAS BUILT BY HAND AND WAS UNDER-POPULATED BY THIRTEEN ROWS
 
-**Nothing in the "none" rows will fail a build, a test or a glance at a diff.** That is the whole
+**Re-derived 2026-08-17 by reading the asset instead of the last manifest anyone read.** The first
+version was written by listing what the *old* plate printed, which produced a table where **every
+row is ink** — ticks, numerals, labels, headings. The plate also stopped carrying **material**: the
+header block, three of the four wells, both Program button faces. There was no column for that, so
+the one row that touched it ("frames stay baked") asserted the opposite of the truth and nothing
+looked incomplete.
+
+That is root `CLAUDE.md`'s conclusion about `HEADER-PART.md` §10's dependant list, arriving here
+from a different direction: **a list cannot enumerate what nobody thought of.** The author was
+standing in the printed layer. Material never came up — not through carelessness, but because it
+was outside the room. And exactly as §10's table did, this one *read as complete*: eleven rows,
+three struck, a clear remainder.
+
+**So it is derived now, not extended.** Two sources answer it between them:
+
+- **the elements** — every positioned element in `design/Chorus-60 CH-60 Panel.dc.html`
+- **baked or not** — sampled out of `design/assets/chorus60-background-plate@3x.png`
+
+**The survey's own first instrument was wrong and its rows said so.** It asked *"is this pixel the
+bare fascia gradient"*, which is a projection that only survives outside the boxes: it reported the
+DRIFT label baked and the RATE label absent — one row type, two verdicts — because DRIFT's sample
+sits over the CHARACTER box field, which really is on the plate. The pixel was not fascia and the
+element was still not there. Ink and material need different tests because they are different
+questions:
+
+| | The test | Why that one |
+|---|---|---|
+| **ink** | peak luma inside the element's own line box | every panel ink is `#a5adb2`/`#b6bec2`/`#e6ebee`, luma 110 up, over grounds that run 11–22. Works over fascia, a box field and the badge alike |
+| **material** | the luma step across the stated edge | a well or a face is a region, so its presence is a boundary rather than a colour |
+
+**The material arm then read its own bug and had to be caught by a known case.** Its step loop
+started one index too early, so the trailing window was an empty slice summing to zero and the
+"step" was the raw luma — a constant 20.72 for every row, reported as BAKED. It was caught only
+because a full-width horizontal scan had already proved the header block bare: the arm was
+confidently wrong about a row whose answer was known. **Third instrument error in one survey**, and
+each was found the same way rather than by reading the code.
+
+### What the plate carries — six things, measured
+
+`chorus60-background-plate@3x.png`, 4020 × 2436:
+
+- the fascia gradient
+- the CHORUS badge and its foot bar
+- the scope well — frame, field and grid
+- the three box frames, their fields and their heading rules
+
+Its twelve box edges land on §1 to within **a third of a canvas pixel**, the residue being one 3×
+subpixel on the two soft bottom edges — so §1's box table is measured-correct rather than merely
+declared, and transcribing it is safe. **Nothing else is on the plate.**
+
+### The enumeration
+
+| The old plate carried | Kind | Count | Authored | Drawn |
+|---|---|---|---|---|
+| Tick rings — major and minor | ink | 9 knobs | **yes** — §3.1, `73d3a09` | **STRUCK** — all nine, named individually |
+| Scale numerals | ink | 9 knobs | **yes**, same tables | **STRUCK** — 5 on primary, 3 on standard |
+| Units, in the arc's bottom gap | ink | 6 of 9 | **yes** — on the ring | **STRUCK**, and re-placed to §8's own row |
+| Knob labels | ink | **9** | n/a — strings | **STRUCK** — one pass, §2.1 having removed the suffix |
+| Group headings — all three | ink | 3 | n/a | **STRUCK** — `GroupPrintedLayer`, inside each box |
+| Model line | ink | 1 | n/a | **STRUCK** — `descriptorY + descriptorH` off the shared part |
+| Switch's printed STEREO / MONO | ink | 2 | n/a | **STRUCK** — flex-centred, measured at draw time |
+| Wells: scope | material | 1 | n/a | **stays baked** — the only one that does |
+| CHORUS badge and foot bar | material | 2 | n/a | **stays baked**, §1 |
+| Box frames, fields, heading rules | material | 3 | n/a | **stays baked** |
+| — found by the plate survey, below — | | | | |
+| Header block material | material | 1 | n/a | **no** |
+| Wells: LCD, IN, OUT, and the bank divider | material | 4 | n/a | **no** |
+| SAVE/STORE and DELETE/CANCEL faces | material | 2 | n/a | **no** |
+| Nameplate wordmark `CHORUS-60` | ink | 1 | n/a | **no** — also needs `LibrestileExtBold.ttf` in BinaryData |
+| Nameplate descriptor `BBD CHORUS PROCESSOR` | ink | 1 | n/a | **no** |
+| PROGRAM / IN / OUT captions | ink | 3 | n/a | **no** |
+| Scope title `DELAY MODULATION` | ink | 1 | n/a | **no** |
+| Scope annotations `DLY MOD` / `± MAX` | ink | 3 | n/a | **no** |
+| Footer left `CH-60 · SN 0061` | ink | 1 | n/a | **no** |
+| IMAGE switch composites | material | 2 | n/a | **no** — §7.3's pair; see the travel question |
+
+**The "Wordmark" row in the first version conflated two different objects.** It read *"stays baked
+— it is the CHORUS badge"*, and the badge genuinely is baked. The header nameplate's `CHORUS-60` is
+a separate element, in a separate face, in a separate place, and it is neither baked nor drawn. One
+row, two objects, and the true half carried the false one — the same construction as root
+`CLAUDE.md`'s `Application Support` paragraph, where a true clause made a false one read as checked.
+
+**Nothing in the "no" rows will fail a build, a test or a glance at a diff.** That is the whole
 reason the table is here rather than left to the spec's element list — the spec says what the panel
 should show, and only this says what stopped being drawn for it.
 

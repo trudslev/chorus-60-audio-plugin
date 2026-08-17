@@ -57,10 +57,20 @@ void ModScope::paint(juce::Graphics& g)
 
     // --- Caption row -----------------------------------------------------------------------
     //
-    // "DELAY MODULATION" is NOT drawn here. Handoff section 1.1 lists it as baked into the plate:
-    // it never changes its characters or its colour, so it is silkscreen like every other static
-    // heading. Drawing it as well double-printed it at a one-pixel offset, which is precisely the
-    // failure the manifest exists to prevent.
+    /*  **"DELAY MODULATION" IS STILL NOT DRAWN HERE, AND THAT IS NOW A GAP RATHER THAN A RULE.**
+
+        The reason it was left out was sound: the old handoff §1.1 listed it as baked, and drawing
+        it as well double-printed it at a one-pixel offset — the failure that manifest existed to
+        prevent. The revision-4 plate does not carry it. Measured, not assumed: a brightness sweep
+        of the title's own line box on `chorus60-background-plate@3x.png` peaks at 20.7 against
+        every panel ink being 110 upward, which is bare ground.
+
+        **The failure mode inverted with the plate and the surviving comment kept arguing the old
+        one.** It is left standing, corrected, rather than deleted: this casting's CLAUDE.md now
+        carries the title as an enumerated absent row, and the sentence that used to justify the
+        omission is the clearest possible statement of why the enumeration has to be checked against
+        the asset rather than against the last manifest anyone read.
+    */
     //
     // Only the status row is live, and section 1.2 gives it exactly two fields: the engine state and
     // the time division. The "DEPTH n%" that used to sit between them is gone with the standing
@@ -78,12 +88,13 @@ void ModScope::paint(juce::Graphics& g)
     const auto readoutFont = monoFont(monoFontHeightForCssPx(11.0f));
     const float readoutTracking = trackingPxForEm(0.06f, 11.0f);
 
-    float cursorRight = scopeBlockX + scopeBlockW;
+    // The caption row is §1's: the well's own x and width, on the row above it at y 136.
+    float cursorRight = scopeWellX + scopeWellW;
     const float readoutGap = 26.0f;
     for (const auto& text : { divText, stateText })
     {
         const float w = trackedTextWidth(text, readoutFont, readoutTracking);
-        const juce::Rectangle<float> r(cursorRight - w, scopeBlockY, w, scopeCaptionRowH);
+        const juce::Rectangle<float> r(cursorRight - w, scopeCaptionRowY, w, scopeCaptionRowH);
         drawTrackedText(g, text, readoutFont, readoutTracking, r, juce::Justification::left,
                          Colour::captionTertiary);
         cursorRight = r.getX() - readoutGap;

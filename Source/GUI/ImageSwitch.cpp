@@ -108,11 +108,13 @@ void ImageSwitch::paintButton(juce::Graphics& g, bool, bool)
                  (int) bounds.getWidth(), (int) bounds.getHeight(),
                  0, 0, track.getWidth(), track.getHeight());
 
-    // Section 7.2 puts the thumb at y 347 for STEREO and y 381 for MONO - 34 px apart - against a
-    // track topped at 343, so the thumb's own inset within the track is 4 px.
-    const float travel = Layout::switchThumbYMono - Layout::switchThumbYStereo;
-    const float inset = Layout::switchThumbYStereo - Layout::switchTrackY;
-    const float thumbX = bounds.getX() + (Layout::switchThumbX - Layout::switchTrackX);
+    // The thumb's inset within the track and its 34 px of travel, both relative to the component's
+    // own bounds - so this follows the cell wherever §5 puts it rather than differencing two
+    // absolute panel positions, which is what it used to do. See Layout's note: this two-part
+    // artwork is superseded by §7.3's two composites and the swap is not this pass's.
+    const float travel = Layout::switchThumbTravel;
+    const float inset = Layout::switchThumbInset;
+    const float thumbX = bounds.getX() + inset;
     const float thumbY = bounds.getY() + inset + travel * juce::jlimit(0.0f, 1.0f, thumbPosition);
 
     const auto& thumb = switchThumbImage();

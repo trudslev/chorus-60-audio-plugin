@@ -49,6 +49,13 @@ namespace Chorus60Theme
             meaning: if the label ink moves, the ring moves with it, because they are the same ink. */
         inline const juce::Colour& knobTick = controlLabelText;
         inline const juce::Colour& knobNumeral = controlLabelText;
+
+        /** §6's `#b6bec2`: the nameplate's model line, and the PROGRAM / IN / OUT captions. §10's
+            item 6 raised all four together — the body had been carrying `#8a9196` at **4.60**
+            against its own header block, which that round records as the worst functional figure it
+            found, while the six-material strip already held the corrected hex.
+            // contrast: 7.79:1 vs plate:headerBlock [functional] */
+        inline const juce::Colour captionSecondary{0xFFB6BEC2};
         // **Functional, not a caption.** All three uses carry live state: the MOD ENGINE status
         // note prints the engine configuration or BYPASS, the footer prints ENGAGED/BYPASS, and
         // the scope status row prints its division and state. Flavour is for text that can be
@@ -166,42 +173,77 @@ namespace Chorus60Theme
         inline constexpr FilmstripSheet modSheet{112, 1, 84.0f / 112.0f};
         inline constexpr FilmstripSheet globalSheet{92, 1, 68.0f / 92.0f};
 
-        // ---- Section 4: regions ---------------------------------------------------------------
-        constexpr float headerBandH = 78.0f;
-        constexpr float footerBandY = 747.0f, footerBandH = 28.0f;
+        // ---- Section 1: regions -----------------------------------------------------------------
+        //
+        /*  **Every figure here is §1's, and the PLATE was measured against §1 rather than the other
+            way round.** The three box frames are the only body geometry the new plate still carries,
+            so they are the one place the asset can contradict the spec — and it does not: measured
+            off `chorus60-background-plate@3x.png`, all twelve edges land on §1 to within a third of
+            a canvas pixel (the residue is one 3x subpixel on the two soft bottom edges).
 
-        constexpr float buttonColumnX = 22.0f, buttonColumnY = 96.0f;
-        constexpr float buttonColumnW = 220.0f, buttonColumnH = 629.0f;
+            That is the declaration-as-known-case check, and it is worth stating which way it ran:
+            the spec is the authority and the plate agreeing is what makes transcribing it safe.
+            A disagreement here would have been information about the delivery, not licence to
+            follow the artwork. */
+        constexpr float badgeX = 24.0f, badgeY = 136.0f, badgeW = 238.0f, badgeH = 46.0f;
+        constexpr float badgeFootY = 740.0f, badgeFootH = 26.0f;
 
-        constexpr float scopeBlockX = 285.0f, scopeBlockY = 96.0f, scopeBlockW = 973.0f, scopeBlockH = 140.0f;
-        constexpr float scopeWellX = 285.0f, scopeWellY = 116.0f, scopeWellW = 973.0f, scopeWellH = 120.0f;
-        constexpr float scopeCaptionRowH = 20.0f;   // block top to well top
+        constexpr float buttonColumnX = 24.0f, buttonColumnY = 196.0f;
+        constexpr float buttonColumnW = 132.0f, buttonColumnH = 534.0f;
+
+        constexpr float scopeCaptionRowY = 136.0f, scopeCaptionRowH = 20.0f;
+        constexpr float scopeWellX = 285.0f, scopeWellY = 160.0f, scopeWellW = 1039.0f, scopeWellH = 120.0f;
         constexpr float scopeInnerInset = 2.0f;
 
-        // Group boxes, confirmed by measuring the plate's own 1px black outlines: MOD ENGINE spans
-        // x 285..1257 / y 252..491, CHARACTER x 285..851, OUTPUT x 868..1257, both y 508..724.
-        constexpr float modEngineGroupX = 285.0f, modEngineGroupY = 252.0f;
-        constexpr float modEngineGroupW = 973.0f, modEngineGroupH = 240.0f;
-        constexpr float characterGroupX = 285.0f, characterGroupY = 508.0f;
-        constexpr float characterGroupW = 567.0f, characterGroupH = 218.0f;
-        constexpr float outputGroupX = 868.0f, outputGroupY = 508.0f;
-        constexpr float outputGroupW = 390.0f, outputGroupH = 218.0f;
+        constexpr float footerY = 782.0f, footerLineBox = 13.0f;
 
-        // Heading row contents, measured off chorus60-page-i@2x.png: the MOD ENGINE box carries a
-        // lit Ø8 LED at (308.5, 268.5) - dark, not merely dimmed, in bypass - with its heading text
-        // starting at x 322 and the status note right-aligned to x 1237, 20 px inside the box. The
-        // heading row sits ABOVE the rule, so none of it dims with the OFF state.
-        constexpr float modEngineLedD = 8.0f;
-        constexpr float modEngineLedCentreX = 308.5f, modEngineLedCentreY = 268.5f;
-        constexpr float modEngineHeadingX = 322.0f;
-        constexpr float modEngineStatusRight = 1237.0f;
-        constexpr float modEngineHeadingRowY = 260.0f, modEngineHeadingRowH = 16.0f;
+        /*  **The three group boxes, and their heading row is part of the box now.**
 
-        // Each box's heading rule, below which the OFF state's multiply applies. Measured off
-        // chorus60-page-off@2x.png as the row where the ratio against the bare plate steps from
-        // 1.000 to 0.500: y 283 for MOD ENGINE and y 539 for the other two - 31 px below each box
-        // top in all three cases.
-        constexpr float groupHeadingRuleOffset = 31.0f;
+            Each box carries a 30 px heading row — title at `x + pad`, `y + 8`, on a 15 px line box —
+            closed by a rule at `y + 30`. `pad` is 31 where a lamp precedes the title and 14 where
+            nothing does, which is the only difference between the three rows.
+
+            **`hasLamp` is not decoration: it is what makes the two pads different**, so the pad is
+            carried beside it rather than as a bare number somebody would later even out. */
+        struct GroupBox
+        {
+            const char* title;
+            float x, y, w, h;
+            float headingPad;
+            bool hasLamp;
+        };
+
+        inline constexpr std::array<GroupBox, 3> groupBoxes{{
+            { "MOD ENGINE", 285.0f, 296.0f, 1039.0f, 240.0f, 31.0f, true  },
+            { "CHARACTER",  285.0f, 552.0f,  567.0f, 214.0f, 14.0f, false },
+            { "OUTPUT",     868.0f, 552.0f,  456.0f, 214.0f, 14.0f, false },
+        }};
+
+        constexpr float groupHeadingRowH = 30.0f;
+        constexpr float groupHeadingTextTop = 8.0f, groupHeadingLineBox = 15.0f;
+        constexpr float groupHeadingCssPx = 12.0f, groupHeadingTrackingEm = 0.28f;
+
+        // The MOD ENGINE box's lamp, inside its heading row at (+14, +11), Ø9.
+        constexpr float groupLampD = 9.0f, groupLampX = 14.0f, groupLampY = 11.0f;
+
+        /*  **THE WHOLE BOX DIMS NOW, HEADING INCLUDED — this was "from the heading rule down".**
+
+            Revision 2 dimmed each box from its rule downward, and that boundary was *measured*: the
+            ratio against the bare plate stepped from 1.000 to 0.500 exactly 31 px below each box top
+            in `chorus60-page-off@2x.png`. The measurement was sound and it is now superseded — §7.2
+            gives the OFF row as "**brightness 0.5**, specular off, MOD ENGINE title to `#8a9196`"
+            against a knob-group column, and the delivered prototype wraps the boxes, the knobs and
+            the IMAGE switch in ONE `filter: brightness(0.5)` layer.
+
+            **Its provenance is the prototype, not a render, because bundle 4 delivered no artwork.**
+            The four `chorus60-page-*@2x.png` composites are the previous canvas and the previous
+            treatment; measuring the new behaviour off them would return the old boundary confidently.
+            Stated here rather than left implicit, because a figure with a render behind it and a
+            figure with a prototype behind it are different claims. */
+        inline juce::Rectangle<float> groupDimRect (const GroupBox& box) noexcept
+        {
+            return { box.x, box.y, box.w, box.h };
+        }
 
         // ---- Section 8: knob positions ---------------------------------------------------------
         //
@@ -233,18 +275,52 @@ namespace Chorus60Theme
         constexpr float modKnobCentreY = 416.0f;
         inline constexpr std::array<float, 4> modKnobCentreX{{425.0f, 621.0f, 817.0f, 1013.0f}};
 
-        // Control label row: "below the cell, 6 px gap". The mod cell's top is centre - 82 = 294,
-        // so its bottom is 458 and the label row starts at 464. Only the mod-engine labels are drawn
-        // (their suffix is page-dependent); the five global labels are baked.
-        /** **Follows its knob rather than being re-invented.** The pivot moved 376 → 416, so this
-            moves by the same 40: the spec does not restate this casting's mod cell, and holding the
-            label's gap to the pivot is the relationship the old figure encoded (centre − 82 = cell
-            top, + 6 below its bottom). A figure computed from a cell nobody restated would be an
-            invention wearing arithmetic. */
-        constexpr float modLabelRowY = 504.0f, modLabelRowH = 15.0f;
-        constexpr float modCellW = 176.0f;
-
         constexpr float globalKnobCentreY = 660.0f;
+
+        /*  **THE UNIT AND THE LABEL ARE ONE STACK UNDER EVERY KNOB, MEASURED FROM ITS OWN BOX.**
+
+            The delivered prototype places both as offsets inside the knob's own d x d box, which
+            sits at `(cx - r, cy - r)`:
+
+                unit   top: d + 20   ->  cy + r + 20,  on a 13 px line box
+                label  top: d + 34   ->  cy + r + 34,  on a 15 px line box
+
+            One expression for all nine, primary and standard alike, which is why they are functions
+            of `(cy, d)` rather than a constant per row.
+
+            **THIS REPLACES A DERIVED `modLabelRowY` THAT WAS 16 PX OUT, AND ITS OWN COMMENT HAD
+            CALLED THE SHOT.** That figure was 504, reached by taking the previous 464 and adding the
+            40 the pivot had moved — holding the label's gap to the pivot because "the spec does not
+            restate this casting's mod cell". The comment ended: *a figure computed from a cell
+            nobody restated would be an invention wearing arithmetic.* It was raised as an ask on
+            exactly that ground, and the bundle answered it before the ask was written: 416 + 38 + 34
+            is **488**.
+
+            The lesson is not that the arithmetic was careless — it was carefully done, and it
+            preserved a relationship that was real in revision 2. It is that **preserving a
+            relationship is not the same as knowing the figure**, and the only thing that could tell
+            them apart was a source restating it. So the check for the next one of these is not "is
+            the derivation sound" but "**is there anything left that states this, and have I read
+            it**". */
+        constexpr float knobUnitTopOffset = 20.0f, knobUnitLineBox = 13.0f;
+        constexpr float knobLabelTopOffset = 34.0f, knobLabelLineBox = 15.0f;
+        constexpr float knobUnitCssPx = 10.0f, knobUnitTrackingEm = 0.16f;
+        constexpr float knobLabelCssPx = 12.0f, knobLabelTrackingEm = 0.18f;
+
+        /** Width to lay a centred label in. Wide enough for DECORRELATION and OUTPUT TRIM, and
+            centred on the knob, so it is a drawing box rather than a cell anything else measures
+            from — the figure the line above exists to stop being invented. */
+        constexpr float knobCaptionBoxW = 180.0f;
+
+        constexpr float knobUnitTop (float centreY, float diameter) noexcept
+        {
+            return centreY + diameter * 0.5f + knobUnitTopOffset;
+        }
+
+        constexpr float knobLabelTop (float centreY, float diameter) noexcept
+        {
+            return centreY + diameter * 0.5f + knobLabelTopOffset;
+        }
 
 
         /*  **THE PRINTED SCALES, AUTHORED FROM §3.1 — there is nothing left to check them against.**
@@ -324,6 +400,7 @@ namespace Chorus60Theme
         struct KnobSpec
         {
             const char* paramID;
+            const char* label;      // the printed control name — plain, never page-suffixed
             float cx, cy, diameter;
             KnobFilmstripSize size;
             KnobScale scale;
@@ -340,32 +417,88 @@ namespace Chorus60Theme
             { percentPrimaryMarks, 5, "%"  },
         }};
 
-        // The five genuinely global knobs. Their names are baked, so no displayName here.
+        // The five genuinely global knobs. Their names were baked into the previous plate and are
+        // drawn now, which is why `label` is here at all.
         inline constexpr std::array<KnobSpec, 5> knobs{{
-            {"drift",       389.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+            {"drift",      "DRIFT",        389.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
                  { percentStandardMarks, 5, "%" }},
-            {"saturation",  569.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+            {"saturation", "SATURATION",   569.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
                  { percentStandardMarks, 5, "%" }},
-            {"noise",       749.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+            {"noise",      "NOISE",        749.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
                  { percentStandardMarks, 5, "%" }},
-            {"mix",        1006.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+            {"mix",        "MIX",         1006.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
                  { percentStandardMarks, 5, "%" }},
-            {"trim",       1186.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
+            {"trim",       "OUTPUT TRIM", 1186.0f, globalKnobCentreY, globalKnobD, KnobFilmstripSize::global,
                  { trimMarks, 5, "dB" }},
         }};
 
-        // ---- Section 7.2: the IMAGE switch ------------------------------------------------------
+        // ---- Section 5: the IMAGE switch --------------------------------------------------------
         //
-        // Track and thumb ship as separate sprites so the thumb travels rather than crossfading.
-        // STEREO is thumb-up. The printed STEREO / MONO words sit at the thumb centres and are baked.
-        constexpr float switchCellX = 1098.0f, switchCellW = 132.0f;
-        constexpr float switchTrackX = 1147.5f, switchTrackY = 343.0f;
-        constexpr float switchTrackW = 34.0f, switchTrackH = 68.0f;
-        constexpr float switchThumbX = 1151.5f, switchThumbD = 26.0f;
-        constexpr float switchThumbYStereo = 347.0f, switchThumbYMono = 381.0f;
+        /*  §5: a 128-wide cell at (1112, 382) holding a 34 x 68 sprite and both legends to its
+            right, STEREO above MONO, on 13 px line boxes 3 px inside a 68-tall column.
+
+            **The horizontal placement is a flex centring, so it is COMPUTED rather than stored.**
+            The prototype's row is `justify-content:center` with a 12 px gap, which means the pair
+            is centred on the cell as a unit and the sprite's x depends on how wide the wider legend
+            renders. Storing an x would freeze one font's metrics into the layout — the same defect
+            as a stored rotation fraction freezing one taper. `switchSpriteX()` measures instead.
+
+            **Both legends are printed permanently and neither moves or re-inks**: the sprite's own
+            position is the state (§4B applied to a sprite part). So there is no lit/unlit ink here,
+            deliberately — one colour, and it is the printed-unit grey. */
+        constexpr float switchCellX = 1112.0f, switchCellY = 382.0f, switchCellW = 128.0f;
+        constexpr float switchSpriteW = 34.0f, switchSpriteH = 68.0f;
+        constexpr float switchLegendGap = 12.0f;
+        constexpr float switchLegendInset = 3.0f, switchLegendLineBox = 13.0f;
+        constexpr float switchLegendCssPx = 10.0f, switchLegendTrackingEm = 0.14f;
+        constexpr const char* switchLegendStereo = "STEREO";
+        constexpr const char* switchLegendMono = "MONO";
+
+        // STEREO sits at the column's top inset; MONO at its bottom, which is space-between on a
+        // 68-tall column padded 3 px at each end.
+        constexpr float switchLegendStereoTop = switchCellY + switchLegendInset;
+        constexpr float switchLegendMonoTop =
+            switchCellY + switchSpriteH - switchLegendInset - switchLegendLineBox;
+
+        /*  **THE TWO-PART SPRITE, WHICH §5 SUPERSEDES AND THIS PASS DID NOT REPLACE.**
+
+            `ImageSwitch` draws an empty track with a Ø26 thumb travelling 34 px over it on a spring
+            ease, and these are that artwork's terms. §7.3 replaces both with **one composite per
+            state** — `switch-stereo@2x.png` / `switch-mono@2x.png`, delivered at 102 x 204 (3x of
+            34 x 68, and their `@2x` names are stale per §5) — selected by which image is rendered.
+
+            **A whole-switch composite cannot have a separately travelling thumb**, so adopting the
+            delivered pair deletes the travel rather than restyling it. That is a design consequence
+            and not a tidy-up, so it is raised with the designers rather than decided here; the
+            printed legends beside it are this pass's row and are drawn. Left standing so the switch
+            keeps working meanwhile, and marked so nobody reads it as current. */
+        constexpr float switchThumbInset = 4.0f, switchThumbTravel = 34.0f, switchThumbD = 26.0f;
         constexpr float switchTravelMs = 260.0f;
 
-        // ---- Section 10: the paged MOD ENGINE box ----------------------------------------------
+        // ---- Section 2.1: the paged MOD ENGINE box ----------------------------------------------
+        //
+        /*  **A PAGE IS NOW FOUR PARAMETER IDs AND NOTHING ELSE — §2.1 DELETED EVERY STRING ON IT.**
+
+            It carried three: a heading (`MOD ENGINE I+II`), a right-aligned status note
+            (`BOTH ENGAGED · MONO BBD PAIR`) and a suffix appended to each slot label
+            (`DELAY CENTER I+II`). §2.1 replaces all three with one sentence — *"No panel text
+            relabels itself on a page change. Knob labels are plain control names; the lamps say
+            which engine is live. That is the whole mechanism, and it is why the row can be one set
+            of four dials rather than three."*
+
+            **Two independent sources and a before/after**, which is what makes this a reading of the
+            design rather than an inference from a prototype default: §2.1 states the rule, the
+            delivered prototype passes `title: 'MOD ENGINE'` with `tag: ''` and names its dials
+            `RATE` / `DEPTH` / `DELAY CENTER` / `DECORRELATION`, and the SUPERSEDED prototype in
+            `design/prototype/` still carries `suffix:' I+II'` and `note:'BOTH ENGAGED …'` — so the
+            three strings did not fail to be written, they were taken out.
+
+            **What replaces the status note is §7.2's re-ink**, not nothing: on OFF the MOD ENGINE
+            title goes to `#8a9196`. The note said "BYPASS" in words; the title says it in ink.
+
+            The consequence worth naming: with the suffix gone, the four paged labels and the five
+            global ones are the same kind of string, so they are drawn by one pass rather than two.
+            `ModSlotLabels` existed only to carry the suffix and is deleted with it. */
         struct EnginePage
         {
             const char* rateID;
@@ -373,28 +506,16 @@ namespace Chorus60Theme
             const char* centreID;
             const char* decorrID;
             const char* imageID;
-            const char* title;      // group heading, e.g. "MOD ENGINE I+II"
-            const char* statusNote; // right-aligned note in the heading row
-            const char* suffix;     // appended to each slot label, e.g. "I+II"
         };
 
-        inline constexpr EnginePage pageI{
-            "rate1", "depth1", "center1", "decorr1", "image1",
-            "MOD ENGINE I", "ENGINE I ENGAGED", "I"};
-        inline constexpr EnginePage pageII{
-            "rate2", "depth2", "center2", "decorr2", "image2",
-            "MOD ENGINE II", "ENGINE II ENGAGED", "II"};
-        inline constexpr EnginePage pageBoth{
-            "rateB", "depthB", "centerB", "decorrB", "imageB",
-            "MOD ENGINE I+II", "BOTH ENGAGED \xc2\xb7 MONO BBD PAIR", "I+II"};
+        inline constexpr EnginePage pageI   { "rate1", "depth1", "center1", "decorr1", "image1" };
+        inline constexpr EnginePage pageII  { "rate2", "depth2", "center2", "decorr2", "image2" };
+        inline constexpr EnginePage pageBoth{ "rateB", "depthB", "centerB", "decorrB", "imageB" };
 
+        /** The mod row's four printed names, in slot order. Plain, and the same on every page —
+            which is §2.1's whole point, so do not re-introduce a per-page variant here. */
         inline constexpr std::array<const char*, 4> slotLabels{
             {"RATE", "DEPTH", "DELAY CENTER", "DECORRELATION"}};
-        constexpr const char* imageSlotLabel = "IMAGE";
-
-        // Shown while nothing is engaged. Revision 2 dropped the "SETTINGS RETAINED" half: the
-        // pointers no longer wind to zero, so there is no false impression left to correct.
-        constexpr const char* bypassStatusNote = "BYPASS";
 
         // Page-change slew: "1 - 0.002^(dt/380ms)", time-based so travel takes the same wall time
         // whatever the frame rate and a dropped frame doesn't shorten it. A drag bypasses it.
@@ -472,6 +593,56 @@ namespace Chorus60Theme
         constexpr float programNameCellY = programWindowY;
         constexpr float programNameCellW = nf::LcdCell::nameAreaW;
         constexpr float programNameCellH = programWindowH;
+
+        /*  **THE NAMEPLATE STACK, AND THE MODEL LINE'S y IS DERIVED FROM CORE RATHER THAN READ OFF
+            THE PROTOTYPE.**
+
+            Three lines inside the part's 303 x 84 nameplate zone: the wordmark, the function
+            descriptor, and the model line under it. The zone is core's; what goes in it is this
+            casting's, per `HeaderPart.h` §I — six metaphors are six paint routines.
+
+            The stack closes on the shared anchor, and that is checkable rather than asserted:
+
+                wordmark   top nameplateY = 30, Librestile Ext 28 on a 32 px line box
+                + leading  16
+                descriptor top 78 == nf::HeaderGeometry::descriptorY          <- the anchor
+                + its own  17 == nf::HeaderGeometry::descriptorH
+                model line top 95
+
+            So the model line is `descriptorY + descriptorH`, and `HeaderPartTests` already owns
+            `landsOnDescriptorAnchor (30, 32, 16)`. **Read this as catching divergence, not as
+            asserting provenance**: a re-typed 95 and this sum are indistinguishable while they
+            agree, and the arm's whole value is the moment §4 moves the anchor and this casting does
+            not follow.
+
+            **The wordmark and the descriptor above it are ABSENT from the panel today** — not baked
+            on the new plate and with no drawing site — which the plate survey found and the
+            enumeration in this casting's CLAUDE.md now carries as its own rows. They are not drawn
+            here because the wordmark additionally needs `LibrestileExtBold.ttf` in BinaryData,
+            which is a CMakeLists change and its own step. */
+        constexpr float nameplateX = (float) nf::HeaderGeometry::nameplateX;
+        constexpr float nameplateY = (float) nf::HeaderGeometry::nameplateY;
+        constexpr float nameplateW = (float) nf::HeaderGeometry::nameplateW;
+
+        constexpr float wordmarkCssPx = 28.0f, wordmarkLineBox = 32.0f, wordmarkTrackingEm = 0.02f;
+        constexpr float nameplateLeading = 16.0f;
+
+        constexpr float descriptorY = (float) nf::HeaderGeometry::descriptorY;
+        constexpr float descriptorLineBox = (float) nf::HeaderGeometry::descriptorH;
+        constexpr float descriptorCssPx = 14.0f, descriptorTrackingEm = 0.26f;
+        constexpr const char* descriptorText = "BBD CHORUS PROCESSOR";
+
+        constexpr float modelLineY = descriptorY + descriptorLineBox;
+        constexpr float modelLineBox = 14.0f;
+        constexpr float modelLineCssPx = 11.0f, modelLineTrackingEm = 0.20f;
+
+        /** `MODEL CH-60 · STEREO`. The middle dot is a CODEPOINT, never a UTF-8 literal —
+            `juce::String`'s `const char*` constructor decodes Latin-1, so `"\xc2\xb7"` reaches the
+            panel as two stray glyphs. Same handling as `withRealMinus`. */
+        inline juce::String modelLineText()
+        {
+            return "MODEL CH-60 " + juce::String::charToString (juce::juce_wchar (0x00B7)) + " STEREO";
+        }
 
         /*  **ONE RUN, ONE SOURCE. This carried THREE figures for one quantity.**
 
@@ -640,9 +811,14 @@ namespace Chorus60Theme
         // documented sum, named so the provenance is clear rather than a bare magic number.
         constexpr float scopeReferenceExcursionMs = 5.0f + 0.15f;
 
-        // Footer status line, right-aligned in the footer band. It carries live engine state
-        // ("... ENGAGED ..." / "... BYPASS ..."), which is why it is drawn rather than baked.
-        constexpr float footerRight = 1258.0f, footerCentreY = 761.0f;
+        /*  The footer's two strings, both on §1's y 782 with a 13 px line box.
+
+            The RIGHT one carries live engine state (`... ENGAGED ...` / `... BYPASS ...`), which is
+            why it was drawn even when the plate baked everything else. The LEFT one — `CH-60 · SN
+            0061` — is static, was baked, and is **absent from the new plate with no drawing site**;
+            it is one of the rows the plate survey added to this casting's enumeration. */
+        constexpr float footerLeftX = 24.0f;
+        constexpr float footerRight = 1324.0f;
     }
 
     // Angle (degrees, clockwise from 12 o'clock) for a normalised 0..1 value across the knob arc.
@@ -675,6 +851,7 @@ namespace Chorus60Theme
     struct RingToDraw
     {
         const char* paramID;                    // for naming a failure, not for lookup
+        const char* label;                      // the printed control name, §2.1-plain
         juce::Point<float> centre;
         float diameter;
         Layout::KnobScale scale;
@@ -686,15 +863,24 @@ namespace Chorus60Theme
         the APVTS — the theme describes the panel, not the plugin. */
     std::vector<RingToDraw> ringsToDraw();
 
-    /** Draws one ring — ticks, numerals and the unit — and returns how many MAJORS it numeralled,
-        so a caller can count what it produced instead of trusting that it ran. */
+    /** The rings whose knob sits inside one group box.
+
+        **The partition is DERIVED, not assigned.** Each box draws its own printed layer, so the
+        nine rings have to be split three ways — and hand-listing which knob belongs to which box
+        is exactly how one goes missing while every box looks populated. Filtering the one
+        enumerable list by containment means the three subsets provably cover it: `PrintedScaleTests`
+        asserts they sum to nine and share no member. */
+    std::vector<RingToDraw> ringsInBox (const Layout::GroupBox& box);
+
+    /** Draws one knob's whole printed stack — ticks, numerals, the unit and the control label — and
+        returns how many MAJORS it numeralled, so a caller can count what it produced instead of
+        trusting that it ran. */
     int drawKnobScale (juce::Graphics& g, const RingToDraw& ring);
 
-    /** The rect of one group box below its heading rule - the region the OFF state multiplies. */
-    inline juce::Rectangle<float> groupDimRect(float x, float y, float w, float h) noexcept
-    {
-        return {x, y + Layout::groupHeadingRuleOffset, w, h - Layout::groupHeadingRuleOffset};
-    }
+    /** Draws one group box's heading. Returns the heading's own line-box rect, so a caller can
+        assert where it landed rather than re-deriving it. */
+    juce::Rectangle<float> drawGroupHeading (juce::Graphics& g, const Layout::GroupBox& box,
+                                             juce::Colour ink);
 
     inline float trackedTextWidth(const juce::String& text, const juce::Font& font, float trackingPx)
     {
@@ -815,6 +1001,38 @@ namespace Chorus60Theme
                  / refCssPx;
         }();
         return cssPx * ratio;
+    }
+
+    /*  **§5's IMAGE row is a flex centring, so its x is MEASURED at draw time.**
+
+        The delivered prototype's row is `width:128; justify-content:center; gap:12` holding a
+        34 x 68 sprite and a legend column. The pair is centred on the cell, so where the sprite
+        starts depends on how wide `STEREO` renders in the shipping build — which is a property of
+        the font binary, not of the design.
+
+        **Storing an x would freeze one font's metrics into the layout**, which is the same defect
+        as a stored rotation fraction freezing one taper: correct until the thing it was derived
+        from moves, and silent when it does. This casting has both faces calibrated at runtime
+        already (`labelFontHeightForCssPx` fits a reference string to a reference width), so the
+        measurement is the cheaper of the two. */
+    inline float switchLegendColumnW()
+    {
+        const auto font = labelFont (labelFontHeightForCssPx (Layout::switchLegendCssPx));
+        const float tracking = trackingPxForEm (Layout::switchLegendTrackingEm,
+                                                Layout::switchLegendCssPx);
+        return juce::jmax (trackedTextWidth (Layout::switchLegendStereo, font, tracking),
+                           trackedTextWidth (Layout::switchLegendMono, font, tracking));
+    }
+
+    inline float switchSpriteX()
+    {
+        const float total = Layout::switchSpriteW + Layout::switchLegendGap + switchLegendColumnW();
+        return Layout::switchCellX + (Layout::switchCellW - total) * 0.5f;
+    }
+
+    inline float switchLegendX()
+    {
+        return switchSpriteX() + Layout::switchSpriteW + Layout::switchLegendGap;
     }
 
     // Binary-data-backed images, decoded once per process via function-local statics - the knob

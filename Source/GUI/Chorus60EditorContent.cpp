@@ -33,63 +33,53 @@ namespace
     }
 }
 
-ModSlotLabels::ModSlotLabels()
+GroupPrintedLayer::GroupPrintedLayer (const Layout::GroupBox& b) : box (b)
 {
-    // Pure overlay inside the MOD ENGINE group - the knobs and the switch own their own hit areas.
-    setInterceptsMouseClicks(false, false);
+    // Pure overlay inside its group - the knobs and the switch own their own hit areas.
+    setInterceptsMouseClicks (false, false);
 }
 
-void ModSlotLabels::setPage(const Layout::EnginePage& newPage)
+void GroupPrintedLayer::setBypassed (bool nowBypassed)
 {
-    if (page == &newPage)
+    if (bypassed == nowBypassed)
         return;
-    page = &newPage;
+    bypassed = nowBypassed;
     repaint();
 }
 
-void ModSlotLabels::paint(juce::Graphics& g)
+void GroupPrintedLayer::paint (juce::Graphics& g)
 {
     using namespace Chorus60Theme;
 
-    // The five labels below the knob row: four slots plus IMAGE. They carry the page's suffix
-    // ("DELAY CENTER I+II"), which is the whole reason they cannot be baked the way the five global
-    // knob names are.
-    //
-    // Section 3: Barlow Condensed 600 at 12 CSS px, .18em. Centred on each control - measured off
-    // chorus60-page-i@2x.png, where the five label centres land within 1.5 px of the knob centres
-    // and the switch cell centre.
-    const auto font = labelFont(labelFontHeightForCssPx(12.0f));
-    const float tracking = trackingPxForEm(0.18f, 12.0f);
+    // §7.2: only MOD ENGINE's title re-inks on OFF. It is the box that carries the lamp, and the
+    // re-ink is what replaced the status note this row used to end with.
+    const auto ink = (box.hasLamp && bypassed) ? Colour::captionTertiary
+                                               : Colour::engravedHeadingText;
+    drawGroupHeading (g, box, ink);
 
-    const auto drawLabel = [&] (const juce::String& text, float centreX)
+    // The rings this box owns — filtered by containment out of the one enumerable list, so the
+    // three layers provably partition the nine rather than three hand-written subsets agreeing by
+    // luck. Counted rather than assumed: a layer that draws nothing reports zero.
+    ringCount = 0;
+    numeralCount = 0;
+
+    for (const auto& ring : ringsInBox (box))
     {
-        const juce::Rectangle<float> rect(centreX - Layout::modCellW * 0.5f, Layout::modLabelRowY,
-                                           Layout::modCellW, Layout::modLabelRowH);
-        drawTrackedText(g, text, font, tracking, rect, juce::Justification::centred,
-                         Colour::controlLabelText);
-    };
-
-    for (int slot = 0; slot < 4; ++slot)
-        drawLabel(juce::String(Layout::slotLabels[(size_t) slot]) + " " + page->suffix,
-                   Layout::modKnobCentreX[(size_t) slot]);
-
-    drawLabel(juce::String(Layout::imageSlotLabel) + " " + page->suffix,
-               Layout::switchCellX + Layout::switchCellW * 0.5f);
+        numeralCount += drawKnobScale (g, ring);
+        ++ringCount;
+    }
 }
 
 Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     : processorRef(p),
-      modEngineGroup(groupDimRect(Layout::modEngineGroupX, Layout::modEngineGroupY,
-                                   Layout::modEngineGroupW, Layout::modEngineGroupH)),
-      characterGroup(groupDimRect(Layout::characterGroupX, Layout::characterGroupY,
-                                   Layout::characterGroupW, Layout::characterGroupH)),
-      outputGroup(groupDimRect(Layout::outputGroupX, Layout::outputGroupY,
-                                Layout::outputGroupW, Layout::outputGroupH)),
+      modEngineGroup(groupDimRect(Layout::groupBoxes[0])),
+      characterGroup(groupDimRect(Layout::groupBoxes[1])),
+      outputGroup(groupDimRect(Layout::groupBoxes[2])),
       buttonII(p, EngineButtonRole::engineII), buttonI(p, EngineButtonRole::engineI),
       buttonOff(p, EngineButtonRole::off),
-      groupLed({Layout::modEngineLedCentreX - Layout::modEngineLedD * 0.5f,
-                Layout::modEngineLedCentreY - Layout::modEngineLedD * 0.5f,
-                Layout::modEngineLedD, Layout::modEngineLedD}),
+      groupLed({Layout::groupBoxes[0].x + Layout::groupLampX,
+                Layout::groupBoxes[0].y + Layout::groupLampY,
+                Layout::groupLampD, Layout::groupLampD}),
       modScope(p), programHeader(p)
 {
     setSize((int) Layout::canvasWidth, (int) Layout::canvasHeight);
@@ -99,11 +89,21 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     // crops of it so those regions can be multiplied down.
     setOpaque(false);
 
-    for (auto* group : {&modEngineGroup, &characterGroup, &outputGroup})
+    DimmableGroup* const groups[] { &modEngineGroup, &characterGroup, &outputGroup };
+
+    for (auto* group : groups)
         addAndMakeVisible(*group);
 
-    slotLabels.setBounds(0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
-    modEngineGroup.content().addAndMakeVisible(slotLabels);
+    // One printed layer per box, INSIDE that box's dimmable content so it fades with the controls
+    // it names. Sized to the whole canvas because its children draw in absolute panel coordinates;
+    // the group's content layer does the clipping.
+    for (size_t i = 0; i < Layout::groupBoxes.size(); ++i)
+    {
+        auto layer = std::make_unique<GroupPrintedLayer>(Layout::groupBoxes[i]);
+        layer->setBounds(0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
+        groups[i]->content().addAndMakeVisible(*layer);
+        printedLayers[i] = std::move(layer);
+    }
 
     // --- The five genuinely global knobs (CHARACTER + OUTPUT) ---------------------------------
     for (size_t i = 0; i < Layout::knobs.size(); ++i)
@@ -156,8 +156,10 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         slotKnobs[(size_t) slot] = std::move(knob);
     }
 
-    imageSwitch.setBounds((int) Layout::switchTrackX, (int) Layout::switchTrackY,
-                           (int) Layout::switchTrackW, (int) Layout::switchTrackH);
+    // §5's flex row: the sprite and the legend column are centred on the cell as a pair, so the
+    // sprite's x follows how wide the wider legend renders rather than being stored.
+    imageSwitch.setBounds((int) std::round(switchSpriteX()), (int) Layout::switchCellY,
+                           (int) Layout::switchSpriteW, (int) Layout::switchSpriteH);
     modEngineGroup.content().addAndMakeVisible(imageSwitch);
 
     bindPage(Layout::pageI);
@@ -323,7 +325,9 @@ void Chorus60EditorContent::bindPage(const Layout::EnginePage& page)
         };
     }
 
-    slotLabels.setPage(page);
+    // Nothing printed changes with the page any more — §2.1 removed the suffix, the page heading
+    // and the status note, so a page change moves pointers and lamps and nothing else. The repaint
+    // is still owed: the pointers are what moved.
     repaint();
 }
 
@@ -400,6 +404,14 @@ void Chorus60EditorContent::timerCallback()
         poweredDown = nowPoweredDown;
         imageSwitch.setPoweredDown(poweredDown);
 
+        // §7.2: the MOD ENGINE title re-inks to #8a9196 on OFF. Only that layer acts on it — the
+        // other two headings never change — but all three are told, so the decision lives in one
+        // place (GroupPrintedLayer::paint, guarded on hasLamp) rather than being split between a
+        // caller that knows which box is which and a painter that also does.
+        for (auto& layer : printedLayers)
+            if (layer != nullptr)
+                layer->setBypassed(poweredDown);
+
         // Section 9: pointer interaction is disabled on all knobs and the switch; the LCD,
         // SAVE/DELETE and the engine buttons stay live.
         for (auto& knob : slotKnobs)
@@ -432,38 +444,43 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
 {
     using namespace Chorus60Theme;
 
-    /*  **The nine printed rings.** They were pixels in the previous plate; the new one carries the
-        fascia, the badge and the box frames only, so every tick and numeral is drawn here or is not
-        drawn at all — and an absent ring is silent, where a doubled one used to be visible.
+    /*  **WHAT IS DRAWN HERE IS WHAT SITS OUTSIDE THE THREE BOXES**, and that division is the whole
+        correction this pass made to the ring pass before it.
 
-        Driven from `ringsToDraw()` rather than from a hand-written sequence, so the set the panel
-        paints and the set the test walks are the same object. A pass that enumerated the knobs
-        itself could omit one and still look complete. */
-    for (const auto& ring : ringsToDraw())
-        drawKnobScale (g, ring);
+        The nine rings, the nine labels and the three box headings used to be drawn here. §7.2 dims
+        each box on OFF, and `paintOverChildren` paints over the dimmed subtree — so every one of
+        them would have stayed at full brightness above controls that faded underneath. They live in
+        `GroupPrintedLayer` now, one per box, inside the group's own content.
 
-    // Only three strings are drawn out here, all of them above a heading rule or outside the boxes,
-    // and all three because they carry live state. Everything else on the fascia is baked - see
-    // design/CHORUS60-BUILD-HANDOFF.md section 1. The slot labels are NOT here: they sit below the
-    // MOD ENGINE rule and so live inside that group's own dimmable subtree.
+        What is genuinely outside a box: the nameplate's model line, the IMAGE switch's two printed
+        legends, and the footer. */
 
-    // MOD ENGINE heading, section 3: Barlow Condensed 600 at 11 CSS px, .28em. Left edge measured
-    // at x 322 off chorus60-page-i@2x.png, clear of the Ø8 LED at 308.5.
-    const juce::Rectangle<float> headingRect(Layout::modEngineHeadingX, Layout::modEngineHeadingRowY,
-                                              400.0f, Layout::modEngineHeadingRowH);
-    drawTrackedText(g, currentPage->title, labelFont(labelFontHeightForCssPx(11.0f)),
-                     trackingPxForEm(0.28f, 11.0f), headingRect, juce::Justification::centredLeft,
-                     Colour::engravedHeadingText);
+    // The nameplate's model line. Its y is `descriptorY + descriptorH` off the shared part rather
+    // than a transcribed 95 — see Layout::modelLineY, and read the arm as catching divergence.
+    drawTrackedText(g, Layout::modelLineText(),
+                     monoFont(monoFontHeightForCssPx(Layout::modelLineCssPx)),
+                     trackingPxForEm(Layout::modelLineTrackingEm, Layout::modelLineCssPx),
+                     juce::Rectangle<float>(Layout::nameplateX, Layout::modelLineY,
+                                             Layout::nameplateW, Layout::modelLineBox),
+                     juce::Justification::centredLeft, Colour::captionSecondary);
 
-    // Status note, right-aligned to x 1237 - 20 px inside the box. Share Tech Mono 11 px / .06em,
-    // in the caption grey, matching the scope's own status row.
-    const char* note = poweredDown ? Layout::bypassStatusNote : currentPage->statusNote;
-    const juce::Rectangle<float> noteRect(Layout::modEngineStatusRight - 500.0f,
-                                           Layout::modEngineHeadingRowY, 500.0f,
-                                           Layout::modEngineHeadingRowH);
-    drawTrackedText(g, juce::String::fromUTF8(note), monoFont(monoFontHeightForCssPx(11.0f)),
-                     trackingPxForEm(0.06f, 11.0f), noteRect, juce::Justification::right,
-                     Colour::captionTertiary);
+    /*  The IMAGE switch's two printed legends. **Both are printed permanently and neither moves or
+        re-inks** — §4B applied to a sprite part, where the sprite's own position carries the state.
+        So there is deliberately no lit/unlit branch here: a legend that brightened with the switch
+        would make the printing the indicator and the shoe redundant. */
+    {
+        const auto font = labelFont(labelFontHeightForCssPx(Layout::switchLegendCssPx));
+        const float tracking = trackingPxForEm(Layout::switchLegendTrackingEm,
+                                                Layout::switchLegendCssPx);
+        const float x = switchLegendX();
+        const float w = Layout::switchCellX + Layout::switchCellW - x;
+
+        for (const auto& [text, top] : { std::pair{Layout::switchLegendStereo, Layout::switchLegendStereoTop},
+                                          std::pair{Layout::switchLegendMono,   Layout::switchLegendMonoTop} })
+            drawTrackedText(g, juce::String(text), font, tracking,
+                             juce::Rectangle<float>(x, top, w, Layout::switchLegendLineBox),
+                             juce::Justification::centredLeft, Colour::controlLabelText);
+    }
 
     // Footer. Drawn rather than baked because it names the engine state.
     // fromUTF8 on each literal, not on the assembled String: juce::String's char* constructor
@@ -478,8 +495,8 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
                               // PROJECT_VERSION in CMakeLists, so the panel and the plugin's
                               // reported version cannot disagree.
                               + " " + midDot + " v" NF_VERSION_SHORT;
-    const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerCentreY - 8.0f,
-                                             400.0f, 16.0f);
+    const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerY,
+                                             400.0f, Layout::footerLineBox);
     drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(10.0f)), trackingPxForEm(0.10f, 10.0f),
                      footerRect, juce::Justification::right, Colour::captionTertiary);
 }

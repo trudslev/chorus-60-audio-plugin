@@ -13,24 +13,40 @@
 #include <array>
 
 /**
-    The five page-suffixed labels under the MOD ENGINE knob row - `RATE I+II`, `DEPTH I+II`,
-    `DELAY CENTER I+II`, `DECORRELATION I+II` and `IMAGE I+II`.
+    One group box's whole printed layer: its heading, and the tick ring, numerals, unit and control
+    label under every knob whose centre falls inside it.
 
-    Drawn rather than baked because the suffix follows the page, which is the one thing about that
-    row that changes. Everything else printed in the box - the scales, the numerals, the units - is
-    silkscreen. Lives inside the MOD ENGINE group's dimmable subtree, because it sits below the
-    heading rule and so dims with the controls it names.
+    **This replaces `ModSlotLabels`, which existed to carry the page suffix.** §2.1 deleted the
+    suffix — *"no panel text relabels itself on a page change"* — so the four paged labels became
+    the same kind of string as the five global ones, and two drawing sites became one.
+
+    **It lives inside the group's dimmable subtree, and that is the point.** §7.2 dims the whole
+    box on OFF, so anything drawn over the group from outside — which is where `paintOverChildren`
+    draws — stays at full brightness while the controls it belongs to fade. That is what the ring
+    pass did before this: nine rings painted over three boxes that dim underneath them.
+
+    Which knobs it owns is **filtered by containment, never listed**: see `ringsInBox`.
 */
-class ModSlotLabels final : public juce::Component
+class GroupPrintedLayer final : public juce::Component
 {
 public:
-    ModSlotLabels();
-    void setPage(const Chorus60Theme::Layout::EnginePage&);
+    explicit GroupPrintedLayer (const Chorus60Theme::Layout::GroupBox& box);
+
+    /** Only MOD ENGINE's heading re-inks — §7.2 takes it to `#8a9196` on OFF, which is what
+        replaced the deleted "BYPASS" status note. The other two never change. */
+    void setBypassed (bool);
+
+    /** What the last paint actually produced: rings drawn, and majors numeralled across them.
+        Reported rather than assumed, so a pass that silently draws nothing is countable. */
+    int ringsDrawn() const noexcept { return ringCount; }
+    int numeralsDrawn() const noexcept { return numeralCount; }
 
 private:
-    void paint(juce::Graphics&) override;
+    void paint (juce::Graphics&) override;
 
-    const Chorus60Theme::Layout::EnginePage* page = &Chorus60Theme::Layout::pageI;
+    const Chorus60Theme::Layout::GroupBox& box;
+    bool bypassed = false;
+    int ringCount = 0, numeralCount = 0;
 };
 
 /**
@@ -40,16 +56,18 @@ private:
     Everything draws in inside-border panel coordinates on a fixed 1280 x 775 content area, which
     PluginEditor places at (1, 1) inside the 1282 x 777 plate and scales as a unit on resize.
 
-    **There is no static-text layer.** Revision 2's plate bakes every string whose characters and
-    colour never change, so `PanelChrome` and `WordmarkComponent` are gone rather than adapted. Only
-    five strings are drawn here, all of them because they carry live state: the MOD ENGINE heading,
-    its status note, the four page-suffixed slot labels plus the IMAGE label, and the footer.
+    **THE STATIC-TEXT LAYER IS BACK, because the plate stopped carrying it.** Revision 2's plate
+    baked every string whose characters and colour never change, which is why `PanelChrome` and
+    `WordmarkComponent` were deleted rather than adapted. The revision-4 plate carries the fascia,
+    the badge, the scope well and the three box frames — measured, not assumed — so those strings
+    are drawn again, in `GroupPrintedLayer` (inside each box) and in `paintOverChildren` (outside
+    them).
 
-    The three group boxes are `DimmableGroup`s, not plain containers. Section 9's OFF state
-    multiplies each box below its heading rule by 0.50, and a multiply has requirements about
-    composition order that a container satisfies and a bare `setAlpha` does not - see
-    DimmableGroup's class comment. Controls therefore go into `group.content()`, never onto this
-    component directly.
+    The three group boxes are `DimmableGroup`s, not plain containers. §7.2's OFF state multiplies
+    each box by 0.50, and a multiply has requirements about composition order that a container
+    satisfies and a bare `setAlpha` does not - see DimmableGroup's class comment. Controls therefore
+    go into `group.content()`, never onto this component directly — **and so does anything printed
+    over them**, which is the correction the printed layer exists to hold.
 */
 class Chorus60EditorContent final : public juce::Component,
                                     private juce::Timer
@@ -80,7 +98,10 @@ private:
     Chorus60LookAndFeel lookAndFeel;
 
     DimmableGroup modEngineGroup, characterGroup, outputGroup;
-    ModSlotLabels slotLabels;
+
+    // One per box, each added to its own group's content so it dims with it. Order matches
+    // Layout::groupBoxes.
+    std::array<std::unique_ptr<GroupPrintedLayer>, Chorus60Theme::Layout::groupBoxes.size()> printedLayers;
 
     // The five genuinely global knobs (CHARACTER + OUTPUT). Fixed parameters, unlike the slots, and
     // no value labels beneath them - revision 2 removed the standing readouts entirely; the LCD is
