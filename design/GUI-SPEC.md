@@ -146,7 +146,9 @@ resolve, so the state is selected by which image is rendered, not by a computed 
 **Both legends are printed permanently and neither moves or re-inks** — the switch's own
 position is the state. This is §4B's rule applied to a sprite part rather than a drawn shoe.
 
-Sprites are **2× and must be re-cut at 3×** — see §9.
+Sprites are **3× as of the second bundle** — 102 × 204 from the drawn 34 × 68, redrawn rather than
+traced because the delivered 2× pair predated this round's ink pass. **The `@2x` in both filenames
+is now stale**; the names are the build's asset paths, so renaming them is the build's call.
 
 ---
 
@@ -309,9 +311,10 @@ the changelog is a gap by construction, not an omission.
 
 ### Outstanding
 
-- **The fascia plate must be re-exported at 3×** per call 6; it is currently 2×.
-- **Both IMAGE switch sprites must be re-cut at 3×** — `switch-stereo` and `switch-mono`,
-  currently `@2x`. They are the round's third under-scale asset after Elmer's two meter pieces.
+- ~~The fascia plate must be re-exported at 3×~~ — **exported, 4020 × 2436** from the current
+  1340 × 812 canvas, not upscaled from the old 2564 × 1552.
+- ~~Both IMAGE switch sprites must be re-cut at 3×~~ — **redrawn, 102 × 204 each**, from the
+  casting's current inks in `Artwork Cutting Sheet.dc.html`. Their filenames still read `@2x`.
 - Wire both meter wells and the scope to real signal; the render shows `−4.8` / `−3.1` as
   samples.
 - Confirm RATE's skew and the four page pointer positions against the build's
