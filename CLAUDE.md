@@ -271,19 +271,23 @@ that was written.
 `Source/`.** Not one tick, numeral or unit has a drawing site today. The printed layer is not
 partially migrated; it is entirely unbuilt.
 
-| The old plate printed | Count | Drawing site today |
-|---|---|---|
-| Tick rings — major and minor | 9 knobs | **none** |
-| Scale numerals | 9 knobs | **none** |
-| Units, in the arc's bottom gap | 6 of 9 | **none** |
-| Global knob labels | 5 | **none** |
-| Mod slot labels | 4 | `ModSlotLabels` — already runtime, the one part that was |
-| Group headings — CHARACTER, OUTPUT | 2 | **none** (MOD ENGINE's is `paintOverChildren`) |
-| Model line | 1 | **none** |
-| Switch's printed STEREO / MONO | 2 | **none** — §5 puts them right of the sprite |
-| PROGRAM / IN / OUT captions | 3 | the shared header part draws these now |
-| Wordmark | 1 | **stays baked** — it is the CHORUS badge, §1 |
-| Wells for scope, LCD, two meters | 4 | box frames stay baked; the wells' contents are runtime |
+**Two rows, and only the second one strikes.** A mark table existing and a drawing site existing are
+different facts: the marks can be authored, asserted and correct while nothing puts them on the
+panel. Tracking them as one column is how "authored" comes to read as "done".
+
+| The old plate printed | Count | Authored | Drawn |
+|---|---|---|---|
+| Tick rings — major and minor | 9 knobs | **yes** — §3.1, `73d3a09` | **no** |
+| Scale numerals | 9 knobs | **yes**, same tables | **no** |
+| Units, in the arc's bottom gap | 6 of 9 | no | **no** |
+| Global knob labels | 5 | n/a — strings | **no** |
+| Mod slot labels | 4 | n/a | yes — `ModSlotLabels`, the one part that always was |
+| Group headings — CHARACTER, OUTPUT | 2 | n/a | **no** (MOD ENGINE's is `paintOverChildren`) |
+| Model line | 1 | n/a | **no** |
+| Switch's printed STEREO / MONO | 2 | n/a | **no** |
+| PROGRAM / IN / OUT captions | 3 | n/a | yes — the shared header part |
+| Wordmark | 1 | n/a | stays baked — it is the CHORUS badge, §1 |
+| Wells for scope, LCD, two meters | 4 | n/a | frames stay baked; contents are runtime |
 
 **Nothing in the "none" rows will fail a build, a test or a glance at a diff.** That is the whole
 reason the table is here rather than left to the spec's element list — the spec says what the panel
