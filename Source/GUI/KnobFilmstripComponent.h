@@ -4,20 +4,22 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 /**
-    A knob rendered from a 128-frame bitmap filmstrip rather than code-drawn, in the two diameters
-    revision 2 enlarged the panel to: Ø84 for the four Mod Engine slots, Ø68 for the five global
-    controls (spec section 6). Frame 0 is −135°, frame 127 is +135°, linear between.
+    A knob, code-drawn into a cached static layer with only its pointer redrawn per frame. §3's two
+    classes: Ø76 for the four MOD ENGINE slots, Ø56 for the five global controls.
 
-    **It draws the knob and nothing else.** The tick ring this used to paint is gone: revision 2
-    bakes every tick into the plate at its *labelled* value (section 7), which on the skewed Rate
-    knob is not evenly spaced, so a drawn ring at even angles would lay wrong marks over right ones.
-    The printed scale replaces the knurl ring too.
+    **THE NAME IS NOW WRONG AND IS KEPT FOR ONE MORE ROUND.** This rendered a 128-frame bitmap
+    filmstrip until call 5 — "code-drawn, cached, no filmstrips" — retired the sheets. Renaming the
+    class touches every construction site in the editor and would land in the same commit as the
+    drawing change, which is the noise the `ProgramId` aliasing decision exists to avoid. It is
+    renamed on its own, next to nothing else.
 
-    The sheet's geometry arrives as data (`Chorus60Theme::FilmstripSheet`) rather than being assumed,
-    because the @1x strips shipping today are an interim: the @2x sheets need Ø168/Ø136, which is
-    above the Ø128 masters they were made from, so they are upsampled placeholders until someone
-    with the original knob source re-renders them. Those will be 8-column row-major grids rather than
-    vertical strips — a table edit here, not a code change.
+    Two sheets went with it: `knob_mod_84px_128f.png` and `knob_global_68px_128f.png`, whose caps
+    were Ø84 and Ø68 — this casting's diameters *before* call 3 — so every frame had been resampled
+    to a size it was not drawn at.
+
+    **It draws the cap and the pointer and nothing else.** The tick ring, the numerals, the unit and
+    the control label are `drawKnobScale`'s, drawn by the group's own printed layer so they dim with
+    the box; the knob is a control and sits above them.
 
     Subclasses juce::Slider purely for its drag-to-value mapping and SliderAttachment compatibility;
     paint() fully replaces the default look. Drag is vertical over 200 px of travel with a
@@ -49,9 +51,23 @@ public:
         slew needs it as a starting point. */
     float getDrawnProportion();
 
+    /** §7.2's OFF state: specular off and the cap's top light suppressed. It is part of the STATIC
+        layer, so setting it invalidates the cache rather than being applied on top. */
+    void setPoweredDown (bool);
+
+    /** **Test seam: how many times the static layer has been rebuilt.** A cache that silently
+        rebuilds every frame is indistinguishable from no cache by looking at the panel, and
+        `setBufferedToImage` — the obvious alternative — does exactly that on a Slider, which
+        repaints on every frame of a drag. Asserted in `KnobRenderTests`. */
+    int staticLayerBuildCount() const noexcept { return staticLayerBuilds; }
+
 private:
     Chorus60Theme::KnobFilmstripSize filmstripSize;
     float diameter;
 
     float displayProportionOverride = -1.0f;
+    bool poweredDown = false;
+
+    juce::Image staticLayer;
+    int staticLayerBuilds = 0;
 };

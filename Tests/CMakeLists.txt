@@ -21,6 +21,7 @@ target_sources(Chorus60Tests PRIVATE
     FactoryProgramsTests.cpp
     CPUCheckTests.cpp
     DisplayBudgetTests.cpp
+    KnobRenderTests.cpp
     PrintedScaleTests.cpp
     ../Source/GUI/KnobScaleRing.cpp
     ../Source/DSP/ModulationEngine.cpp

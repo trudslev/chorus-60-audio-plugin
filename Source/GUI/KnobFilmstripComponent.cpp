@@ -16,40 +16,52 @@ void KnobFilmstripComponent::paint(juce::Graphics& g)
 {
     using namespace Chorus60Theme;
 
-    const auto centre = getLocalBounds().toFloat().getCentre();
+    /*  **CODE-DRAWN AND CACHED — call 5 retires the filmstrips.**
 
-    const bool isMod = filmstripSize == KnobFilmstripSize::mod;
-    const auto& sheet = isMod ? Layout::modSheet : Layout::globalSheet;
-    const auto& strip = isMod ? knobModFilmstrip() : knobGlobalFilmstrip();
+        This blitted one of 128 frames from a 168 x 21504 sheet. Two sheets shipped in BinaryData,
+        the cap in each was Ø84 / Ø68 — this casting's previous diameters — and call 3 moved the
+        classes to Ø76 / Ø56, so every frame was being resampled to a size it was not drawn at.
 
-    // The frame is drawn into a box scaled so the CAP comes out at the section-8 diameter. For the
-    // @1x strips capFraction is 1, so this is the diameter itself and matches the reference renders
-    // exactly; for a padded sheet it grows the box so the shadow margin lands outside the cap rather
-    // than eating into it. See FilmstripSheet's comment - conflating cap with frame pitch is the
-    // mistake handoff section 4 calls out.
-    const float boxSize = diameter / sheet.capFraction;
-    const juce::Rectangle<int> box((int) std::round(centre.x - boxSize * 0.5f),
-                                    (int) std::round(centre.y - boxSize * 0.5f),
-                                    (int) std::round(boxSize), (int) std::round(boxSize));
+        **The split is static / pointer, and the line between them is what the value moves.** The
+        cap, its rim and its specular do not: §3 fixes the specular to the panel rather than to the
+        knob, so it belongs in the layer that is drawn once. Only the pointer rotates.
 
-    // sliderPos accounts for the parameter's own skew (Rate's 0.35) via the Slider's
-    // NormalisableRange, set up by SliderAttachment from the bound RangedAudioParameter - so the
-    // pointer's rotation always matches the parameter's true travel proportion, and therefore lands
-    // on the plate's printed marks, which were placed from that same curve.
-    //
-    // The override, when set, is already a proportion of travel and needs no conversion: a page
-    // slew works in the same units precisely so it is linear in *rotation* rather than in parameter
-    // value, which for a skewed parameter are not the same motion.
-    constexpr int lastFrame = Layout::knobFrameCount - 1;
-    const int frame = juce::jlimit(0, lastFrame,
-                                    (int) std::round(getDrawnProportion() * (float) lastFrame));
+        **The cache is keyed on the DEVICE scale, not on the component size.** A Retina panel and a
+        scaled editor both change how many physical pixels the cap covers while its logical bounds
+        stay put, so a cache keyed on `getWidth()` would serve a blurry layer after a move between
+        displays. `staticLayerBuilds` counts rebuilds so a test can assert the cache is a cache —
+        `setBufferedToImage` is the trap this avoids, since it re-renders on every repaint and a
+        knob repaints on every frame of a drag.  */
+    const auto bounds = getLocalBounds().toFloat();
+    const auto centre = bounds.getCentre();
 
-    const int srcX = (frame % sheet.columns) * sheet.framePx;
-    const int srcY = (frame / sheet.columns) * sheet.framePx;
+    const float deviceScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+    const int wantedW = juce::roundToInt (bounds.getWidth() * deviceScale);
+    const int wantedH = juce::roundToInt (bounds.getHeight() * deviceScale);
 
-    g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
-    g.drawImage(strip, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
-                srcX, srcY, sheet.framePx, sheet.framePx);
+    if (staticLayer.isNull() || staticLayer.getWidth() != wantedW
+        || staticLayer.getHeight() != wantedH)
+    {
+        staticLayer = juce::Image (juce::Image::ARGB, juce::jmax (1, wantedW),
+                                    juce::jmax (1, wantedH), true);
+        ++staticLayerBuilds;
+
+        juce::Graphics ig { staticLayer };
+        ig.addTransform (juce::AffineTransform::scale (deviceScale));
+        paintKnobCap (ig, bounds.withZeroOrigin(), diameter, poweredDown);
+    }
+
+    g.drawImageTransformed (staticLayer, juce::AffineTransform::scale (1.0f / deviceScale));
+
+    /*  The pointer. Its angle comes from the Slider's own `valueToProportionOfLength`, which carries
+        the parameter's skew (RATE's 0.35) through `SliderAttachment` — so the pointer lands on the
+        printed marks, which `drawKnobScale` places from that same range rather than from a stored
+        fraction.
+
+        The override, when set, is already a proportion of TRAVEL and needs no conversion: a page
+        slew works in those units precisely so it is linear in rotation rather than in parameter
+        value, which for a skewed parameter are not the same motion. */
+    paintKnobPointer (g, centre, diameter, getDrawnProportion());
 }
 
 void KnobFilmstripComponent::setDisplayProportion(float proportion) noexcept
@@ -58,6 +70,17 @@ void KnobFilmstripComponent::setDisplayProportion(float proportion) noexcept
     if (std::abs(clamped - displayProportionOverride) < 1.0e-5f)
         return;
     displayProportionOverride = clamped;
+    repaint();
+}
+
+void KnobFilmstripComponent::setPoweredDown(bool nowPoweredDown)
+{
+    if (poweredDown == nowPoweredDown)
+        return;
+    poweredDown = nowPoweredDown;
+
+    // The specular is in the static layer, so this invalidates it rather than drawing over it.
+    staticLayer = {};
     repaint();
 }
 

@@ -414,12 +414,19 @@ void Chorus60EditorContent::timerCallback()
 
         // Section 9: pointer interaction is disabled on all knobs and the switch; the LCD,
         // SAVE/DELETE and the engine buttons stay live.
+        // §7.2 also turns the specular off, which is part of each knob's cached static layer.
         for (auto& knob : slotKnobs)
             if (knob != nullptr)
+            {
                 knob->setInterceptsMouseClicks(! poweredDown, ! poweredDown);
+                knob->setPoweredDown(poweredDown);
+            }
         for (auto& knob : knobs)
             if (knob != nullptr)
+            {
                 knob->setInterceptsMouseClicks(! poweredDown, ! poweredDown);
+                knob->setPoweredDown(poweredDown);
+            }
 
         repaint();
     }

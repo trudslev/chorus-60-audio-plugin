@@ -110,6 +110,18 @@ namespace Chorus60Theme
         inline const juce::Colour ledWindowText{0xFFDFE6EA};    // 14.6:1 on #07090A
         inline const juce::Colour lcdParameterReadout{0xFFFFD9A0}; // 11.7:1 - only while a control moves
 
+        /*  §3's knob cap, code-drawn as of call 5. The three stops of
+            `radial-gradient(circle at 36% 26%, #191d21, #0c0e10 48%, #010202)`, the black rim, and
+            the pointer — which is `engravedHeadingText`'s own `#e6ebee`, measuring **16.10:1**
+            against the cap's outer field. An alias rather than a fourth spelling of that hex,
+            because if the panel's brightest ink moves the pointer moves with it. */
+        inline const juce::Colour knobCapInner{0xFF191D21};
+        inline const juce::Colour knobCapMid{0xFF0C0E10};
+        inline const juce::Colour knobCapOuter{0xFF010202};
+        inline const juce::Colour knobRim{0xFF000000};
+        inline const juce::Colour& knobPointer = engravedHeadingText;
+        inline const juce::Colour knobSpecular{0xBFFFFFFF};   // rgba(255,255,255,.75) at its core
+
         // The one accent (BRAND.md's one-colour rule): the scope trace and the engine lamps.
         inline const juce::Colour chorusAccent{0xFFFF2B1C};
 
@@ -328,7 +340,56 @@ namespace Chorus60Theme
         /** §3's tick and numeral figures. The 29.5 offset is the catalogue's clearance chain —
             r + 8 ink gap + 9 major tick + 6 clearance + 6.5 half line box — which this casting
             follows exactly, so none of these is a per-casting term. */
+        /*  **THE TICKS START AT r + 8, AND THIS READ r + 2 — one constant, two meanings.**
+
+            `knobTickInkGap` was 2, with a comment saying *"ticks start 2 px outside the sweep
+            arc"*. The sentence is right and the code read it as 2 px outside the **cap**: the sweep
+            arc is drawn at **r + 6**, so 2 px outside it is r + 8. Every tick on this panel sat six
+            pixels too close to the knob.
+
+            **The arc was the missing term and it was missing from the panel too** — nothing drew
+            it, so there was no ring on screen to make r + 2 look wrong, and the numeral ring at
+            r + 29.5 was right the whole time because it was transcribed from the catalogue's chain
+            rather than built from this constant.
+
+            The chain, which is the catalogue's and which this casting follows exactly:
+
+                r + 6      the sweep arc, a 1.4 px ring
+                  + 2      ink gap
+                  = 8      tick INNER end — majors and minors alike
+                  + 9      major tick, or + 5 minor
+                  + 6      clearance
+                  + 6.5    half the numeral's line box
+                  = 29.5   numeral ring
+
+            **Minors are inner-aligned, not outer-aligned.** Both lengths start at r + 8 and grow
+            outward, so a minor is a short tick beside a long one rather than a long one cropped.
+            The previous code hung both off a shared outer radius, which put minors at r + 6..r + 11
+            — outside the majors' inner end, and the wrong way round. */
+        constexpr float knobSweepArcRadiusGap = 6.0f, knobSweepArcThickness = 1.4f;
+        constexpr float knobSweepArcAlpha = 0.26f;
+
+        /*  §3's cap, drawn rather than blitted — call 5, "code-drawn, cached, no filmstrips".
+
+            Cap `radial-gradient(circle at 36% 26%, #191d21, #0c0e10 48%, #010202)`, rim
+            `inset 0 0 0 1.5px #000`, pointer 3 x (r - 1) in `#e6ebee` — **16.10:1 against the cap's
+            outer field, the widest pointer separation in the suite**, which is why the pointer ink
+            is not the label grey.
+
+            **The specular is FIXED TO THE PANEL AND DOES NOT ROTATE**, which is the one thing here
+            a filmstrip could not have got wrong and a drawn knob easily can: it is a property of
+            where the light is, not of where the control points. It lives in the STATIC layer for
+            exactly that reason — if it ever needs to move with the value it has been misunderstood,
+            not merely misplaced. */
+        constexpr float knobCapHighlightX = 0.36f, knobCapHighlightY = 0.26f;
+        constexpr float knobCapMidStop = 0.48f;
+        constexpr float knobRimThickness = 1.5f;
+        constexpr float knobSpecularInset = 6.0f, knobSpecularRotationDeg = -45.0f;
+        constexpr float knobSpecularEllipseW = 0.38f, knobSpecularEllipseH = 0.17f;
+        constexpr float knobSpecularCentreX = 0.46f, knobSpecularCentreY = 0.17f;
+        constexpr float knobPointerWidth = 3.0f, knobPointerInset = 1.0f;
         constexpr float knobTickInkGap = 2.0f;
+        constexpr float knobTickInnerGap = knobSweepArcRadiusGap + knobTickInkGap;   // 8
         constexpr float knobMajorTickLength = 9.0f, knobMajorTickWidth = 2.0f;
         constexpr float knobMinorTickLength = 5.0f, knobMinorTickWidth = 1.5f;
         constexpr float knobNumeralRingOffset = 29.5f;
@@ -1246,6 +1307,91 @@ namespace Chorus60Theme
         g.setGradientFill ({ ink, r.getX(), y0, ink.withAlpha (0.0f), r.getX(), y1, false });
         g.fillRect (fromTop ? r.withHeight (depth)
                             : r.withTop (r.getBottom() - depth));
+    }
+
+    /** §3's knob cap: everything about a knob that does NOT move with its value — the radial cap,
+        the rim, and the specular that is fixed to the panel. Drawn into a cached layer; see
+        `KnobFilmstripComponent::paint`. `area` is the component's own bounds, so this draws at the
+        origin rather than at a panel coordinate. */
+    inline void paintKnobCap (juce::Graphics& g, juce::Rectangle<float> area, float diameter,
+                              bool poweredDown)
+    {
+        const auto centre = area.getCentre();
+        const float r = diameter * 0.5f;
+        const juce::Rectangle<float> cap { centre.x - r, centre.y - r, diameter, diameter };
+
+        // radial-gradient(circle at 36% 26%, #191d21, #0c0e10 48%, #010202)
+        juce::ColourGradient cg { Colour::knobCapInner,
+                                  cap.getX() + diameter * Layout::knobCapHighlightX,
+                                  cap.getY() + diameter * Layout::knobCapHighlightY,
+                                  Colour::knobCapOuter, cap.getRight(), cap.getBottom(), true };
+        cg.addColour (Layout::knobCapMidStop, Colour::knobCapMid);
+        g.setGradientFill (cg);
+        g.fillEllipse (cap);
+
+        /*  The specular, `inset: 6px` and rotated −45°. **It does not rotate with the value**, which
+            is §3's own wording and the reason it lives in the static layer: it is where the light
+            is, not where the control points. It is suppressed in the OFF state along with the cap's
+            top light — §7.2's "specular off". */
+        if (! poweredDown)
+        {
+            const auto inner = cap.reduced (Layout::knobSpecularInset);
+            juce::Graphics::ScopedSaveState saved (g);
+
+            juce::Path clip;
+            clip.addEllipse (inner);
+            g.reduceClipRegion (clip);
+            g.addTransform (juce::AffineTransform::rotation (
+                                juce::degreesToRadians (Layout::knobSpecularRotationDeg),
+                                inner.getCentreX(), inner.getCentreY()));
+
+            const float ew = inner.getWidth() * Layout::knobSpecularEllipseW;
+            const float eh = inner.getHeight() * Layout::knobSpecularEllipseH;
+            const float cx = inner.getX() + inner.getWidth() * Layout::knobSpecularCentreX;
+            const float cy = inner.getY() + inner.getHeight() * Layout::knobSpecularCentreY;
+
+            /*  **JUCE's radial gradient is CIRCULAR, and the spec's is an ellipse 38% x 17%.**
+
+                Filling an elliptical path with a circular gradient does not make an elliptical
+                falloff — it makes a circular one cropped to an ellipse, so the highlight reaches
+                full strength at the top and bottom edges and reads as a hard bright blob instead of
+                a sheen. That is what the first version drew.
+
+                So the gradient is built as a CIRCLE of radius `ew` and the space is squashed by
+                `eh / ew` about the highlight's own centre. The stops are the CSS ones as fractions
+                of that radius: .75 held to 58 %, .30 at 72 %, out at 84 %. */
+            g.addTransform (juce::AffineTransform::scale (1.0f, eh / ew, cx, cy));
+
+            juce::ColourGradient spec { Colour::knobSpecular, cx, cy,
+                                        Colour::knobSpecular.withAlpha (0.0f), cx + ew, cy, true };
+            spec.addColour (0.58f, Colour::knobSpecular);
+            spec.addColour (0.72f, Colour::knobSpecular.withAlpha (0.30f));
+            spec.addColour (0.84f, Colour::knobSpecular.withAlpha (0.0f));
+            g.setGradientFill (spec);
+            g.fillEllipse (cx - ew, cy - ew, ew * 2.0f, ew * 2.0f);
+        }
+
+        g.setColour (Colour::knobRim);
+        g.drawEllipse (cap.reduced (Layout::knobRimThickness * 0.5f), Layout::knobRimThickness);
+    }
+
+    /** §3's pointer: `3 x (r - 1)` in `#e6ebee`, measuring 16.10:1 against the cap's outer field.
+        The only part of a knob that moves with its value, which is why it is not in the cache. */
+    inline void paintKnobPointer (juce::Graphics& g, juce::Point<float> centre, float diameter,
+                                  float value01)
+    {
+        const float r = diameter * 0.5f;
+        const float length = r - Layout::knobPointerInset;
+        const float angle = knobAngleForValue01 (juce::jlimit (0.0f, 1.0f, value01));
+
+        juce::Path pointer;
+        pointer.addRoundedRectangle (-Layout::knobPointerWidth * 0.5f, -length,
+                                      Layout::knobPointerWidth, length,
+                                      Layout::knobPointerWidth * 0.5f);
+
+        g.setColour (Colour::knobPointer);
+        g.fillPath (pointer, juce::AffineTransform::rotation (juce::degreesToRadians (angle))
+                                 .translated (centre.x, centre.y));
     }
 
     /** §1's header block: the material every other header element sits on, and the ground §6's

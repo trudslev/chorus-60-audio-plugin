@@ -66,10 +66,23 @@ int drawKnobScale (juce::Graphics& g, const RingToDraw& ring)
 {
     const float r = ring.diameter * 0.5f;
 
-    // §3: ticks start 2 px outside the sweep arc, major 2 x 9 and minor 1.5 x 5, ink #a5adb2.
-    // The numeral ring is r + 29.5 — the catalogue's clearance chain, which this casting follows
-    // exactly, so nothing here is a per-casting figure.
-    const float tickOuter = r + Layout::knobTickInkGap + Layout::knobMajorTickLength;
+    /*  §3's sweep arc: a 1.4 px ring at r + 6, 270 degrees from the sweep's start, in the tick ink
+        at 26 %. It is what the tick gap is measured from — see `knobTickInnerGap` — and nothing
+        drew it before this pass, which is why r + 2 looked plausible for six pixels' worth of
+        error. */
+    {
+        const float arcR = r + Layout::knobSweepArcRadiusGap;
+        juce::Path arc;
+        arc.addCentredArc (ring.centre.x, ring.centre.y, arcR, arcR, 0.0f,
+                           juce::degreesToRadians (Layout::knobArcStartDegrees),
+                           juce::degreesToRadians (Layout::knobArcEndDegrees), true);
+        g.setColour (Colour::knobTick.withAlpha (Layout::knobSweepArcAlpha));
+        g.strokePath (arc, juce::PathStrokeType (Layout::knobSweepArcThickness));
+    }
+
+    // Ticks grow OUTWARD from one shared inner radius, so a minor is a short tick beside a long
+    // one rather than a long one cropped.
+    const float tickInner = r + Layout::knobTickInnerGap;
 
     int numeralled = 0;
 
@@ -86,8 +99,8 @@ int drawKnobScale (juce::Graphics& g, const RingToDraw& ring)
         const float width  = mark.isMajor() ? Layout::knobMajorTickWidth  : Layout::knobMinorTickWidth;
 
         g.setColour (Colour::knobTick);
-        g.drawLine ({ pointOnCircle (ring.centre, tickOuter - length, angle),
-                      pointOnCircle (ring.centre, tickOuter, angle) }, width);
+        g.drawLine ({ pointOnCircle (ring.centre, tickInner, angle),
+                      pointOnCircle (ring.centre, tickInner + length, angle) }, width);
 
         if (! mark.isMajor())
             continue;
