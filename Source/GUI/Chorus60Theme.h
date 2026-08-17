@@ -216,6 +216,71 @@ namespace Chorus60Theme
 
         constexpr float globalKnobCentreY = 620.0f;
 
+        /*  **THE PRINTED SCALES, AUTHORED FROM §3.1 — there is nothing left to check them against.**
+
+            This casting's own notes said *"the plate is the single source of truth for where a mark
+            sits"*, and that plate is being replaced by one carrying only the fascia, the badge and
+            the box frames. So these tables are not a transcription of anything: they are the marks,
+            and §3.1 is their only authority.
+
+            **Stored as VALUES, not as rotation fractions**, which is stronger than either. A mark's
+            angle comes from `range.convertTo0to1 (value)` on the parameter that actually drives the
+            pointer, so a taper change moves the ring with the pointer instead of leaving numerals
+            pointing where the pointer never goes — BRAND.md's correctness requirement, and the same
+            construction `nf::printedScaleDefects` checks.
+
+            **RATE is why this matters and why it could not be inferred.** Its range is 0.05–16 Hz at
+            skew 0.35, so its five marks land at f 0 / 0.286852 / 0.479232 / 0.783722 / 1 —
+            reproduced to six decimals from the range, and nothing like even spacing. An evenly
+            spaced ring would look entirely plausible: the pointer would still land on marks, the
+            marks would still look deliberate, and every value between them would be wrong. Same trap
+            as Reflect-84's DAMPING HF, which *gained* a minor no reasoning from the dropped numerals
+            would have produced.
+
+            `printed == nullptr` is a **minor**: a tick with no numeral. §3.1 gives the standard class
+            three numerals with the demoted positions keeping their ticks — what is dropped is the
+            numeral, never the mark. */
+        struct ScaleMark
+        {
+            float value;              // in the parameter's own units
+            const char* printed;      // nullptr = minor tick, no numeral
+
+            constexpr bool isMajor() const noexcept { return printed != nullptr; }
+        };
+
+        /** RATE — §3.2's five, skewed. Do NOT even these out. */
+        inline constexpr ScaleMark rateMarks[] {
+            { 0.05f, "0.05" }, { 0.5f, "0.5" }, { 2.0f, "2" }, { 8.0f, "8" }, { 16.0f, "16" } };
+
+        /** DEPTH · DECORRELATION — even fifths, all five numeralled (primary class). */
+        inline constexpr ScaleMark percentPrimaryMarks[] {
+            { 0.0f, "0" }, { 25.0f, "25" }, { 50.0f, "50" }, { 75.0f, "75" }, { 100.0f, "100" } };
+
+        /** DELAY CENTER — even fifths in ms. */
+        inline constexpr ScaleMark delayCentreMarks[] {
+            { 2.0f, "2" }, { 5.0f, "5" }, { 8.0f, "8" }, { 11.0f, "11" }, { 14.0f, "14" } };
+
+        /** DRIFT · SATURATION · NOISE · MIX — three numerals, minors holding .25 and .75. */
+        inline constexpr ScaleMark percentStandardMarks[] {
+            { 0.0f, "0" }, { 25.0f, nullptr }, { 50.0f, "50" }, { 75.0f, nullptr }, { 100.0f, "100" } };
+
+        /** OUTPUT TRIM — three numerals with the leading plus kept, minors at the quarters. */
+        inline constexpr ScaleMark trimMarks[] {
+            { -12.0f, "-12" }, { -6.0f, nullptr }, { 0.0f, "0" },
+            { 6.0f, nullptr }, { 12.0f, "+12" } };
+
+        /** **The printed minus is U+2212 and the tables store ASCII `-`, deliberately.**
+
+            `juce::String`'s `const char*` constructor decodes **Latin-1, not UTF-8**, so a
+            `"\xe2\x88\x92"` literal reaches the panel as three stray glyphs rather than a minus —
+            the trap this suite already records for a middle dot rendering as `\u00c2\u00b7`. Storing
+            ASCII and substituting from a codepoint at the draw call keeps the table readable and the
+            glyph correct, and it is the same shape as Reflect-84's `Text::withRealMinus`. */
+        inline juce::String withRealMinus (const char* printed)
+        {
+            return juce::String (printed).replaceCharacter ('-', juce::juce_wchar (0x2212));
+        }
+
         struct KnobSpec
         {
             const char* paramID;
