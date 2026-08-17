@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+  @font-face { font-family: 'Librestile Ext'; src: url('fonts/LibrestileExtBold.ttf') format('truetype'); font-display: swap; }
+  body { margin: 0; background: #3d4245; }
+  a { color: #6fa8dc; }
+  a:hover { color: #9cc7ea; }
+</style>
+</helmet>
+<div style="padding:40px;background:#3d4245;">
+<div style="position:relative;margin:0 auto;width:1340px;height:812px;background:linear-gradient(180deg,#141618,#0e1012 55%,#0a0c0d);box-shadow:inset 0 0 0 1px #000000, 0 10px 40px rgba(0,0,0,.5);overflow:hidden;">
+
+  <div style="position:absolute;left:16px;top:16px;width:1308px;height:104px;box-sizing:border-box;border-radius:5px;background:linear-gradient(180deg,#24292c,#171a1c);box-shadow:inset 0 0 0 1px #0a0c0d, inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.5);">
+    <div style="position:absolute;left:22px;top:14px;width:303px;height:84px;">
+      <div style="font-family:'Librestile Ext','Barlow Condensed',sans-serif;font-size:28px;line-height:32px;letter-spacing:.02em;color:#e6ebee;white-space:nowrap;">CHORUS-60</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;line-height:17px;letter-spacing:.26em;color:#e6ebee;margin-top:16px;">BBD CHORUS PROCESSOR</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.20em;color:#b6bec2;">MODEL CH-60 · STEREO</div>
+    </div>
+    <div style="position:absolute;left:341px;top:25px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.24em;color:#b6bec2;">{{ caption }}</div>
+    <div style="position:absolute;left:341px;top:45px;width:641px;height:34px;box-sizing:border-box;display:flex;align-items:stretch;background:#07090a;box-shadow:inset 0 0 0 1px #363c41, inset 0 2px 6px rgba(0,0,0,.9);border-radius:3px;overflow:hidden;">
+      <div style="width:72px;display:flex;align-items:center;justify-content:center;border-right:1px solid #2a3035;font-family:'Share Tech Mono',monospace;font-size:17px;line-height:22px;letter-spacing:.10em;color:#dfe6ea;">{{ bankTag }}</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:17px;line-height:22px;letter-spacing:.10em;color:#dfe6ea;text-shadow:0 0 8px rgba(200,220,230,.25);">{{ programName }}</div>
+      <div style="width:30px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"><svg viewBox="0 0 14 8" style="width:14px;height:8px;flex:0 0 14px;"><path d="M1 1.6 L7 6.4 L13 1.6" fill="none" stroke="#dfe6ea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    </div>
+    <div style="position:absolute;left:990px;top:45px;width:62px;height:34px;box-sizing:border-box;border-radius:4px;background:linear-gradient(180deg,#23282c,#14181b);box-shadow:inset 0 0 0 1px #0b0d0f, inset 0 1px 0 rgba(255,255,255,.10), inset 0 -2px 5px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;line-height:13px;letter-spacing:.12em;color:{{ saveInk }};text-shadow:{{ saveGlow }};">SAVE</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;line-height:13px;letter-spacing:.12em;color:{{ storeInk }};text-shadow:{{ storeGlow }};">STORE</span>
+    </div>
+    <div style="position:absolute;left:1060px;top:45px;width:70px;height:34px;box-sizing:border-box;border-radius:4px;background:linear-gradient(180deg,#23282c,#14181b);box-shadow:inset 0 0 0 1px #0b0d0f, inset 0 1px 0 rgba(255,255,255,.10), inset 0 -2px 5px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;line-height:13px;letter-spacing:.12em;color:{{ deleteInk }};text-shadow:{{ deleteGlow }};">DELETE</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;line-height:13px;letter-spacing:.12em;color:{{ cancelInk }};text-shadow:{{ cancelGlow }};">CANCEL</span>
+    </div>
+    <div style="position:absolute;left:1148px;top:25px;width:64px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.28em;color:#b6bec2;">IN</div>
+    <div style="position:absolute;left:1148px;top:45px;width:64px;height:34px;box-sizing:border-box;background:#07090a;box-shadow:inset 0 0 0 1px #363c41, inset 0 2px 6px rgba(0,0,0,.9);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:17px;line-height:22px;color:#dfe6ea;">−4.8</div>
+    <div style="position:absolute;left:1222px;top:25px;width:64px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.28em;color:#b6bec2;">OUT</div>
+    <div style="position:absolute;left:1222px;top:45px;width:64px;height:34px;box-sizing:border-box;background:#07090a;box-shadow:inset 0 0 0 1px #363c41, inset 0 2px 6px rgba(0,0,0,.9);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:17px;line-height:22px;color:#dfe6ea;">−3.1</div>
+  </div>
+
+  <div style="position:absolute;left:24px;top:136px;width:238px;height:46px;background:linear-gradient(100deg,#2a4cba,#1b3593);display:flex;align-items:center;justify-content:center;">
+    <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;line-height:30px;letter-spacing:.34em;color:#dfe4ec;">CHORUS</span>
+  </div>
+  <div style="position:absolute;left:24px;top:740px;width:238px;height:26px;background:linear-gradient(100deg,#2a4cba,#1b3593);"></div>
+  <div style="position:absolute;left:24px;top:196px;width:132px;height:534px;">
+    <sc-for list="{{ engineButtons }}" as="e" hint-placeholder-count="3">
+      <div style="position:absolute;left:0;top:{{ e.top }}px;width:132px;height:132px;box-sizing:border-box;border-radius:5px;background:{{ e.fill }};box-shadow:{{ e.shadow }};"></div>
+      <div style="position:absolute;left:148px;top:{{ e.rowTop }}px;height:26px;display:flex;align-items:center;gap:14px;">
+        <div style="width:15px;height:15px;flex:0 0 15px;border-radius:9999px;background:{{ e.lampFill }};box-shadow:{{ e.lampGlow }};"></div>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:{{ e.size }}px;line-height:{{ e.size }}px;letter-spacing:.10em;color:{{ e.captionInk }};white-space:nowrap;">{{ e.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="position:absolute;left:285px;top:136px;width:1039px;height:20px;display:flex;align-items:baseline;justify-content:space-between;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;line-height:15px;letter-spacing:.28em;color:#e6ebee;">DELAY MODULATION</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.06em;color:#8a9196;">250 ms / DIV</div>
+  </div>
+  <div style="position:absolute;left:285px;top:160px;width:1039px;height:120px;box-sizing:border-box;background:linear-gradient(180deg,#06080a,#0b0f11);box-shadow:inset 0 0 0 1px #000000, inset 0 2px 8px rgba(0,0,0,.9);overflow:hidden;">
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,43,28,.10) 0 1px,rgba(0,0,0,0) 1px 129.875px),repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 1px,rgba(0,0,0,0) 1px 30px);"></div>
+    <div style="position:absolute;left:0;top:59.5px;width:1039px;height:1px;background:rgba(255,255,255,.10);"></div>
+    <svg viewBox="0 0 1039 120" width="1039" height="120" style="position:absolute;left:0;top:0;">
+      <polyline points="{{ tracePoints }}" fill="none" stroke="#ff2b1c" stroke-width="1.8" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px rgba(255,43,28,.5));"></polyline>
+    </svg>
+    <div style="position:absolute;left:12px;top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.06em;color:#9ba3a8;">DLY MOD</div>
+    <div style="position:absolute;right:12px;top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.06em;color:#9ba3a8;">+ MAX</div>
+    <div style="position:absolute;right:12px;bottom:8px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.06em;color:#9ba3a8;">− MAX</div>
+  </div>
+
+  <div style="position:absolute;inset:0;filter:{{ groupFilter }};">
+  <sc-for list="{{ boxes }}" as="b" hint-placeholder-count="3">
+    <div style="position:absolute;left:{{ b.left }}px;top:{{ b.top }}px;width:{{ b.width }}px;height:{{ b.height }}px;box-sizing:border-box;border-radius:3px;background:linear-gradient(180deg,#131517,#0c0e10);box-shadow:inset 0 0 0 1px #000000, inset 0 1px 0 rgba(255,255,255,.05);">
+      <div style="position:absolute;left:0;top:0;width:{{ b.width }}px;height:30px;box-sizing:border-box;padding:8px 14px 0 {{ b.pad }}px;border-bottom:1px solid rgba(0,0,0,.6);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;line-height:15px;letter-spacing:.28em;color:{{ b.ink }};">{{ b.title }}</div>
+      <sc-if value="{{ b.hasLamp }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;left:14px;top:11px;width:9px;height:9px;border-radius:9999px;background:{{ engineLampFill }};box-shadow:{{ engineLampGlow }};"></div>
+      </sc-if>
+      <div style="position:absolute;right:14px;top:8px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;line-height:15px;letter-spacing:.28em;color:#b6bec2;">{{ b.tag }}</div>
+      <div style="position:absolute;left:0;top:30px;width:{{ b.width }}px;height:1px;background:rgba(255,255,255,.05);"></div>
+    </div>
+  </sc-for>
+
+  <sc-for list="{{ knobs }}" as="k" hint-placeholder-count="9">
+    <div style="position:absolute;left:{{ k.left }}px;top:{{ k.top }}px;width:{{ k.d }}px;height:{{ k.d }}px;">
+      <div style="position:absolute;left:50%;top:50%;width:{{ k.arcBox }}px;height:{{ k.arcBox }}px;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from 225deg,rgba(165,173,178,.26) 0turn 0.75turn,rgba(0,0,0,0) 0.75turn);mask:radial-gradient(closest-side,rgba(0,0,0,0) calc(100% - 1.4px),#000 calc(100% - 1.4px));"></div>
+      <sc-for list="{{ k.ticks }}" as="t" hint-placeholder-count="5">
+        <div style="position:absolute;left:50%;bottom:50%;width:{{ t.w }}px;height:{{ t.h }}px;margin-left:-1px;transform-origin:bottom center;transform:rotate({{ t.a }}deg);background:linear-gradient(180deg,#a5adb2 0 {{ t.ink }}px,rgba(0,0,0,0) {{ t.ink }}px);"></div>
+      </sc-for>
+      <sc-for list="{{ k.nums }}" as="n" hint-placeholder-count="5">
+        <div style="position:absolute;left:50%;top:50%;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:13px;color:#a5adb2;white-space:nowrap;transform:{{ n.tf }};">{{ n.t }}</div>
+      </sc-for>
+      <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 36% 26%,#191d21,#0c0e10 48%,#010202 100%);box-shadow:{{ capShadow }};"></div>
+      <div style="position:absolute;inset:6px;border-radius:50%;transform:rotate(-45deg);opacity:{{ specular }};background:radial-gradient(ellipse 38% 17% at 46% 17%,rgba(255,255,255,.75) 0 58%,rgba(255,255,255,.30) 72%,rgba(255,255,255,0) 84%);"></div>
+      <div style="position:absolute;left:50%;bottom:50%;width:3px;height:{{ k.pointerH }}px;margin-left:-1.5px;border-radius:1.5px;transform-origin:bottom center;transform:rotate({{ k.ang }}deg);background:#e6ebee;"></div>
+      <div style="position:absolute;left:50%;top:{{ k.unitTop }}px;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.16em;color:#a5adb2;white-space:nowrap;">{{ k.unit }}</div>
+      <div style="position:absolute;left:50%;top:{{ k.labelTop }}px;transform:translateX(-50%);font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:12px;line-height:15px;letter-spacing:.18em;color:#a5adb2;white-space:nowrap;">{{ k.name }}</div>
+    </div>
+  </sc-for>
+
+  <div style="position:absolute;left:1112px;top:382px;width:128px;display:flex;align-items:center;justify-content:center;gap:12px;">
+    <sc-if value="{{ isStereo }}" hint-placeholder-val="{{ true }}">
+      <img src="assets/chorus60/switch-stereo@2x.png" width="34" height="68" alt="" style="display:block;" />
+    </sc-if>
+    <sc-if value="{{ isMono }}" hint-placeholder-val="{{ true }}">
+      <img src="assets/chorus60/switch-mono@2x.png" width="34" height="68" alt="" style="display:block;" />
+    </sc-if>
+    <div style="display:flex;flex-direction:column;justify-content:space-between;height:68px;padding:3px 0;box-sizing:border-box;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.14em;color:#a5adb2;">STEREO</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;line-height:13px;letter-spacing:.14em;color:#a5adb2;">MONO</span>
+    </div>
+  </div>
+
+  </div>
+
+  <div style="position:absolute;left:24px;top:782px;width:400px;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#8a9196;">CH-60 · SN 0061</div>
+  <div style="position:absolute;left:924px;top:782px;width:400px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#8a9196;">CHORUS-60 · v1.0</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:892},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;I&quot;,&quot;II&quot;,&quot;I+II&quot;,&quot;OFF&quot;],&quot;default&quot;:&quot;I&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Engine page&quot;},&quot;image&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;STEREO&quot;,&quot;MONO&quot;],&quot;default&quot;:&quot;STEREO&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Engine page&quot;},&quot;programState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;factory&quot;,&quot;factory-edited&quot;,&quot;user&quot;,&quot;user-edited&quot;,&quot;naming&quot;],&quot;default&quot;:&quot;factory&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Panel state&quot;}}">
+class Component extends DCLogic {
+  // 270° sweep, −135 … +135 (KnobFilmstripComponent.cpp:7).
+  a(f) { return -135 + f * 270; }
+
+  // Rate is the one skewed control: skew 0.35, anchors asserted in ParametersStateTests.
+  rateMarks() {
+    return [
+      [0.000000, '0.05', 1], [0.286852, '0.5', 1], [0.479232, '2', 1],
+      [0.783722, '8', 1], [1.000000, '16', 1]
+    ];
+  }
+
+  knobSpec() {
+    const A = (f) => this.a(f);
+    const even5 = [0, 0.25, 0.5, 0.75, 1];
+    const N = (fs, labels, flags) => fs.map((f, i) => [f, labels[i], flags && flags[i] !== undefined ? flags[i] : 1]);
+    const pct = N(even5, ['0', '25', '50', '75', '100']);
+    const pct3 = N(even5, ['0', '', '50', '', '100'], [1, 0, 1, 0, 1]);
+    const page = this.props.page ?? 'I';
+    // MOD ENGINE row is the page — its four dials are whichever engine the buttons select.
+    const modRow = [
+      ['RATE', 'Hz', 425, 416, 76, page === 'I' ? 0.286852 : (page === 'II' ? 0.560 : 0.420), this.rateMarks()],
+      ['DEPTH', '%', 621, 416, 76, page === 'I' ? 0.38 : (page === 'II' ? 0.64 : 0.52), pct],
+      ['DELAY CENTER', 'ms', 817, 416, 76, page === 'I' ? 0.30 : (page === 'II' ? 0.183 : 0.367),
+        N(even5, ['2', '5', '8', '11', '14'])],
+      ['DECORRELATION', '%', 1013, 416, 76, page === 'I' ? 0.52 : (page === 'II' ? 0.66 : 0.44), pct]
+    ];
+    return modRow.concat([
+      ['DRIFT', '%', 389, 660, 56, 0.22, pct3],
+      ['SATURATION', '%', 569, 660, 56, 0.30, pct3],
+      ['NOISE', '%', 749, 660, 56, 0.14, pct3],
+      ['MIX', '%', 1006, 660, 56, 0.50, pct3],
+      ['OUTPUT TRIM', 'dB', 1186, 660, 56, 0.50, N(even5, ['−12', '', '0', '', '+12'], [1, 0, 1, 0, 1])]
+    ]).map(([name, unit, cx, cy, d, pf, marks]) => ({
+      name, unit, cx, cy, d, ang: A(pf),
+      marks: marks.map(([f, t, numbered]) => [A(f), t, numbered])
+    }));
+  }
+
+  renderVals() {
+    const state = this.props.programState ?? 'factory';
+    const page = this.props.page ?? 'I';
+    const bypassed = page === 'OFF';
+
+    // The Program buttons are the shared part: shared/HEADER-PART.md §6.
+    const lit = { ink: '#f4f8fa', glow: '0 0 7px rgba(244,248,250,.6)' };
+    const idle = { ink: '#9aa1a6', glow: 'none' };
+    const naming = state === 'naming';
+    const edited = state === 'factory-edited' || state === 'user-edited';
+    const user = state === 'user' || state === 'user-edited';
+    const names = {
+      'factory': ['FACT', '01 JUNO STACK I+II'],
+      'factory-edited': ['FACT', '01 JUNO STACK I+II *'],
+      'user': ['USER', 'WIDE VOICES'],
+      'user-edited': ['USER', 'WIDE VOICES *'],
+      'naming': ['NAME', 'WIDE VOICES▮']
+    };
+    const [bankTag, programName] = names[state] || names['factory'];
+
+    const knobs = this.knobSpec().map((k) => {
+      const r = k.d / 2;
+      const numR = r + 8 + 9 + 6 + 6.5;
+      return {
+        name: k.name, unit: k.unit, d: k.d, ang: k.ang,
+        left: k.cx - r, top: k.cy - r,
+        capShadow: bypassed
+          ? 'inset 0 0 0 1.5px #000000, inset 0 -2px 6px rgba(0,0,0,.7), 0 2px 4px rgba(0,0,0,.5)'
+          : 'inset 0 0 0 1.5px #000000, inset 0 1px 0 rgba(255,255,255,.22), inset 0 -2px 6px rgba(0,0,0,.7), 0 3px 6px rgba(0,0,0,.45)',
+        arcBox: k.d + 12,
+        pointerH: r - 1,
+        unitTop: k.d + 20,
+        labelTop: k.d + 34,
+        ticks: k.marks.map(([a, , numbered]) => numbered
+          ? { a, h: r + 8 + 9, ink: 9, w: 2 }
+          : { a, h: r + 8 + 5, ink: 5, w: 1.5 }),
+        nums: k.marks.filter(([, t, numbered]) => numbered && t !== '').map(([a, t]) => ({
+          t,
+          tf: 'translate(-50%,-50%) rotate(' + a + 'deg) translate(0,-' + numR + 'px) rotate(' + (-a) + 'deg)'
+        }))
+      };
+    });
+
+    // Three engine buttons in their own colours — the page selector, and this casting's signature
+    // layout. Column spacing follows the JN-80: four equal 41 px gaps, distributed not centred.
+    const lampOn = {
+      fill: 'radial-gradient(circle at 40% 32%,#ff5a4a,#ff2b1c 38%,#b0140c 72%,#6d0b06)',
+      glow: 'inset 0 1px 1px rgba(255,255,255,.3), inset 0 0 6px 1px rgba(255,43,28,.5), 0 0 8px 2px rgba(255,43,28,.35)'
+    };
+    const lampOff = {
+      fill: 'radial-gradient(circle at 40% 32%,#4a2320,#2e1513 60%,#1c0d0b)',
+      glow: 'inset 0 1px 1px rgba(255,255,255,.10), inset 0 -1px 3px rgba(0,0,0,.6)'
+    };
+    const unlit = bypassed;
+    const engine = (label, top, fill, size, on, caption) => ({
+      label, top, fill, size,
+      rowTop: top + 53,
+      captionInk: on ? '#e6ebee' : '#a5adb2',
+      shadow: unlit
+        ? 'inset 0 -3px 8px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.5)'
+        : (on
+          ? 'inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 8px rgba(0,0,0,.28), 0 3px 7px rgba(0,0,0,.5)'
+          : 'inset 0 1px 0 rgba(255,255,255,.35), inset 0 -3px 8px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.45)'),
+      // OFF is the absence of a selection, so it carries no lamp — its slot is held open
+      // so the three legends share one left edge.
+      lampFill: label === 'OFF' ? 'transparent' : (on ? lampOn : lampOff).fill,
+      lampGlow: label === 'OFF' ? 'none' : (on ? lampOn : lampOff).glow
+    });
+
+    return {
+      caption: naming ? 'NAME PROGRAM' : 'PROGRAM',
+      bankTag, programName, knobs,
+      saveInk: (!naming && edited ? lit : idle).ink, saveGlow: (!naming && edited ? lit : idle).glow,
+      storeInk: (naming ? lit : idle).ink, storeGlow: (naming ? lit : idle).glow,
+      deleteInk: (!naming && user ? lit : idle).ink, deleteGlow: (!naming && user ? lit : idle).glow,
+      cancelInk: (naming ? lit : idle).ink, cancelGlow: (naming ? lit : idle).glow,
+      groupFilter: bypassed ? 'brightness(0.5)' : 'none',
+      engineLampFill: bypassed ? lampOff.fill : lampOn.fill,
+      engineLampGlow: bypassed ? lampOff.glow : lampOn.glow,
+      // The IMAGE switch is its own hardware part, from its plate's control sprites. Each state
+      // gets a literal src — a hole in an img src is fetched verbatim before values resolve.
+      isStereo: (this.props.image ?? 'STEREO') !== 'MONO',
+      isMono: (this.props.image ?? 'STEREO') === 'MONO',
+      specular: bypassed ? 0 : 1,
+      engineButtons: [
+        engine('II', 34.5, 'linear-gradient(160deg,#e5a021,#c07908)', 22, page === 'II' || page === 'I+II'),
+        engine('I', 201, 'linear-gradient(160deg,#ead681,#d0b857)', 22, page === 'I' || page === 'I+II'),
+        engine('OFF', 367.5, 'linear-gradient(160deg,#eaecec,#c9cdcf)', 18, bypassed)
+      ],
+      boxes: [
+        { title: 'MOD ENGINE', tag: '', hasLamp: true, pad: 31, left: 285, top: 296, width: 1039, height: 240, ink: bypassed ? '#8a9196' : '#e6ebee' },
+        { title: 'CHARACTER', tag: '', hasLamp: false, pad: 14, left: 285, top: 552, width: 567, height: 214, ink: '#e6ebee' },
+        { title: 'OUTPUT', tag: '', hasLamp: false, pad: 14, left: 868, top: 552, width: 456, height: 214, ink: '#e6ebee' }
+      ],
+      // §4B two-position shoe — the shoe carries the state, both positions printed alike.
+      imageSwitch: [
+        { label: 'STEREO', face: (this.props.image ?? 'STEREO') === 'STEREO' ? 'linear-gradient(180deg,#565d63,#3a4045)' : '#0a0c0d', shadow: (this.props.image ?? 'STEREO') === 'STEREO' ? 'inset 0 1px 0 rgba(255,255,255,.18), inset -1px 0 0 rgba(0,0,0,.5)' : 'inset 1px 0 0 rgba(255,255,255,.04)' },
+        { label: 'MONO', face: (this.props.image ?? 'STEREO') === 'MONO' ? 'linear-gradient(180deg,#565d63,#3a4045)' : '#0a0c0d', shadow: (this.props.image ?? 'STEREO') === 'MONO' ? 'inset 0 1px 0 rgba(255,255,255,.18), inset -1px 0 0 rgba(0,0,0,.5)' : 'inset 1px 0 0 rgba(255,255,255,.04)' }
+      ],
+      tracePoints: Array.from({ length: 209 }, (_, i) => {
+        const x = i * 5;
+        const rate = page === 'II' ? 0.30 : (page === 'I+II' ? 0.19 : 0.11);
+        const depth = bypassed ? 0 : (page === 'II' ? 0.62 : (page === 'I+II' ? 0.52 : 0.38));
+        const second = page === 'I+II' ? Math.sin(i * 0.31) * 0.35 : 0;
+        return x + ',' + (59.5 + (Math.sin(i * rate) + second) * depth * 46).toFixed(1);
+      }).join(' ')
+    };
+  }
+}
+</script>
+</body>
+</html>

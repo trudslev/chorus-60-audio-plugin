@@ -66,7 +66,7 @@ public:
 
           - the anchor row — the band's bottom edge, `bandY + bandH`
           - the width the list opens at — `lcdW`
-          - where its foot lands — `programListFootY`, the chassis-inset contract
+          - the width the list opens at — `lcdW`
 
         and the 8 px lead is derived from the anchor here, because it is a property of JUCE's
         clamping rather than of the part. */
@@ -87,11 +87,10 @@ public:
         room actually below the anchor is the display's own height less than that. */
     static int menuHostTop() noexcept { return menuAnchorY() - 8; }
 
-    /** The list's foot — the chassis inset above the panel's bottom, per the shared contract. */
-    static int menuHostBottom (int panelHeight) noexcept
-    {
-        return nf::HeaderGeometry::programListFootY (panelHeight);
-    }
+    /** The list's foot — the panel's bottom edge, flush. A 16 px inset was briefly contracted
+        here and §12 of HEADER-PART Revision 4 withdrew it: the margin was reconstructed to explain
+        Reflect-84's published 537 and appears in no spec as a list figure. */
+    static int menuHostBottom (int panelHeight) noexcept { return panelHeight; }
 
     void mouseDown(const juce::MouseEvent&) override;
     void mouseUp(const juce::MouseEvent&) override;

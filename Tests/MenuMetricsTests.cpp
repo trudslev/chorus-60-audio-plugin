@@ -75,16 +75,14 @@ public:
             expectEquals ((int) Chorus60Theme::Layout::programWindowW, nf::HeaderGeometry::lcdW);
             expectEquals ((int) Chorus60Theme::Layout::programWindowW, 641);
 
-            // And its foot is the chassis inset above the panel bottom — the shared contract, not
-            // this casting's own figure, and not flush to the edge.
+            // The foot is the panel's bottom edge, flush. A 16 px inset was briefly contracted and
+            // §12 withdrew it — the margin had been reconstructed to explain Reflect-84's published
+            // 537 and appears in no spec as a list figure.
             const int panelH = (int) Chorus60Theme::Layout::canvasHeight;
-            expectEquals (ProgramHeader::menuHostBottom (panelH),
-                          nf::HeaderGeometry::programListFootY (panelH));
-            expectEquals (ProgramHeader::menuHostBottom (812), 796);
-
-            expectLessThan (ProgramHeader::menuHostBottom (panelH), panelH,
-                            "a flush list is the pre-contract behaviour — the foot must sit inside "
-                            "the chassis, on the same frame the header block observes");
+            expectEquals (ProgramHeader::menuHostBottom (panelH), panelH,
+                          "the list must run to the panel's bottom edge; an inset here is the "
+                          "withdrawn contract returning");
+            expectEquals (ProgramHeader::menuHostBottom (812), 812);
 
             logMessage ("  anchor " + juce::String (ProgramHeader::menuAnchorY())
                         + ", host top " + juce::String (ProgramHeader::menuHostTop())
