@@ -431,7 +431,12 @@ void ProgramHeader::paint(juce::Graphics& g)
         const bool caretOn = (juce::Time::getMillisecondCounter() % 1000) < 500;
         const juce::String text = typedName + (caretOn ? juce::String(juce::CharPointer_UTF8("\xe2\x96\x88"))
                                                          : juce::String());
-        drawTrackedText(g, text, lcdFont, lcdTracking, nameCellRect.reduced(12.0f, 0.0f),
+        // **The same run as every other path.** This used reduced(12, 0) — 328 px against the
+        // 326 the stored-name path draws into — so the field a name is TYPED in was two pixels
+        // wider than the field it is SHOWN in. One run now, so a name that fits while typing
+        // cannot fail to fit once stored.
+        drawTrackedText(g, text, lcdFont, lcdTracking,
+                         nameCellRect.withTrimmedRight(Layout::lcdNameRightPadding),
                          juce::Justification::left, Colour::ledWindowText);
     }
     else if (const auto takeover = readout.textAt(juce::Time::getMillisecondCounter());

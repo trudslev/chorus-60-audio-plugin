@@ -20,6 +20,7 @@ target_sources(Chorus60Tests PRIVATE
     ProgramManagerTests.cpp
     FactoryProgramsTests.cpp
     CPUCheckTests.cpp
+    DisplayBudgetTests.cpp
     ../Source/DSP/ModulationEngine.cpp
     ../Source/DSP/BBDDelayLine.cpp
     ../Source/DSP/StereoDecorrelationStage.cpp

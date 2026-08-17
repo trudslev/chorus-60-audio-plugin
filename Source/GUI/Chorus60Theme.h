@@ -333,12 +333,63 @@ namespace Chorus60Theme
         constexpr float programNameCellX = 618.0f, programNameCellY = 33.0f;
         constexpr float programNameCellW = 352.0f, programNameCellH = 32.0f;
 
-        // Share Tech Mono 15 px at .10em advances 9.6 px per character, so the 352 px run holds 36.
-        // The longest strings that can appear are a 27-character "NN " + 24-char name and a
-        // 25-character parameter readout, so both clear it with 90+ px to spare. Do not narrow the
-        // window without re-checking those two.
+        /*  **ONE RUN, ONE SOURCE. This carried THREE figures for one quantity.**
+
+            `lcdCharacterBudget` read 36 — the 352 px cell divided by the advance. The paint path
+            trimmed `lcdNameRightPadding` off that cell and drew into 326 px, which is 33. The naming
+            field used a different inset again, `reduced (12, 0)` = 328 px, which is 34. And
+            `readoutFormat()` handed core the **cell** figure, so the live readout believed it had
+            three characters it does not have.
+
+            None of the three was wrong about what it measured; they measured different things and
+            were all called the budget. That is the recorded one-value-two-meanings shape with an
+            extra head — and the cap, at 31, was derived from the middle one, so the only figure that
+            constrains what a user can type was the only one nobody could find from the constant's
+            name.
+
+            **The drawn run is the source now.** The cell and the padding are stated; the run is
+            their difference; the character count comes from measuring the advance of the face the
+            paint path actually draws, which is the one term that genuinely belongs to the font
+            rather than to the cell. `DisplayBudgetTests` does that measuring and asserts the run
+            holds **cap + marker**, not merely the cap.
+
+            When this casting's header moves onto the shared part, the cell becomes
+            `nf::LcdCell::nameAreaW` (538.00) and **`lcdNameRightPadding` must go to zero**: the
+            part's name area already excludes the chevron through its own 30 px trim, so keeping this
+            one subtracts the same affordance twice. The arithmetic is exact and unforgiving — 538.00
+            holds 49 and the shared cap is 47, so 47 + 2 fits precisely, while trimming 26 again
+            leaves a 47-character run for a 47-character cap and no room for the marker. A cap may
+            never shrink, so that is the one figure here that cannot be corrected after the fact. */
         constexpr float lcdCssPx = 15.0f, lcdTrackingEm = 0.10f;
-        constexpr int lcdCharacterBudget = 36;
+
+        /** The name cell, and the padding that clears the chevron. */
+        constexpr float lcdNameCellW_ = programNameCellW;
+        constexpr float lcdNameRightPadding = 26.0f;
+
+        /** **The run the panel actually draws into** — every path uses this, including naming. */
+        constexpr float lcdDrawnRunW = lcdNameCellW_ - lcdNameRightPadding;
+
+        /** The trailing " *" on an edited Program. The cap must leave room for it. */
+        constexpr int lcdDirtyMarkerChars = 2;
+
+        /** Stated: Share Tech Mono at 15 px with .10 em tracking. `DisplayBudgetTests` measures
+            both off the face the paint path draws, so the stated pair is checkable rather than
+            trusted — the advance is the one term that belongs to the font. */
+        constexpr float lcdTrackingPx = lcdCssPx * lcdTrackingEm;      // 1.5
+        constexpr float lcdGlyphAdvance = 8.1f;                        // 9.6 per character less it
+
+        /** **By exact fit, not division** — the last glyph pays no trailing gap, so the two
+            questions come apart within one tracking step of a boundary. */
+        constexpr int charactersFitting (float runW)
+        {
+            int n = 0;
+            while ((float) (n + 1) * lcdGlyphAdvance + (float) n * lcdTrackingPx <= runW)
+                ++n;
+            return n;
+        }
+
+        constexpr int lcdCharacterBudget = charactersFitting (lcdDrawnRunW);
+
         constexpr int maxProgramNameLength = 31; // mirrors ProgramManager::maxProgramNameLength
 
         // Held after the gesture ends before the program name returns (section 5).
@@ -356,7 +407,9 @@ namespace Chorus60Theme
         constexpr float lcdChevronStroke = 1.4f;
         constexpr float lcdChevronInsetRight = 10.0f;
         constexpr float lcdChevronAlpha = 0.75f;
-        constexpr float lcdNameRightPadding = 26.0f;
+        // lcdNameRightPadding lives with the LCD run above — it is a term of the character budget,
+        // not a property of the chevron, and holding it beside the glyph is how it came to be
+        // subtracted a second time from a cell that already excluded the chevron.
 
         /** **The plate bakes both button FACES now, and the build draws only the legends.**
 

@@ -25,6 +25,11 @@
 class ProgramManager : private juce::AsyncUpdater
 {
 public:
+    /** **Public so a test can bind it to the panel's copy.** This header is compiled into targets
+        with no GUI, so it cannot read `Chorus60Theme`; the duplication is structural and
+        `DisplayBudgetTests` asserting the two equal is the only thing that stops them drifting. */
+    static constexpr int maxProgramNameLength = 31;   // mirrored by Layout::maxProgramNameLength
+
     /** @param userDirectoryOverride  where User Programs live. Defaults to the real per-OS
                                       location; a test passes a temporary directory so it never
                                       writes into the user's own Programs folder. */
@@ -161,5 +166,4 @@ private:
     // The old 24 came from the spec rather than from either measurement. Chorus60Theme.h's
     // lcdCharacterBudget still says 36; that figure describes the cell, not the drawn run, and the
     // comment there now says so.
-    static constexpr int maxProgramNameLength = 31;   // mirrored by Layout::maxProgramNameLength
 };
