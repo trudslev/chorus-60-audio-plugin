@@ -277,9 +277,9 @@ panel. Tracking them as one column is how "authored" comes to read as "done".
 
 | The old plate printed | Count | Authored | Drawn |
 |---|---|---|---|
-| Tick rings — major and minor | 9 knobs | **yes** — §3.1, `73d3a09` | **no** |
-| Scale numerals | 9 knobs | **yes**, same tables | **no** |
-| Units, in the arc's bottom gap | 6 of 9 | no | **no** |
+| Tick rings — major and minor | 9 knobs | **yes** — §3.1, `73d3a09` | **STRUCK** — all nine, named individually |
+| Scale numerals | 9 knobs | **yes**, same tables | **STRUCK** — 5 on primary, 3 on standard |
+| Units, in the arc's bottom gap | 6 of 9 | **yes** — on the ring | **STRUCK** with them |
 | Global knob labels | 5 | n/a — strings | **no** |
 | Mod slot labels | 4 | n/a | yes — `ModSlotLabels`, the one part that always was |
 | Group headings — CHARACTER, OUTPUT | 2 | n/a | **no** (MOD ENGINE's is `paintOverChildren`) |

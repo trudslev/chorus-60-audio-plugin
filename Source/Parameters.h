@@ -182,6 +182,14 @@ namespace Chorus60Ranges
 
     // 2-14 ms spans both the I/II delay band and the narrower I+II one (3.3-3.7 ms). The previous
     // 5 ms floor could not represent the I+II centre at all.
+    /** OUTPUT TRIM. **Named because the printed ring reads it too** — an inline range here and a
+        second copy behind the marks is the arrangement that lets a numeral point where the pointer
+        never goes, which is exactly what Fifth Member's Hz ring did with a transcribed skew. */
+    inline juce::NormalisableRange<float> trimDb()
+    {
+        return juce::NormalisableRange<float>(-12.0f, 12.0f);
+    }
+
     inline juce::NormalisableRange<float> delayCentreMs()
     {
         return juce::NormalisableRange<float>(2.0f, 14.0f);
@@ -328,7 +336,7 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createChorus60Paramet
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(
         juce::ParameterID{ParamIDs::trim, 1}, "OUTPUT TRIM",
-        juce::NormalisableRange<float>(-12.0f, 12.0f), 0.0f, dbAttrs));
+        Chorus60Ranges::trimDb(), 0.0f, dbAttrs));
 
     // New parameters are appended below this line, never inserted above, to keep existing
     // sessions' and programs' parameter IDs stable.

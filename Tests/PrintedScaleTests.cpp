@@ -164,6 +164,57 @@ public:
                 expect (s.marks != nullptr && s.count == 5, "a mod ring is missing its marks");
         }
 
+        beginTest ("All NINE rings have a drawing site, named one at a time");
+        {
+            /*  **The enumeration's second column, struck per row rather than per pass.** A paint
+                pass that draws "the rings" looks complete on a panel while one knob silently has
+                none — the knob still draws, the pointer still moves, and only a comparison against
+                the old plate would show it. So this walks the same list the panel paints from and
+                names any knob missing from it, rather than asserting the pass ran.
+
+                It counts what the painter PRODUCED, too: `drawKnobScale` returns how many majors it
+                numeralled, so a ring that is present in the list and draws nothing is caught as
+                well as one that is absent from it. */
+            const auto rings = Chorus60Theme::ringsToDraw();
+
+            expectEquals ((int) rings.size(), 9, "the panel does not paint nine rings");
+
+            const char* const expected[] { "rate", "depth", "delayCenter", "decorrelation",
+                                           "drift", "saturation", "noise", "mix", "trim" };
+
+            for (const auto* id : expected)
+            {
+                bool found = false;
+
+                for (const auto& r : rings)
+                    if (juce::String (r.paramID) == id)
+                        found = true;
+
+                expect (found, juce::String (id) + " has NO ring in the paint pass. Its knob will "
+                               "still draw and its pointer will still move, so nothing on the panel "
+                               "shows this");
+            }
+
+            // Drive the painter into a real context and count what each ring produced.
+            juce::Image target { juce::Image::ARGB, 1340, 812, true };
+            juce::Graphics g { target };
+
+            for (const auto& r : rings)
+            {
+                const int numeralled = Chorus60Theme::drawKnobScale (g, r);
+
+                logMessage ("  " + juce::String (r.paramID) + ": "
+                            + juce::String (r.scale.count) + " marks, "
+                            + juce::String (numeralled) + " numeralled");
+
+                expectGreaterThan (numeralled, 0,
+                                   juce::String (r.paramID) + "'s ring drew no numerals at all");
+                expect (numeralled == 3 || numeralled == 5,
+                        juce::String (r.paramID) + ": §3.1 gives five numerals on primary and three "
+                        "on standard, and this is neither");
+            }
+        }
+
         beginTest ("OUTPUT TRIM keeps its signs, and the minus is U+2212");
         {
             expect (juce::String (trimMarks[4].printed).startsWith ("+"),

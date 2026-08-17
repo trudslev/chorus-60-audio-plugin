@@ -22,6 +22,7 @@ target_sources(Chorus60Tests PRIVATE
     CPUCheckTests.cpp
     DisplayBudgetTests.cpp
     PrintedScaleTests.cpp
+    ../Source/GUI/KnobScaleRing.cpp
     ../Source/DSP/ModulationEngine.cpp
     ../Source/DSP/BBDDelayLine.cpp
     ../Source/DSP/StereoDecorrelationStage.cpp

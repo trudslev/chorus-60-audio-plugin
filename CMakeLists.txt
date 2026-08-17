@@ -156,6 +156,7 @@ target_sources(Chorus60 PRIVATE
     Source/GUI/KnobFilmstripComponent.cpp
     Source/GUI/ImageSwitch.cpp
     Source/GUI/DimmableGroup.cpp
+    Source/GUI/KnobScaleRing.cpp
     Source/GUI/ModScope.cpp
     Source/GUI/EngineButtonComponent.cpp
     Source/GUI/ProgramHeader.cpp

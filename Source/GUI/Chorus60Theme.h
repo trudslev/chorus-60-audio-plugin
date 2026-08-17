@@ -43,6 +43,12 @@ namespace Chorus60Theme
         // contrast: 15.24-15.37:1 vs plate:modEngineHeadingRow [functional]
         inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // engaged button letters
         inline const juce::Colour controlLabelText{0xFFA5ADB2};    //  8.04:1 - functional text
+
+        /** §3's tick ink and §3.1's numerals — the same `#a5adb2` the control labels use, which is
+            why they are aliases rather than three constants that happen to agree. One value, one
+            meaning: if the label ink moves, the ring moves with it, because they are the same ink. */
+        inline const juce::Colour& knobTick = controlLabelText;
+        inline const juce::Colour& knobNumeral = controlLabelText;
         // **Functional, not a caption.** All three uses carry live state: the MOD ENGINE status
         // note prints the engine configuration or BYPASS, the footer prints ENGAGED/BYPASS, and
         // the scope status row prints its division and state. Flavour is for text that can be
@@ -211,6 +217,16 @@ namespace Chorus60Theme
             TRIM move +33** — the two lower boxes absorbing call 1's +58 of width. Three of five
             staying put makes the two that move look like transcription slips when the row is checked
             as a group, so they are checked one at a time against §3. */
+        /** §3's tick and numeral figures. The 29.5 offset is the catalogue's clearance chain —
+            r + 8 ink gap + 9 major tick + 6 clearance + 6.5 half line box — which this casting
+            follows exactly, so none of these is a per-casting term. */
+        constexpr float knobTickInkGap = 2.0f;
+        constexpr float knobMajorTickLength = 9.0f, knobMajorTickWidth = 2.0f;
+        constexpr float knobMinorTickLength = 5.0f, knobMinorTickWidth = 1.5f;
+        constexpr float knobNumeralRingOffset = 29.5f;
+        constexpr float knobNumeralCssPx = 11.0f, knobNumeralTrackingEm = 0.0f;
+        constexpr float knobUnitDrop = 6.0f;
+
         constexpr float modKnobD = 76.0f;
         constexpr float globalKnobD = 56.0f;
 
@@ -646,6 +662,33 @@ namespace Chorus60Theme
     {
         return centre + directionForAngleDegrees(angleDegrees) * radius;
     }
+
+    /*  **ONE ENUMERABLE SOURCE FOR THE NINE RINGS, so the pass can be COUNTED rather than looked
+        at.** A paint pass that draws "the rings" looks complete on a panel while one knob silently
+        has none: the knob still draws, the pointer still moves, and only a comparison against the
+        old plate shows it. The enumeration has nine ring rows and nine numeral rows and each strikes
+        on its own, so the drawing has to be enumerable too.
+
+        Both tables feed this — the four paged mod rings and the five global ones — and nothing else
+        draws a mark. `Tests/PrintedScaleTests` walks what this returns and names any knob missing
+        from it. */
+    struct RingToDraw
+    {
+        const char* paramID;                    // for naming a failure, not for lookup
+        juce::Point<float> centre;
+        float diameter;
+        Layout::KnobScale scale;
+        juce::NormalisableRange<float> range;   // what actually drives the pointer
+    };
+
+    /** The nine rings the panel draws, in one enumerable list. **Defined in `KnobScaleRing.cpp`**
+        rather than here, because it reads the parameter ranges and this header must not depend on
+        the APVTS — the theme describes the panel, not the plugin. */
+    std::vector<RingToDraw> ringsToDraw();
+
+    /** Draws one ring — ticks, numerals and the unit — and returns how many MAJORS it numeralled,
+        so a caller can count what it produced instead of trusting that it ran. */
+    int drawKnobScale (juce::Graphics& g, const RingToDraw& ring);
 
     /** The rect of one group box below its heading rule - the region the OFF state multiplies. */
     inline juce::Rectangle<float> groupDimRect(float x, float y, float w, float h) noexcept

@@ -435,6 +435,16 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
 {
     using namespace Chorus60Theme;
 
+    /*  **The nine printed rings.** They were pixels in the previous plate; the new one carries the
+        fascia, the badge and the box frames only, so every tick and numeral is drawn here or is not
+        drawn at all — and an absent ring is silent, where a doubled one used to be visible.
+
+        Driven from `ringsToDraw()` rather than from a hand-written sequence, so the set the panel
+        paints and the set the test walks are the same object. A pass that enumerated the knobs
+        itself could omit one and still look complete. */
+    for (const auto& ring : ringsToDraw())
+        drawKnobScale (g, ring);
+
     // Only three strings are drawn out here, all of them above a heading rule or outside the boxes,
     // and all three because they carry live state. Everything else on the fascia is baked - see
     // design/CHORUS60-BUILD-HANDOFF.md section 1. The slot labels are NOT here: they sit below the
