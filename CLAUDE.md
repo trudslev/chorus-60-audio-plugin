@@ -366,9 +366,32 @@ plausible small grey string in roughly the right place.
 
 **So the second column answers "does a drawing site exist", which is not "is it drawn right".** That
 is the right question for this table — it was built to catch *absence*, which is the failure the
-plate inversion introduced — but a row that strikes on existence will read as finished. The type
-pass is where correctness gets checked, and it needs its own list rather than this one's struck
-rows.
+plate inversion introduced — but a row that strikes on existence will read as finished.
+
+### THE TYPE PASS'S OWN LIST — and it does not inherit the struck rows
+
+**Starting from this table's struck column would start from the wrong claim.** Every row above
+strikes on a drawing site existing; the type pass asks whether each site draws §8's face, size,
+line box, tracking and ink. Those are different questions and the second is not implied by the
+first, which the scope annotations demonstrated by being struck and wrong four ways at once.
+
+**Its first four entries are already known**, from the annotations, and they are the four shapes to
+sweep the rest of the panel for rather than four one-off fixes:
+
+| Found on the annotations | The shape | Sweep for |
+|---|---|---|
+| `monoFont (9.0f)` | a **raw JUCE height** where a CSS px belongs — ascent+descent against an em size | every `labelFont(` / `monoFont(` call whose argument did not come through a `…ForCssPx` converter |
+| 9 where §8 says 11 | a size that **predates the current spec** | every type size against §8's table, read off the call site rather than the constant's name |
+| `drawText` rather than `drawTrackedText` | **tracking silently not applied** — JUCE has no letter-spacing, so the wrong call is the wrong glyph run | every `g.drawText` / `drawFittedText` on panel lettering |
+| `"- MAX"` | an **ASCII hyphen** where the ruling is U+2212 | every literal minus, en dash, middle dot and degree sign |
+
+Two of the four are invisible on the panel (a size 20 % small and missing tracking both look like
+type), one is invisible unless compared against a sibling glyph, and one renders a plausible string.
+**None would fail a build, a test or a glance** — which is the same property the absent rows had, and
+the reason this list exists separately rather than as a note on the pass.
+
+They are **not** assumed fixed by the annotation edit. That edit corrected three sites; the sweep is
+what says whether the other several dozen carry the same four shapes.
 
 **The "Wordmark" row in the first version conflated two different objects.** It read *"stays baked
 — it is the CHORUS badge"*, and the badge genuinely is baked. The header nameplate's `CHORUS-60` is
