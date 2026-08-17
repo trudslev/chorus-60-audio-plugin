@@ -249,6 +249,46 @@ Only these are drawn at runtime:
 | MOD ENGINE heading + status note, footer | `Chorus60EditorContent::paintOverChildren` |
 | The five page-suffixed slot labels | `ModSlotLabels` |
 
+### THE PLATE'S PRINTED LAYER — what it carried, and where each must now draw
+
+**Written 2026-08-17, while BOTH plates are still in the tree, because this is the last moment the
+reference exists.** `design/assets/chorus60-background-plate@2x.png` is the superseded plate and
+`@3x.png` is the new one; once the old one goes, nothing states what it used to print.
+
+**The failure mode INVERTED with the asset format and the new one is silent.** While the printed
+layer was baked, the hazard was *double-printing* — a runtime draw landing on top of baked ink at a
+one-pixel offset, which this file warns about in three places and which is **visible**. The new plate
+carries the fascia gradient, the CHORUS badge and the box frames and nothing else, so the same
+element now fails by being **absent**, and the panel merely looks slightly emptier than the render.
+
+So the check the body layout needs is a **completeness** one, not a duplication one: enumerate what
+the old plate printed and assert each has a drawing site. A forward check passes the moment
+*something* is drawn; only comparing against what was there catches a subset — the same shape as the
+icon set comparison, where a delivered directory smaller than the one it replaced passed every arm
+that was written.
+
+**Measured 2026-08-17: `drawTickRing`, `scaleNumeral` and `numeralRadius` return no hits anywhere in
+`Source/`.** Not one tick, numeral or unit has a drawing site today. The printed layer is not
+partially migrated; it is entirely unbuilt.
+
+| The old plate printed | Count | Drawing site today |
+|---|---|---|
+| Tick rings — major and minor | 9 knobs | **none** |
+| Scale numerals | 9 knobs | **none** |
+| Units, in the arc's bottom gap | 6 of 9 | **none** |
+| Global knob labels | 5 | **none** |
+| Mod slot labels | 4 | `ModSlotLabels` — already runtime, the one part that was |
+| Group headings — CHARACTER, OUTPUT | 2 | **none** (MOD ENGINE's is `paintOverChildren`) |
+| Model line | 1 | **none** |
+| Switch's printed STEREO / MONO | 2 | **none** — §5 puts them right of the sprite |
+| PROGRAM / IN / OUT captions | 3 | the shared header part draws these now |
+| Wordmark | 1 | **stays baked** — it is the CHORUS badge, §1 |
+| Wells for scope, LCD, two meters | 4 | box frames stay baked; the wells' contents are runtime |
+
+**Nothing in the "none" rows will fail a build, a test or a glance at a diff.** That is the whole
+reason the table is here rather than left to the spec's element list — the spec says what the panel
+should show, and only this says what stopped being drawn for it.
+
 `PanelChrome` and `WordmarkComponent` are **deleted**, not adapted - everything they drew is
 silkscreen now. So is `KnobValueLabel`, the standing value under every knob, and the drag-time popup:
 revision 2 removed all standing readouts, and the LCD is the only numeric display on the panel. The
