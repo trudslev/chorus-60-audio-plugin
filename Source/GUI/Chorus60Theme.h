@@ -40,9 +40,22 @@ namespace Chorus60Theme
         // approximations. The retired values, for anyone reading an old commit: #8A9196 as a *label*
         // colour, #7B8287, #5F666B and #5A6165 have all collapsed into the two below, and #C6CED3
         // went with the standing value readouts.
-        // contrast: 15.24-15.37:1 vs plate:modEngineHeadingRow [functional]
+        /** Box headings, the scope title, and the nameplate's wordmark and descriptor. **The header
+            block is its worst ground, not a box heading row** — `#24292c` is lighter than the box
+            field, and a light ink's worst case is its lightest ground. That ground is a colour
+            constant since the revision-4 plate stopped carrying the block. */
+        // contrast: 12.24-15.37:1 vs plate:groupHeadingRow,headerBlockTop [functional]
         inline const juce::Colour engravedHeadingText{0xFFE6EBEE}; // engaged button letters
-        inline const juce::Colour controlLabelText{0xFFA5ADB2};    //  8.04:1 - functional text
+
+        /** Knob labels, tick rings, numerals, printed units and the IMAGE switch's two legends —
+            everything printed inside a group box.
+
+            **Its 8.04 was a bare comment, so nothing could check it.** Converted to the machine
+            readable form in the same pass that found `buttonCapTop` one digit adrift: a ratio
+            written as prose is a record with no consumer, which is the failure that entry is
+            about. */
+        // contrast: 8.11-8.24:1 vs plate:groupField [functional]
+        inline const juce::Colour controlLabelText{0xFFA5ADB2};
 
         /** §3's tick ink and §3.1's numerals — the same `#a5adb2` the control labels use, which is
             why they are aliases rather than three constants that happen to agree. One value, one
@@ -54,13 +67,25 @@ namespace Chorus60Theme
             item 6 raised all four together — the body had been carrying `#8a9196` at **4.60**
             against its own header block, which that round records as the worst functional figure it
             found, while the six-material strip already held the corrected hex.
-            // contrast: 7.79:1 vs plate:headerBlock [functional] */
+            **The ground is a COLOUR CONSTANT, not `plate:headerBlock`.** It was written as a plate
+            region in the pass that added it, which was true of the revision-2 plate and is not of
+            the revision-4 one — the block is painted from `headerBlockTop` now. An annotation
+            naming a region of an asset that no longer contains it is a ground the tool cannot
+            resolve, and it said so.
+            // contrast: 7.79:1 vs headerBlockTop [functional] */
         inline const juce::Colour captionSecondary{0xFFB6BEC2};
-        // **Functional, not a caption.** All three uses carry live state: the MOD ENGINE status
-        // note prints the engine configuration or BYPASS, the footer prints ENGAGED/BYPASS, and
-        // the scope status row prints its division and state. Flavour is for text that can be
-        // missed. Raised from #8A9196, which read 5.78 against the plate under a 7:1 bar.
-        // contrast: 7.09-7.38:1 vs plate:modEngineHeadingRow,plate:modEngineStatusNote,plate:footerRow [functional]
+        /*  **Functional, not a caption.** Its uses carry live state: the scope status row prints
+            its division and the engine configuration, and the footer prints ENGAGED/BYPASS.
+            Flavour is for text that can be missed. Raised from #8A9196, which read 5.78 against the
+            plate under a 7:1 bar.
+
+            **Two grounds now, not three, and both moved.** The annotation named
+            `plate:modEngineStatusNote` — an element §2.1 DELETED, since no panel text relabels
+            itself on a page change — and sampled all three off the `@2x` plate on the superseded
+            1282 x 777 canvas. Re-derived against the delivered @3x plate, the stated range moves
+            7.09-7.38 to **7.31-7.44**: not drift in the ink, but the ground it is quoted against
+            being a different asset. */
+        // contrast: 7.09-7.59:1 vs plate:scopeCaptionRow,plate:footerRow [functional]
         inline const juce::Colour captionTertiary{0xFF9CA2A6};
 
         /*  **THE HEADER BLOCK'S OWN MATERIAL. §1: `linear-gradient(180deg, #24292c, #171a1c)`.**
