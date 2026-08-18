@@ -11,6 +11,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | Share Tech Mono | all six — the shared LCD face, meter values | OFL | **ships in all six** — reflect-84 and elmer landed this call |
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
+| **Archivo Expanded Bold** (+ the variable file) | elmer — wordmark | **OFL 1.1** | **ships** — landed this call, `elmer/fonts/` |
 | Librestile Extended | chorus-60 — wordmark | licensed, embeddable | ships |
 | Tudor Victors | gatecrasher — wordmark | licensed, embeddable | ships |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
@@ -48,6 +49,81 @@ folder held no Share Tech Mono. **The face is now in it, so the rise is measured
 ships** and Elmer's LCD no longer has to be deferred. Reflect-84's type pass is unblocked — its body
 was already finished, so it is the casting the gate was costing most. TapeRot, the cheapest remaining
 panel at +4 px, has its last dependency closed.
+
+## Elmer's wordmark: Archivo, not Archivo Black
+
+**The exact face:**
+
+| Field | Value |
+|---|---|
+| Family | **Archivo** |
+| Designer / foundry | Héctor Gatti · **Omnibus Type** |
+| Licence | **SIL Open Font License 1.1** — embeddable |
+| Kind | **variable**, two axes: `wdth` and `wght` (Archivo became variable in 2021; current release 2.001) |
+| Google Fonts filename | **`Archivo[wdth,wght].ttf`** — the axes-in-brackets convention, no `VF` suffix |
+| Repository path | `ofl/archivo/` in `google/fonts` |
+| **Face of record** | **`elmer/fonts/Archivo_Expanded-Bold.ttf`** — `wdth` 125 · `wght` 700, 121136 bytes |
+| Also shipped | **`elmer/fonts/Archivo-VariableFont_wdth_wght.ttf`** — 652084 bytes; the same design as a variable file |
+| Not these | `Archivo-Bold.ttf` (normal width) · `Archivo_SemiExpanded-*` (`wdth` ~112) · `Archivo-Black.ttf` (`wght` 900) · `Archivo_Expanded-SemiBold.ttf` (unused — see below) · any `*Italic` |
+| CSS as the panels declare it | `font-family:'Archivo'; font-weight:700; font-stretch:125%` |
+| Equivalent low-level form | `font-variation-settings:'wdth' 125,'wght' 700` |
+| Request URL the panels load | `https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600;125,700` |
+
+**Both files ship, and they carry different jobs.** The **static** is the face of record — the build
+embeds statics, and `Archivo_Expanded-Bold.ttf` is exactly `wdth 125 / wght 700` with no axis to set.
+The **variable** file is included because the design sources declare the stretched form
+(`'Archivo'` + `font-stretch:125%`), which only a variable file can satisfy; a build that prefers it
+can use it unchanged.
+
+**Only weight 700 is used, anywhere.** `Archivo_Expanded-SemiBold.ttf` is **not needed** and should
+not be shipped. The panels' request URL asks for `125,600;125,700`, but **no element in any of the six
+panels or in the header part renders weight 600 in Archivo** — the 600 is an over-request left in the
+URL, now removed from it. An earlier revision of this section said the header part needed SemiBold;
+that was read off the request URL rather than off the markup, which is the same class of error as
+trusting a ratio without its base.
+
+**Two corrections to earlier revisions of this section, kept because both were confidently wrong:**
+the static family *does* ship an Expanded width (no instance needs cutting — Archivo's statics cover
+six widths at every weight), and SemiBold was never required.
+
+**With static faces, drop `font-stretch`.** The width is already in the file, so
+`font-stretch: 125%` on top of an Expanded face either does nothing or synthesises a second stretch,
+depending on the renderer:
+
+```css
+@font-face { font-family: 'Archivo Expanded'; src: url('fonts/Archivo_Expanded-Bold.ttf') format('truetype');
+             font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Archivo Expanded'; src: url('fonts/Archivo_Expanded-SemiBold.ttf') format('truetype');
+             font-weight: 600; font-display: swap; }
+```
+
+then `font-family:'Archivo Expanded'; font-weight:700` and **no `font-stretch`**. The panels' current
+declaration (`'Archivo'` + `font-stretch:125%`) is correct for the *variable* file only; a build
+installing statics must change the declaration with them, or the wordmark's width comes from the
+wrong place.
+
+§6's **31 px** is measured on `wdth 125 / wght 700` and is correct for it.
+
+**`ArchivoBlack-Regular.ttf` is a different typeface, not a heavier setting of the same one.** Archivo
+Black is a **separate release within the Archivo superfamily** — alongside Archivo Narrow — shipped as
+a single static face at weight 900 with **no axes at all**. It can reproduce neither the stretch nor
+the weight, and it is a different drawing: heavier and squarer, not the 700 master widened. The panel's stack reads
+`font-family:'Archivo','Archivo Black',sans-serif; font-weight:700; font-stretch:125%` — **Archivo
+Black is the fallback that appears when the variable face is missing**, which is exactly what the
+build is seeing. It was never the specified face.
+
+**So `wordmarkSize = 53` and §6's `31` are not the same quantity measured differently, and the build
+is right to refuse the conversion.** They are em sizes of two unrelated faces. Adopting 31 against
+Black would render the wordmark narrower *and* heavier — two changes at once, from a table that only
+appears to disagree by a number.
+
+**This was an omission in this file, not a disagreement in the spec.** Archivo had no row here at
+all, so the one face whose absence would silently substitute was the one face the table did not
+declare — the failure the table exists to prevent. It is declared now.
+
+**Until the binary lands:** keep the panel's current wordmark rather than adopting 31 against Black.
+A size for Black is deliberately *not* given here — it would have to be measured on Black, and
+publishing a converted figure is how a substituted face gets legitimised.
 
 ## What a substituted face costs, stated once
 
