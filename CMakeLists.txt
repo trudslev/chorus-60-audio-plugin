@@ -85,8 +85,11 @@ juce_add_binary_data(Chorus60BinaryData
         design/assets/controls/button-off@2x.png
         design/assets/controls/lamp-on@2x.png
         design/assets/controls/lamp-off@2x.png
-        design/assets/controls/switch-track@2x.png
-        design/assets/controls/switch-thumb@2x.png
+        # The two-part shoe at this round's inks, delivered 2026-08-18. The @2x pair under
+        # controls/ predates the ink pass — no bezel, and a body gradient running the wrong way —
+        # and is retired rather than kept: §4B keeps the mechanism, not the artwork.
+        design/assets/switch-track@3x.png
+        design/assets/switch-thumb@3x.png
         design/assets/BarlowCondensed-SemiBold.ttf
         design/assets/BarlowCondensed-Bold.ttf
         design/assets/ShareTechMono-Regular.ttf

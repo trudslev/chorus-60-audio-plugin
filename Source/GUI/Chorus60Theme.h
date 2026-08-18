@@ -1525,14 +1525,14 @@ namespace Chorus60Theme
     inline const juce::Image& switchTrackImage()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::switchtrack2x_png, (size_t) BinaryData::switchtrack2x_pngSize);
+            BinaryData::switchtrack3x_png, (size_t) BinaryData::switchtrack3x_pngSize);
         return image;
     }
 
     inline const juce::Image& switchThumbImage()
     {
         static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::switchthumb2x_png, (size_t) BinaryData::switchthumb2x_pngSize);
+            BinaryData::switchthumb3x_png, (size_t) BinaryData::switchthumb3x_pngSize);
         return image;
     }
 
