@@ -767,11 +767,24 @@ namespace Chorus60Theme
             agree, and the arm's whole value is the moment §4 moves the anchor and this casting does
             not follow.
 
-            **The wordmark and the descriptor above it are ABSENT from the panel today** — not baked
-            on the new plate and with no drawing site — which the plate survey found and the
-            enumeration in this casting's CLAUDE.md now carries as its own rows. They are not drawn
-            here because the wordmark additionally needs `LibrestileExtBold.ttf` in BinaryData,
-            which is a CMakeLists change and its own step. */
+            **BOTH ARE DRAWN NOW, and this paragraph said the opposite until 2026-08-19.** It read
+            *"absent from the panel today — not baked on the new plate and with no drawing site"*,
+            and was true when written: the step it describes as pending — `LibrestileExtBold.ttf`
+            into BinaryData plus a paint routine — was then done, in `ProgramHeader::paint`, and the
+            sentence three hundred lines away was not. Kept as a correction rather than deleted,
+            because it is this suite's most expensive recurring failure arriving in the header that
+            warns about it, and because the check that finds it is neither of the cheap ones: `git
+            log` shows the file changing constantly, and the sentence reads as a description of a
+            solved problem. Only grepping for the constant it governs settles it.
+
+            **Measured, not read.** The Release standalone draws the wordmark's glyph run at
+            **251.50 px** inside the 303 px cell, which is Librestile — the delivered prototype
+            renders the same string at **113.58** because its `@font-face` points at a `fonts/`
+            directory this casting does not have, and at **253.63** when the face is put where it
+            looks. So the build is on the real letterforms and the prototype is not: **do not
+            compare this nameplate against `design/Chorus-60 CH-60 Panel.dc.html` until that path
+            resolves**, or the build's wordmark reads 2.2x too wide against a fallback. Raised as
+            `design-asks/prototype-font-paths-do-not-resolve.md`. */
         constexpr float nameplateX = (float) nf::HeaderGeometry::nameplateX;
         constexpr float nameplateY = (float) nf::HeaderGeometry::nameplateY;
         constexpr float nameplateW = (float) nf::HeaderGeometry::nameplateW;

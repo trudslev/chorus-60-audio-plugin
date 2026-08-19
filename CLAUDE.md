@@ -41,6 +41,35 @@ source adds no information over reading those two directly, and once it sits in 
 plausible name the next person reads it as the thing the headers cite. **A confident reconstruction
 of a lost source is worse than an acknowledged gap** — the gap is legible, the reconstruction is not.
 
+## DO NOT COMPARE THE NAMEPLATE AGAINST ITS OWN PROTOTYPE — the prototype is in a fallback
+
+`design/Chorus-60 CH-60 Panel.dc.html` declares `@font-face … url('fonts/LibrestileExtBold.ttf')`
+and **`design/fonts/` does not exist** — the face is at `design/assets/LibrestileExtBold.ttf`, which
+is where `CMakeLists.txt` names it and where BinaryData takes it from. So the prototype renders
+`CHORUS-60` in Barlow and says nothing about it.
+
+**The build is right.** Measured rather than reasoned, off a Release capture and the prototype in
+both states:
+
+| | Glyph run for `CHORUS-60`, 28 px on a 32 px line box, 303 px cell |
+|---|---|
+| Release standalone | **251.50** |
+| Prototype with the face put where it looks | **253.63** |
+| **Prototype as delivered** | **113.58** |
+
+The 2.13 px is a `Range`'s side bearings against a pixel ink extent. **A side-by-side against the
+delivered file shows this build's wordmark 2.2× too wide**, and exactly one of 278 elements differs,
+so nothing else about that prototype is affected.
+
+Raised as `design-asks/prototype-font-paths-do-not-resolve.md`. Re-check with:
+
+    python3 ../tools/enumerate_prototype.py "design/Chorus-60 CH-60 Panel.dc.html" --canvas 1340x812
+
+It refuses to report measurements while a declared local face has not resolved, and names the
+strings that move when it has.
+
+---
+
 ## Commands
 
 CHORUS-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
