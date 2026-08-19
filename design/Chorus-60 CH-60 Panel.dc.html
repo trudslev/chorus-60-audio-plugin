@@ -259,11 +259,9 @@ class Component extends DCLogic {
         { title: 'CHARACTER', tag: '', hasLamp: false, pad: 14, left: 285, top: 552, width: 567, height: 214, ink: '#e6ebee' },
         { title: 'OUTPUT', tag: '', hasLamp: false, pad: 14, left: 868, top: 552, width: 456, height: 214, ink: '#e6ebee' }
       ],
-      // §4B two-position shoe — the shoe carries the state, both positions printed alike.
-      imageSwitch: [
-        { label: 'STEREO', face: (this.props.image ?? 'STEREO') === 'STEREO' ? 'linear-gradient(180deg,#565d63,#3a4045)' : '#0a0c0d', shadow: (this.props.image ?? 'STEREO') === 'STEREO' ? 'inset 0 1px 0 rgba(255,255,255,.18), inset -1px 0 0 rgba(0,0,0,.5)' : 'inset 1px 0 0 rgba(255,255,255,.04)' },
-        { label: 'MONO', face: (this.props.image ?? 'STEREO') === 'MONO' ? 'linear-gradient(180deg,#565d63,#3a4045)' : '#0a0c0d', shadow: (this.props.image ?? 'STEREO') === 'MONO' ? 'inset 0 1px 0 rgba(255,255,255,.18), inset -1px 0 0 rgba(0,0,0,.5)' : 'inset 1px 0 0 rgba(255,255,255,.04)' }
-      ],
+      // The IMAGE switch is the sprite part above, not a shoe: an earlier shoe-style imageSwitch
+      // array lived here, unread by the template, and Elmer's KNEE spec was written citing it.
+      // Removed - a construction nothing renders is not a reference.
       tracePoints: Array.from({ length: 209 }, (_, i) => {
         const x = i * 5;
         const rate = page === 'II' ? 0.30 : (page === 'I+II' ? 0.19 : 0.11);

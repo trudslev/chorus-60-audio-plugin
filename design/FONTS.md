@@ -137,9 +137,9 @@ nobody will, but the two kinds of absence sitting in one table is what keeps tha
 
 ## Where the prototypes look for these faces
 
-Three of the six `designs/*.dc.html` panels declare a per-casting face with `url('fonts/…')` — a path
+Two of the six `designs/*.dc.html` panels declare a per-casting face with `url('fonts/…')` — a path
 relative to the prototype, not to its casting folder. **So `designs/fonts/` carries those binaries as
-well**, duplicating two files that also ship under `gatecrasher/fonts/` and chorus-60's. The
+well**, duplicating files that also ship under `gatecrasher/fonts/` and chorus-60's. The
 duplication is deliberate: a missing `@font-face` source is silent, the browser substitutes and lays
 the page out on the fallback's metrics, and every width measured afterwards belongs to a face nobody
 chose. Two extra binaries are cheaper than one silent substitution.
@@ -148,8 +148,16 @@ chose. Two extra binaries are cheaper than one silent substitution.
 |---|---|
 | `TudorVictors.ttf` | yes |
 | `LibrestileExtBold.ttf` | yes |
-| `ImpactLabelReversed.ttf` | **no — absent by decision, see `designs/ABSENT.md`** |
+| *(TapeRot declared `ImpactLabelReversed.ttf`)* | **no longer declared** — the prototype places the wordmark artwork instead, so nothing asks for a face that cannot ship. See `designs/ABSENT.md` |
 
 **Librestile Extended's "ships" row above was accurate as an intent and wrong as a fact** in export 3:
 the face was in no location in that bundle, so Chorus-60's runtime nameplate — Librestile Extended
 28 / 32 — could not be checked against its own prototype. It ships at `designs/fonts/` from export 4.
+
+
+**TapeRot was the last measurement-unsafe artefact in the delivery and is closed in export 9.** Its
+prototype declared the one face absent by decision, so the nameplate silently laid out on Barlow
+Condensed — the substitution `taperot/fonts/ABSENT.md` warns about, performed by a file shipped
+beside it. The nameplate now places `assets/taperot/taperot-wordmark.png` (694 × 150 delivered, drawn
+231.2 × 50), which is what the build embeds. **Absence by decision no longer implies a prototype that
+cannot be measured** — where the letterforms ship as artwork, the prototype uses the artwork.
