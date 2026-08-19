@@ -41,12 +41,18 @@ source adds no information over reading those two directly, and once it sits in 
 plausible name the next person reads it as the thing the headers cite. **A confident reconstruction
 of a lost source is worse than an acknowledged gap** — the gap is legible, the reconstruction is not.
 
-## DO NOT COMPARE THE NAMEPLATE AGAINST ITS OWN PROTOTYPE — the prototype is in a fallback
+## THE NAMEPLATE IS COMPARABLE AGAIN — closed 2026-08-19, and kept because the reason is reusable
 
-`design/Chorus-60 CH-60 Panel.dc.html` declares `@font-face … url('fonts/LibrestileExtBold.ttf')`
-and **`design/fonts/` does not exist** — the face is at `design/assets/LibrestileExtBold.ttf`, which
-is where `CMakeLists.txt` names it and where BinaryData takes it from. So the prototype renders
-`CHORUS-60` in Barlow and says nothing about it.
+**For one day this section said the opposite.** `design/Chorus-60 CH-60 Panel.dc.html` declared
+`@font-face … url('fonts/LibrestileExtBold.ttf')` against a `design/fonts/` that did not exist — the
+face was only at `design/assets/`, which is where `CMakeLists.txt` names it and where BinaryData
+takes it from — so the prototype rendered `CHORUS-60` in Barlow and said nothing about it. **Export 6
+ships `designs/fonts/` and the merge puts the face where the prototype looks.** Re-measured after the
+merge: it RESOLVES, 1 of 278 boxes moving when `fonts/` is removed, and the box that moves is
+`CHORUS-60`.
+
+The measurements below are why the note existed and are what makes the closure checkable rather than
+announced.
 
 **The build is right.** Measured rather than reasoned, off a Release capture and the prototype in
 both states:
@@ -61,7 +67,8 @@ The 2.13 px is a `Range`'s side bearings against a pixel ink extent. **A side-by
 delivered file shows this build's wordmark 2.2× too wide**, and exactly one of 278 elements differs,
 so nothing else about that prototype is affected.
 
-Raised as `design-asks/prototype-font-paths-do-not-resolve.md`. Re-check with:
+Closed as `design-asks/prototype-font-paths-do-not-resolve.md`. **Re-check rather than assume** — a
+prototype whose font stops resolving is silent, so this is worth one command before any visual pass:
 
     python3 ../tools/enumerate_prototype.py "design/Chorus-60 CH-60 Panel.dc.html" --canvas 1340x812
 

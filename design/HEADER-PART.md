@@ -257,8 +257,11 @@ only on User Programs.
 
 ## 7 · Meter wells and captions
 
-Wells 64 × 34, dark glass in the casting's own LCD material, value in the shared LCD face at 17 px,
-centred. Captions `IN` / `OUT` at 10 px / line box 13 / .28 em, Barlow Condensed 600, centred on
+Wells 64 × 34, dark glass in the casting's own LCD material, value in the shared LCD face at
+**17 px / line box 22 / .10 em**, centred — the same figure §5 states for the LCD itself, stated here
+because the wells are the shared part's rather than any casting's. One convention per role: the LCD
+and both wells are the same face at the same size in the same header, so a prototype drawing the
+wells with tracking unset differs from the part and the part governs. Captions `IN` / `OUT` at 10 px / line box 13 / .28 em, Barlow Condensed 600, centred on
 their wells at y 41. `PROGRAM` at the same size and weight at .24 em, left-aligned to the LCD at
 x 357.
 

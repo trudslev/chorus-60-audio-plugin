@@ -131,3 +131,25 @@ An undeclared absent font gets "fixed" by substituting a metrically different on
 every measurement taken from the nameplate** — that is why both by-decision absences are declared in
 their casting's own `GUI-SPEC.md` §9 / §10 and restated here. Nobody has substituted a face and
 nobody will, but the two kinds of absence sitting in one table is what keeps that true.
+
+
+---
+
+## Where the prototypes look for these faces
+
+Three of the six `designs/*.dc.html` panels declare a per-casting face with `url('fonts/…')` — a path
+relative to the prototype, not to its casting folder. **So `designs/fonts/` carries those binaries as
+well**, duplicating two files that also ship under `gatecrasher/fonts/` and chorus-60's. The
+duplication is deliberate: a missing `@font-face` source is silent, the browser substitutes and lays
+the page out on the fallback's metrics, and every width measured afterwards belongs to a face nobody
+chose. Two extra binaries are cheaper than one silent substitution.
+
+| Prototype declares | Resolves at `designs/fonts/` |
+|---|---|
+| `TudorVictors.ttf` | yes |
+| `LibrestileExtBold.ttf` | yes |
+| `ImpactLabelReversed.ttf` | **no — absent by decision, see `designs/ABSENT.md`** |
+
+**Librestile Extended's "ships" row above was accurate as an intent and wrong as a fact** in export 3:
+the face was in no location in that bundle, so Chorus-60's runtime nameplate — Librestile Extended
+28 / 32 — could not be checked against its own prototype. It ships at `designs/fonts/` from export 4.
