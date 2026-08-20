@@ -10,6 +10,7 @@ target_sources(Chorus60Tests PRIVATE
     MeterReadoutBudgetTests.cpp
     TestMain.cpp
     ReadoutConformanceTests.cpp
+    EditorWiringTests.cpp
     MenuMetricsTests.cpp
     ModulationEngineTests.cpp
     BBDDelayLineTests.cpp
