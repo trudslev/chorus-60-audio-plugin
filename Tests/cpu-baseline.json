@@ -1,0 +1,23 @@
+{
+  "_comment": "Category 7's baseline. Figures are FRACTIONS OF ONE CORE - CPU time consumed divided by the audio duration rendered - so 0.02 is 2 % of a core. Re-baselining is an explicit, committed act: the provenance below records what produced these, which is what makes 'one sitting, all six, one machine state' enforceable after the fact. Do not edit a figure to make a regression go away.",
+  "provenance": {
+    "machine": "Mac15,13, 8 cores",
+    "os": "Mac OSX 26.5.2",
+    "config": "Release",
+    "coreCommit": "9bc68ca",
+    "takenOn": "2026-08-20"
+  },
+  "session": { "closedInstances": 24, "openInstances": 4, "coreFraction": 0.500000 },
+  "cells": [
+    { "blockSize": 64, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002509 },
+    { "blockSize": 64, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.527091 },
+    { "blockSize": 128, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002064 },
+    { "blockSize": 128, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.557237 },
+    { "blockSize": 512, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002245 },
+    { "blockSize": 512, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.608273 },
+    { "blockSize": 128, "sampleRate": 44100, "editorOpen": false, "coreFraction": 0.001873 },
+    { "blockSize": 128, "sampleRate": 44100, "editorOpen": true, "coreFraction": 0.530655 },
+    { "blockSize": 128, "sampleRate": 96000, "editorOpen": false, "coreFraction": 0.004181 },
+    { "blockSize": 128, "sampleRate": 96000, "editorOpen": true, "coreFraction": 0.552099 }
+  ]
+}

@@ -2,6 +2,7 @@ juce_add_console_app(Chorus60Tests PRODUCT_NAME "Chorus60Tests")
 
 target_sources(Chorus60Tests PRIVATE
     RealtimeSafetyTests.cpp
+    CpuBaselineTests.cpp
     NumericalRobustnessTests.cpp
     InvarianceTests.cpp
     AutomationLatencyTests.cpp
@@ -60,7 +61,22 @@ target_sources(Chorus60Tests PRIVATE
 # same parent variables the plugin target uses, so there is nothing to re-sync — a hand-synced copy
 # in CHORUS-60 once drifted to a dead company name and quietly pointed saved Programs at a directory
 # nothing reads.
+# **The core commit this casting was pinned at, resolved at CONFIGURE time and baked into the CPU
+# test's provenance.** The tag moves while core is pre-release, so `v1.0.0` in a baseline file would
+# record nothing — the whole value of the provenance block is that a figure can be attributed to one
+# state of six castings and one state of core, which is what makes "one sitting, all six, one machine
+# state" checkable after the fact rather than a promise.
+execute_process(
+    COMMAND git -C "${neonfoundrycore_SOURCE_DIR}" rev-parse --short HEAD
+    OUTPUT_VARIABLE NF_CORE_PIN_COMMIT_VALUE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+if(NOT NF_CORE_PIN_COMMIT_VALUE)
+    set(NF_CORE_PIN_COMMIT_VALUE "unknown")
+endif()
+
 target_compile_definitions(Chorus60Tests PRIVATE
+    NF_CORE_PIN_COMMIT="${NF_CORE_PIN_COMMIT_VALUE}"
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     NF_COMPANY_NAME="${CHORUS60_COMPANY_NAME}"
