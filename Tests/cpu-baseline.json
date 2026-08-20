@@ -4,20 +4,20 @@
     "machine": "Mac15,13, 8 cores",
     "os": "Mac OSX 26.5.2",
     "config": "Release",
-    "coreCommit": "9bc68ca",
+    "coreCommit": "17e3013",
     "takenOn": "2026-08-20"
   },
   "session": { "closedInstances": 24, "openInstances": 4, "coreFraction": 0.500000 },
   "cells": [
-    { "blockSize": 64, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002509 },
-    { "blockSize": 64, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.527091 },
-    { "blockSize": 128, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002064 },
-    { "blockSize": 128, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.557237 },
-    { "blockSize": 512, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002245 },
-    { "blockSize": 512, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.608273 },
-    { "blockSize": 128, "sampleRate": 44100, "editorOpen": false, "coreFraction": 0.001873 },
-    { "blockSize": 128, "sampleRate": 44100, "editorOpen": true, "coreFraction": 0.530655 },
-    { "blockSize": 128, "sampleRate": 96000, "editorOpen": false, "coreFraction": 0.004181 },
-    { "blockSize": 128, "sampleRate": 96000, "editorOpen": true, "coreFraction": 0.552099 }
+    { "blockSize": 64, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002238 },
+    { "blockSize": 64, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.401760 },
+    { "blockSize": 128, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002094 },
+    { "blockSize": 128, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.374143 },
+    { "blockSize": 512, "sampleRate": 48000, "editorOpen": false, "coreFraction": 0.002047 },
+    { "blockSize": 512, "sampleRate": 48000, "editorOpen": true, "coreFraction": 0.371065 },
+    { "blockSize": 128, "sampleRate": 44100, "editorOpen": false, "coreFraction": 0.001890 },
+    { "blockSize": 128, "sampleRate": 44100, "editorOpen": true, "coreFraction": 0.374147 },
+    { "blockSize": 128, "sampleRate": 96000, "editorOpen": false, "coreFraction": 0.004157 },
+    { "blockSize": 128, "sampleRate": 96000, "editorOpen": true, "coreFraction": 0.365566 }
   ]
 }
