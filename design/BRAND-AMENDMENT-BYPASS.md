@@ -32,6 +32,21 @@ Different reasons, same conclusion: **the header does not dim.**
 Reflect-84, TapeRot and Gatecrasher currently multiply full-bleed. Fifth Member had no
 disengaged state at all until this round and now follows the full-bleed rule.
 
+### The two castings with no recorded choice — **both now recorded** (2026-08-21)
+
+The suite audit found four castings documenting whether they had a disengaged state and two
+saying nothing. Both are ruled:
+
+| Casting | Has a bypass? | Where it is recorded |
+|---|---|---|
+| **TapeRot** | **No, by decision** — this effect is a tape path, and a bypass would be the tape being out of the machine | `GUI-SPEC.md` §7.5, marked **does not apply**; `Source/PluginProcessor.h` |
+| **Gatecrasher** | **Yes** — full-bleed 0.50 multiply as built, moving to the control area under §4 above, its envelope scope leaving the multiply and holding the closed-gate baseline it already draws | this table; its `GUI-SPEC.md` has **no §7.5 to mark** |
+
+TapeRot's veil stays implemented and driven from `getBypassParameter()` — unreachable, one
+override away, and stated in the code rather than left as a dead branch. **A specified state a
+casting cannot enter is marked, not deleted**, the way §6 marks Elmer's absent meter; §9 wants
+that gap visible. Reversing either is a processor change, not a panel one.
+
 ---
 
 ## 3 · The shared reason, which is stronger than either casting's

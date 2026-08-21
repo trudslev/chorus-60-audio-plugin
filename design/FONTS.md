@@ -8,6 +8,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | Face | Used by | Licence | State |
 |---|---|---|---|
 | Barlow Condensed SemiBold | all six — panel lettering (call 7) | OFL | **ships in all six** — reflect-84 and taperot landed this call |
+| Barlow Condensed **Medium (500)** | **gatecrasher (5 §8 rows), taperot (2), fifth-member (1)** | OFL | **ships in fifth-member only** — owed to gatecrasher and taperot, see below |
 | Share Tech Mono | all six — the shared LCD face, meter values | OFL | **ships in all six** — reflect-84 and elmer landed this call |
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
@@ -16,6 +17,25 @@ kind is the only kind anyone should try to fix by adding a file.
 | Tudor Victors | gatecrasher — wordmark | licensed, embeddable | ships |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
 | **Permanent Marker** | fifth-member — nameplate, tape strings | **not embeddable** | **ABSENT BY DECISION.** Letterforms baked into `fifth-member/plate/fifth-member-plate-3x.png` |
+
+## The 500 weight — **open, owed to two castings**
+
+**Ruled 2026-08-21: 500 was intended and the file is what moves.** Deliver the same OFL
+`BarlowCondensed-Medium.ttf` already cut for Fifth Member to **`gatecrasher/fonts/`** and
+**`taperot/fonts/`**; both builds pick it up with one line. The §8 rows are not being changed to
+600 — eight roles across two panels ask for 500 deliberately (units, scale numerals, scope
+legends and header data all sit one step below their labels, and that step is the hierarchy).
+
+Until it lands both builds draw those seven roles in **SemiBold (600)** and must say so at the
+call site. Gatecrasher's rewrite made the substitution silently; that is the part which should
+not persist — an undeclared substitution is the failure this register exists for.
+
+**The check that missed it is the finding.** A bundle delivering *fewer* files than a casting
+needs passes every arm: forward finds every path CMake names, reverse finds every delivered file
+read, and the set comparison diffs a directory against **its own** previous state. Nothing asks
+whether two castings with the same §8 row got the same font set. **Add that arm** — group §8 rows
+by (face, weight) across castings and assert the delivered sets match. Seventh instance of a fix
+not travelling between castings.
 
 ## The omissions — **closed**
 
