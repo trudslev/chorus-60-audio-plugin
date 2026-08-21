@@ -77,6 +77,42 @@ strings that move when it has.
 
 ---
 
+## THE FILMSTRIP HYPOTHESIS IS REFUTED, AND BY READING RATHER THAN BY THE CONTROL
+
+**Nothing on this panel blits a filmstrip.** `KnobFilmstripComponent::paint` calls `paintKnobCap`
+into a cached static layer and then `drawImageTransformed (staticLayer, scale (1 / deviceScale))`.
+The cap is CODE-DRAWN. `knobModFilmstrip()` and `knobGlobalFilmstrip()` have **no consumer anywhere
+in `Source/`** — the only caller was the timing control written to test the hypothesis, which is why
+that control was deleted rather than run: it would have measured a path the panel does not take.
+
+**The refutation condition was stated before the run and it is met in the strongest possible form.**
+It said: *if the 1:1-against-resampled ratio falls outside the 10-20x band, the resampling mechanism
+is refuted even though the knobs are demonstrably the largest cost.* There is no ratio to measure,
+because there is no sheet blit. **A 2x re-export would have been the wrong fix** — expensive, and
+aimed at a mechanism that is not operating.
+
+**The mechanism was right in KIND and wrong in OBJECT.** A resampled blit is exactly what costs here
+— `drawImageTransformed` at `1 / deviceScale` — but what is resampled is the component's **own
+cache**, not artwork. That distinction is the whole finding: the hypothesis named the right physics
+and the wrong subject, and a measurement of the wrong subject would have been precise and useless.
+
+**And it was the second cheap question that settled it, not the measurement.** The first — *what does
+it redraw per tick* — found ModScope's missing cache. The second — *what does it actually draw* —
+found that the knobs draw no sheet. Both were answerable by reading, and both were reached only
+because the ranking came first and the hypothesis was held rather than acted on.
+
+**Three things fall out, none of them fixed here:**
+
+| | |
+|---|---|
+| **Two filmstrip binaries ship with no consumer.** `knob_mod_84px_128f.png` and `knob_global_68px_128f.png` are in `juce_add_binary_data` and drawn by nothing | dead weight in every shipping binary |
+| **The `@2x` sheets are now in `design/assets/`** — `knob_mod_168px_128f@2x.png` and `knob_global_136px_128f@2x.png`, the Ø168 / Ø136 pair `CMakeLists.txt` tracks as a release blocker | and the comment beside that list still says *"There are no @2x sheets to embed"*, which is the state it was written to describe and no longer the one on disk |
+| **`KnobFilmstripComponent` draws no filmstrip** | its own header already says the rename is owed and wants its own commit |
+
+The knobs remain the largest cost at 8.13 ms of 15.13. What that cost IS has moved: it is
+`paintKnobCap` plus a cache blit, so the levers are the cap's drawing and the blit's scale — not the
+artwork.
+
 ## MODSCOPE CACHES NOTHING AND REPAINTS ITS STATIC HALF 60 TIMES A SECOND
 
 **3.398 ms per paint, 22 % of this editor's attributable cost, in one component.** The ranking put it
