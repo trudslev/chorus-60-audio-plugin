@@ -77,6 +77,49 @@ strings that move when it has.
 
 ---
 
+## THE GLOW'S LEVERS: RESOLUTION WINS ON BOTH COUNTS, AND THE PREFERENCE DID NOT NEED SPENDING
+
+Measured over five runs, four of which agree tightly:
+
+| Lever | Per frame | Against 4600 µs | Visible consequence |
+|---|---|---|---|
+| **Half resolution** | **~870 µs** | **5.3×** | mean delta **33/255** against the full-res glow |
+| Quarter resolution | ~390 µs | 11.7× | mean delta **74/255** — a visibly different glow |
+| Stroke stack, no blur | ~935 µs | 4.9× | a different construction, not a softer one |
+| Every 2nd frame | ~2300 µs | 2.0× | **lags the trace by up to 16.7 ms** |
+| Every 4th frame | ~1150 µs | 4.0× | lags by up to 50 ms |
+
+**Resolution dominates and the tie-break was never needed.** Half resolution is 5.3× where the update
+lever is 2×, and the update lever has to reach *every fourth frame* — 50 ms of lag — to match 4×,
+which is still short. So the pre-stated preference for resolution holds **and** the cost measurement
+agrees with it; there was no case where the cheaper lever was the one with the worse consequence.
+
+**What half resolution costs visually, stated as a figure rather than as "slightly softer":** a mean
+absolute delta of **33/255, about 13 %**, over the glow's own area — and a **worst case of 255/255**.
+That worst case is not spread out: it is the trace's own **3 px core stroke**, whose hard edge is
+maximally wrong when resampled.
+
+**Which points at the refinement, and it is free.** The construction already draws the core stroke
+separately from the two blurred passes. **Reduce resolution for the blurs and keep the core at full
+resolution** — the blurs are low-frequency and lose nothing, and the one element with a hard edge
+never gets resampled. The 255/255 worst case is an artefact of scaling something that should not have
+been scaled.
+
+**Not applied.** The refinement changes what the panel looks like at its sharpest element, so it
+wants its own capture and a side-by-side rather than being appended to a measurement.
+
+### A method note: the first run of five was a 6× outlier and nearly became the finding
+
+Run 1 reported half resolution at **5303 µs — slower than full** — and would have been written up as
+*the resolution lever does not pay*. Runs 2 to 5 gave 861, 884, 859, 880. The first run pays for
+image allocation and first-touch that the others do not, and a warm-up call inside the timing loop
+does not cover an allocation made outside it.
+
+It was caught only because the number was *surprising in the wrong direction* — a blur at a quarter
+of the pixels being slower has no mechanism, and this file's own rule is to ask whether a result is
+more regular, or here more perverse, than its mechanism permits. **A single run is not a
+measurement**, and the CPU-bar work established the same thing a day earlier in a different unit.
+
 ## MODSCOPE'S COST IS THE GLOW — TWO DropShadow PASSES A FRAME, ~1800x THE GRID
 
 **Found by the parts not adding up, and closed by two controls before anything was touched.**

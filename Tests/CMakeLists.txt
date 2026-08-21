@@ -7,6 +7,7 @@ target_sources(Chorus60Tests PRIVATE
     HeaderPaintSplitTests.cpp
     ScopeLiveHalfSplitTests.cpp
     RankingMethodControlTests.cpp
+    GlowLeverSplitTests.cpp
     EditorPaintRankingTests.cpp
     NumericalRobustnessTests.cpp
     InvarianceTests.cpp
