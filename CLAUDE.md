@@ -77,6 +77,42 @@ strings that move when it has.
 
 ---
 
+## THE KNOBS ARE ~1 % OF THE "KNOB GROUPS" — THE COST IS THE PRINTED LAYER BESIDE THEM
+
+**The split was scoped to decide between two levers and the answer is that neither is the cost.**
+Pre-stated: if the cache's BLIT dominates the fix is bounded and ours; if the CAP'S DRAWING
+dominates it is §3.1's construction and a spec question. Measured:
+
+| | |
+|---|---|
+| Static layer builds | **1 across 400 paints** — the cache is a cache |
+| Cap drawing | **141 µs per BUILD**, paid once per (size, scale) |
+| Cache blit | **1.4 µs per FRAME** |
+
+**A knob costs 1.4 µs a frame. Nine cost about 12 µs. The ranking put the three groups at
+8.13 ms.** So the knobs are on the order of one per cent of their own group, and both levers were
+the wrong pair — the question "cap or blit" could only ever have picked a winner between two things
+that together are ~1 % of the row they were being asked to explain.
+
+**What is actually in a `DimmableGroup` is `GroupPrintedLayer`**, which draws the group heading and
+then `drawKnobScale` for every ring it owns — tick rings, numerals, units, control labels — **with no
+cache at all, every frame.** That is the ModScope finding a third time, and it is a cache question,
+which makes it ours rather than §3.1's.
+
+**Two method failures worth more than the result.**
+
+**The ranking's row name was read as its content.** `DimmableGroup` was taken to mean *the knobs*
+because that is what a dimmable group is for; it means the knobs AND the printed layer AND the
+heading, and the knobs are the cheap third. That is `enumerate what carries state, not what carries a
+value` arriving in a profile — the row was accurate and the reading of it was not.
+
+**And the verdict line committed the arithmetic error its own comment warned about, one line down.**
+It compared `blitMs * 60` — a second of blitting — against `capMs`, one build, and announced the cap
+dominant. A rate against a one-off. Over two seconds it inverts and over a session it is not close;
+the comment ten lines above it says in as many words that a one-off must not be compared to a
+per-frame figure. Corrected to report both with their units and to name neither, because neither is
+the answer.
+
 ## THE FILMSTRIP HYPOTHESIS IS REFUTED, AND BY READING RATHER THAN BY THE CONTROL
 
 **Nothing on this panel blits a filmstrip.** `KnobFilmstripComponent::paint` calls `paintKnobCap`
