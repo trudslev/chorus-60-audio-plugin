@@ -342,10 +342,23 @@ public:
                 because the delta figures below are a summary and a glow is not a thing anyone should
                 accept or reject from a summary. Everything sharp is identical in both; only the two
                 blurs differ. */
-            if (const auto dir = juce::File (juce::SystemStats::getEnvironmentVariable (
-                                                  "NF_GLOW_IMAGE_DIR", {}));
-                dir.isDirectory())
+            /*  **The variable ENABLES the write; it does not choose where.** It was
+                `NF_GLOW_IMAGE_DIR` and the test wrote to whatever path it named — a test that
+                writes where it is told is a test that will one day be told somewhere unfortunate,
+                and this suite already keeps its Program directory behind a process-wide redirect
+                for exactly that reason.
+
+                The destination is derived from the running binary instead, so it is always inside
+                the build tree that produced it and cannot be aimed. The evidence is just as good
+                from a fixed location — and the name says what it now does rather than what it used
+                to take, which is the calibration-constant lesson applied to an environment
+                variable. */
+            if (juce::SystemStats::getEnvironmentVariable ("NF_WRITE_GLOW_RENDERS", {}).isNotEmpty())
             {
+                const auto dir = juce::File::getSpecialLocation (juce::File::currentExecutableFile)
+                                     .getParentDirectory().getChildFile ("glow-renders");
+                dir.createDirectory();
+
                 for (const auto& [img, name] : { std::pair { &before, "glow-current.png" },
                                                   std::pair { &after,  "glow-half-resolution.png" } })
                 {
