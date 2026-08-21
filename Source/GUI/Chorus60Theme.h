@@ -1325,7 +1325,7 @@ namespace Chorus60Theme
 
     /** §3's knob cap: everything about a knob that does NOT move with its value — the radial cap,
         the rim, and the specular that is fixed to the panel. Drawn into a cached layer; see
-        `KnobFilmstripComponent::paint`. `area` is the component's own bounds, so this draws at the
+        `KnobComponent::paint`. `area` is the component's own bounds, so this draws at the
         origin rather than at a panel coordinate. */
     inline void paintKnobCap (juce::Graphics& g, juce::Rectangle<float> area, float diameter,
                               bool poweredDown)
@@ -1503,19 +1503,14 @@ namespace Chorus60Theme
         return image;
     }
 
-    inline const juce::Image& knobModFilmstrip()
-    {
-        static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::knob_mod_84px_128f_png, (size_t) BinaryData::knob_mod_84px_128f_pngSize);
-        return image;
-    }
+    /*  **`knobModFilmstrip()` and `knobGlobalFilmstrip()` are gone as of 2026-08-20, with the two
+        sheets they wrapped.** Nothing drew them: `KnobComponent::paint` calls `paintKnobCap` into a
+        cached static layer, so the cap is code-drawn and no filmstrip is blitted anywhere on this
+        panel. They were embedded in every shipping binary and read by nothing.
 
-    inline const juce::Image& knobGlobalFilmstrip()
-    {
-        static const juce::Image image = juce::ImageFileFormat::loadFrom(
-            BinaryData::knob_global_68px_128f_png, (size_t) BinaryData::knob_global_68px_128f_pngSize);
-        return image;
-    }
+        Found while testing the hypothesis that Chorus-60's editor cost came from resampling those
+        sheets — the only caller either accessor ever had was the timing control written to test it,
+        which is how a dead path can look like a live one from a call-graph. */
 
     inline const juce::Image& engineButtonImage(int index) // 0 = II, 1 = I, 2 = OFF
     {

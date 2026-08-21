@@ -110,7 +110,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     {
         const auto& spec = Layout::knobs[i];
 
-        auto knob = std::make_unique<KnobFilmstripComponent>(spec.size, spec.diameter);
+        auto knob = std::make_unique<KnobComponent>(spec.size, spec.diameter);
         knob->setName(spec.paramID);
 
         // Bounds are the cap exactly. Revision 1 stretched them to the drawn tick ring's outer
@@ -145,7 +145,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     // would silently degrade into a snap.
     for (int slot = 0; slot < numSlots; ++slot)
     {
-        auto knob = std::make_unique<KnobFilmstripComponent>(KnobFilmstripSize::mod, Layout::modKnobD);
+        auto knob = std::make_unique<KnobComponent>(KnobFilmstripSize::mod, Layout::modKnobD);
 
         const float cx = Layout::modKnobCentreX[(size_t) slot];
         const float half = Layout::modKnobD * 0.5f;

@@ -1,4 +1,4 @@
-#include "../Source/GUI/KnobFilmstripComponent.h"
+#include "../Source/GUI/KnobComponent.h"
 #include "../Source/GUI/Chorus60Theme.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -21,7 +21,7 @@ public:
     KnobRenderTests() : juce::UnitTest ("Knob rendering", "GUI") {}
 
     /** Renders the knob into an offscreen image the way a repaint would. */
-    static void render (KnobFilmstripComponent& knob, juce::Image& target)
+    static void render (KnobComponent& knob, juce::Image& target)
     {
         juce::Graphics g { target };
         knob.paint (g);
@@ -33,7 +33,7 @@ public:
 
         beginTest ("The static layer is built once and reused across value changes");
         {
-            KnobFilmstripComponent knob { KnobFilmstripSize::mod, Layout::modKnobD };
+            KnobComponent knob { KnobFilmstripSize::mod, Layout::modKnobD };
             knob.setBounds (0, 0, (int) Layout::modKnobD, (int) Layout::modKnobD);
             knob.setRange (0.0, 1.0);
 
@@ -64,7 +64,7 @@ public:
                 incremented would satisfy it just as well as a working cache. So this drives the two
                 things that MUST invalidate the layer and asserts the count rises — which is the
                 same shape as core's allocation sentinel proving it can catch as well as clear. */
-            KnobFilmstripComponent knob { KnobFilmstripSize::global, Layout::globalKnobD };
+            KnobComponent knob { KnobFilmstripSize::global, Layout::globalKnobD };
             knob.setBounds (0, 0, (int) Layout::globalKnobD, (int) Layout::globalKnobD);
 
             juce::Image target { juce::Image::ARGB, (int) Layout::globalKnobD,
@@ -97,7 +97,7 @@ public:
                 places from the same range. The Slider's `valueToProportionOfLength` is what carries
                 that, so this asserts the knob reports TRAVEL rather than value — the property the
                 printed scale depends on. */
-            KnobFilmstripComponent knob { KnobFilmstripSize::mod, Layout::modKnobD };
+            KnobComponent knob { KnobFilmstripSize::mod, Layout::modKnobD };
             knob.setNormalisableRange ({ 0.05, 16.0, 0.0, 0.35 });
 
             knob.setValue (0.5, juce::dontSendNotification);

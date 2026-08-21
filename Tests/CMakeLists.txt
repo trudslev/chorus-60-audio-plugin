@@ -46,7 +46,7 @@ target_sources(Chorus60Tests PRIVATE
     ../Source/GUI/ProgramHeader.cpp
     ../Source/GUI/Chorus60PanelBackground.cpp
     ../Source/GUI/Chorus60LookAndFeel.cpp
-    ../Source/GUI/KnobFilmstripComponent.cpp
+    ../Source/GUI/KnobComponent.cpp
     ../Source/GUI/EngineButtonComponent.cpp
     ../Source/GUI/ImageSwitch.cpp
     ../Source/GUI/DimmableGroup.cpp

@@ -1,6 +1,6 @@
-#include "KnobFilmstripComponent.h"
+#include "KnobComponent.h"
 
-KnobFilmstripComponent::KnobFilmstripComponent(Chorus60Theme::KnobFilmstripSize size, float diameterPx)
+KnobComponent::KnobComponent(Chorus60Theme::KnobFilmstripSize size, float diameterPx)
     : juce::Slider(juce::Slider::RotaryVerticalDrag, juce::Slider::NoTextBox),
       filmstripSize(size), diameter(diameterPx)
 {
@@ -12,7 +12,7 @@ KnobFilmstripComponent::KnobFilmstripComponent(Chorus60Theme::KnobFilmstripSize 
     setMouseDragSensitivity(Chorus60Theme::Layout::knobDragPixels);
 }
 
-void KnobFilmstripComponent::paint(juce::Graphics& g)
+void KnobComponent::paint(juce::Graphics& g)
 {
     using namespace Chorus60Theme;
 
@@ -64,7 +64,7 @@ void KnobFilmstripComponent::paint(juce::Graphics& g)
     paintKnobPointer (g, centre, diameter, getDrawnProportion());
 }
 
-void KnobFilmstripComponent::setDisplayProportion(float proportion) noexcept
+void KnobComponent::setDisplayProportion(float proportion) noexcept
 {
     const float clamped = juce::jlimit(0.0f, 1.0f, proportion);
     if (std::abs(clamped - displayProportionOverride) < 1.0e-5f)
@@ -73,7 +73,7 @@ void KnobFilmstripComponent::setDisplayProportion(float proportion) noexcept
     repaint();
 }
 
-void KnobFilmstripComponent::setPoweredDown(bool nowPoweredDown)
+void KnobComponent::setPoweredDown(bool nowPoweredDown)
 {
     if (poweredDown == nowPoweredDown)
         return;
@@ -84,7 +84,7 @@ void KnobFilmstripComponent::setPoweredDown(bool nowPoweredDown)
     repaint();
 }
 
-void KnobFilmstripComponent::clearDisplayProportion() noexcept
+void KnobComponent::clearDisplayProportion() noexcept
 {
     if (displayProportionOverride < 0.0f)
         return;
@@ -92,14 +92,14 @@ void KnobFilmstripComponent::clearDisplayProportion() noexcept
     repaint();
 }
 
-float KnobFilmstripComponent::getDrawnProportion()
+float KnobComponent::getDrawnProportion()
 {
     if (displayProportionOverride >= 0.0f)
         return displayProportionOverride;
     return (float) valueToProportionOfLength(getValue());
 }
 
-void KnobFilmstripComponent::mouseDown(const juce::MouseEvent& e)
+void KnobComponent::mouseDown(const juce::MouseEvent& e)
 {
     // Sensitivity has to be settled BEFORE Slider::mouseDown records its drag anchor: JUCE measures
     // from that anchor and scales by the current sensitivity, so changing it mid-drag rescales the

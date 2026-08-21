@@ -27,10 +27,10 @@
     Mod Engine knobs automatically drag in *sweep fraction* rather than in Hz — which is what makes
     the skewed Rate knob feel even under the hand.
 */
-class KnobFilmstripComponent final : public juce::Slider
+class KnobComponent final : public juce::Slider
 {
 public:
-    KnobFilmstripComponent(Chorus60Theme::KnobFilmstripSize size, float diameterPx);
+    KnobComponent(Chorus60Theme::KnobFilmstripSize size, float diameterPx);
 
     void paint(juce::Graphics&) override;
 

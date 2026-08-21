@@ -18,7 +18,7 @@
     travel on a spring curve.
 
     Subclasses juce::Button purely for its click handling and ButtonAttachment compatibility, exactly
-    as KnobFilmstripComponent subclasses Slider. Toggle state true = MONO (thumb down), false =
+    as KnobComponent subclasses Slider. Toggle state true = MONO (thumb down), false =
     STEREO (thumb up), matching the image parameters' own sense.
 */
 class ImageSwitch final : public juce::Button,

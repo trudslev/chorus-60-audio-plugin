@@ -61,16 +61,24 @@ FetchContent_MakeAvailable(NeonFoundryCore)
 # LibrestileExtBold is gone: the wordmark is baked now, so nothing draws it live. It stays in
 # design/assets/ so the plate can be re-exported.
 #
-# Knob filmstrips: the @1x strips, and they are final. There are no @2x sheets to embed - earlier
-# revisions shipped upsampled placeholders and the designers REMOVED them rather than leave a file
-# named @2x sitting in an assets folder where it would get wired up on sight and ship a soft knob
-# under a retina label.
+# **NO KNOB FILMSTRIP IS EMBEDDED, BECAUSE NOTHING DRAWS ONE.** `KnobComponent::paint` calls
+# `paintKnobCap` into a cached static layer; the cap is code-drawn. `knobModFilmstrip()` and
+# `knobGlobalFilmstrip()` had no consumer anywhere in Source/, and the two @1x sheets they wrapped
+# were shipping in every binary drawn by nothing. Removed 2026-08-20.
 #
-# The knob is drawn by a parametric generator taking a scale factor, so any diameter is reachable and
-# producing the real Ø168/Ø136 sheets is a config change rather than new artwork; handoff section 4
-# has the run parameters. KnobFilmstripComponent takes the sheet geometry as data - frame pitch,
-# column count and cap-to-pitch ratio - so they drop in with no drawing-code change. Tracked as a
-# release blocker in prompts/PROMPTS.md.
+# **What this comment said until then, corrected rather than deleted, because it is the clearest
+# example this file has of a description outliving its subject.** It read: *"the @1x strips, and
+# they are final. There are no @2x sheets to embed - earlier revisions shipped upsampled
+# placeholders and the designers REMOVED them rather than leave a file named @2x sitting in an
+# assets folder where it would get wired up on sight."* Every clause was true when written. By
+# 2026-08-20 the @2x sheets WERE in design/assets/ - `knob_mod_168px_128f@2x.png` and
+# `knob_global_136px_128f@2x.png`, the real Ø168/Ø136 pair this comment goes on to call a release
+# blocker - so the file it warned would get wired up on sight was sitting there, and the sentence
+# saying there were none to embed was the reason nobody looked.
+#
+# They are deliberately still not embedded, and now for a stronger reason than the old one: the
+# knobs draw no sheet at all, so a sheet at any scale is dead weight. The release-blocker line is
+# discharged - the artwork exists and the build does not need it.
 #
 # Fonts: Barlow Condensed SemiBold (600 - control labels, captions, scope status) and Bold (700 -
 # group headings, engine button letters) per spec section 3, plus Share Tech Mono Regular for
@@ -78,8 +86,6 @@ FetchContent_MakeAvailable(NeonFoundryCore)
 juce_add_binary_data(Chorus60BinaryData
     SOURCES
         design/assets/chorus60-background-plate@3x.png
-        design/assets/knob_mod_84px_128f.png
-        design/assets/knob_global_68px_128f.png
         design/assets/controls/button-i@2x.png
         design/assets/controls/button-ii@2x.png
         design/assets/controls/button-off@2x.png
@@ -161,7 +167,7 @@ target_sources(Chorus60 PRIVATE
     Source/DSP/ProgramManager.cpp
     Source/GUI/Chorus60LookAndFeel.cpp
     Source/GUI/Chorus60PanelBackground.cpp
-    Source/GUI/KnobFilmstripComponent.cpp
+    Source/GUI/KnobComponent.cpp
     Source/GUI/ImageSwitch.cpp
     Source/GUI/DimmableGroup.cpp
     Source/GUI/KnobScaleRing.cpp

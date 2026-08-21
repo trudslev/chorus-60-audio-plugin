@@ -3,7 +3,7 @@
 #include "Chorus60Theme.h"
 #include "Chorus60LookAndFeel.h"
 #include "DimmableGroup.h"
-#include "KnobFilmstripComponent.h"
+#include "KnobComponent.h"
 #include "ImageSwitch.h"
 #include "ModScope.h"
 #include "EngineButtonComponent.h"
@@ -106,7 +106,7 @@ private:
     // The five genuinely global knobs (CHARACTER + OUTPUT). Fixed parameters, unlike the slots, and
     // no value labels beneath them - revision 2 removed the standing readouts entirely; the LCD is
     // the only numeric display on the panel.
-    std::array<std::unique_ptr<KnobFilmstripComponent>, Chorus60Theme::Layout::knobs.size()> knobs;
+    std::array<std::unique_ptr<KnobComponent>, Chorus60Theme::Layout::knobs.size()> knobs;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>,
                Chorus60Theme::Layout::knobs.size()> knobAttachments;
 
@@ -116,7 +116,7 @@ private:
     // are created once and re-attached; recreating them per page would destroy the very rotation the
     // transition animates away from.
     static constexpr int numSlots = 4;
-    std::array<std::unique_ptr<KnobFilmstripComponent>, numSlots> slotKnobs;
+    std::array<std::unique_ptr<KnobComponent>, numSlots> slotKnobs;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>, numSlots> slotAttachments;
 
     ImageSwitch imageSwitch;

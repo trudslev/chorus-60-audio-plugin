@@ -46,7 +46,7 @@ private:
         static half that varies, so they belong in the key rather than outside the cache.
 
         **`setBufferedToImage` is the trap this avoids**, for the same reason
-        `KnobFilmstripComponent` says so: it re-renders on every repaint, which for a component that
+        `KnobComponent` says so: it re-renders on every repaint, which for a component that
         repaints at 60 Hz is the problem restated rather than solved. */
     void renderStaticLayer (float deviceScale, const juce::String& cacheKey);
 

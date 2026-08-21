@@ -7,7 +7,7 @@ Chorus60LookAndFeel::Chorus60LookAndFeel()
     // over it (section 1's chassis gradient sits around #141618 -> #0A0C0D).
     setColour(juce::ResizableWindow::backgroundColourId, juce::Colour(0xFF0E1012));
 
-    // Knob drag-value popup (KnobFilmstripComponent's setPopupDisplayEnabled) and the shared
+    // Knob drag-value popup (KnobComponent's setPopupDisplayEnabled) and the shared
     // TooltipWindow - styled like an LED window so they read as part of the same instrument.
     setColour(juce::BubbleComponent::backgroundColourId, Chorus60Theme::Colour::ledWindowBg);
     setColour(juce::BubbleComponent::outlineColourId, Chorus60Theme::Colour::ledWindowBorder);
