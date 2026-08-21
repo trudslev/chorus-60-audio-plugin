@@ -46,14 +46,43 @@ void ModScope::timerCallback()
     repaint();
 }
 
-void ModScope::paint(juce::Graphics& g)
+/*  Everything that does not change per frame: the title, the two status readouts and the well
+    itself. Rendered once per (device scale, readout strings) and blitted by `paint`.
+
+    **The region is the caption row plus the well, not the whole component.** This spans the canvas
+    so that the trace can be clipped against panel coordinates, but it INKS about 1039 x 144 of it —
+    caching the full 1340 x 812 would be a 17 MB image to save 3 ms, which is the wrong trade and the
+    kind a cache makes silently. */
+namespace
+{
+    /*  The inked region, not the component's bounds. `ModScope` spans the canvas so the trace can
+        be clipped in panel coordinates, but it inks the caption row and the well — about
+        1039 x 144. Caching 1340 x 812 would be a 17 MB image to save 3 ms, which is the wrong
+        trade and exactly the kind a cache makes silently. */
+    constexpr float staticRegionX = Chorus60Theme::Layout::scopeWellX;
+    constexpr float staticRegionY = Chorus60Theme::Layout::scopeCaptionRowY;
+    constexpr float staticRegionW = Chorus60Theme::Layout::scopeWellW;
+    constexpr float staticRegionH = (Chorus60Theme::Layout::scopeWellY
+                                      + Chorus60Theme::Layout::scopeWellH)
+                                     - Chorus60Theme::Layout::scopeCaptionRowY;
+}
+
+void ModScope::renderStaticLayer (float deviceScale, const juce::String& cacheKey)
 {
     using namespace Chorus60Theme;
     using namespace Chorus60Theme::Layout;
 
-    // Same resolver the audio thread uses, so the trace can never disagree with what is being
-    // heard about which configuration is engaged.
-    const auto active = processorRef.resolveActiveConfiguration();
+    staticLayer = juce::Image (juce::Image::ARGB,
+                                juce::jmax (1, juce::roundToInt (staticRegionW * deviceScale)),
+                                juce::jmax (1, juce::roundToInt (staticRegionH * deviceScale)), true);
+
+    juce::Graphics g { staticLayer };
+    g.addTransform (juce::AffineTransform::scale (deviceScale)
+                        .translated (-staticRegionX * deviceScale, -staticRegionY * deviceScale));
+
+    // The engaged configuration's own text: `cacheKey` IS that string, passed in rather than
+    // re-resolved, so the layer and the key can never describe different states.
+    const juce::String stateText = cacheKey;
 
     // --- Caption row -----------------------------------------------------------------------
     //
@@ -76,12 +105,10 @@ void ModScope::paint(juce::Graphics& g)
     // the time division. The "DEPTH n%" that used to sit between them is gone with the standing
     // readouts - section 4 of the spec is explicit that the LCD is now the only numeric display on
     // the panel.
-    using Configuration = Chorus60AudioProcessor::Configuration;
-    const juce::String stateText = active.which == Configuration::both ? "ENGINE I + II"
-                                  : active.which == Configuration::one ? "ENGINE I"
-                                  : active.which == Configuration::two ? "ENGINE II"
-                                  : "ENGINE BYPASS";
-
+    // The engine string arrives as the cache key rather than being re-resolved here, so the layer
+    // and the key that decides whether to rebuild it can never describe different states — a cache
+    // whose contents and whose key are computed separately is one that will eventually disagree
+    // with itself, which is the same shape as a check whose input comes from the thing it checks.
     const juce::String divText = "250 ms / DIV";
 
     // Section 3: Share Tech Mono 11 px, .06em, in the caption grey.
@@ -110,16 +137,57 @@ void ModScope::paint(juce::Graphics& g)
         cursorRight = r.getX() - readoutGap;
     }
 
-    // --- Scope rect (section 5: "same construction as Gatecrasher's envelope scope") ---
+    /*  The well itself — gradient and frame. Static, and it sits UNDER the scrolling grid and the
+        trace, so caching it means the live half starts by clipping rather than by filling. */
+    const juce::Rectangle<float> outerRect (scopeWellX, scopeWellY, scopeWellW, scopeWellH);
+    const auto innerRect = outerRect.reduced (scopeInnerInset);
+
+    juce::ColourGradient bgGradient (Colour::scopeBgTop, innerRect.getCentreX(), innerRect.getY(),
+                                      Colour::scopeBgBottom, innerRect.getCentreX(),
+                                      innerRect.getBottom(), false);
+    g.setGradientFill (bgGradient);
+    g.fillRect (innerRect);
+    g.setColour (Colour::scopeBorder);
+    g.drawRect (outerRect, 1.0f);
+}
+
+void ModScope::paint(juce::Graphics& g)
+{
+    using namespace Chorus60Theme;
+    using namespace Chorus60Theme::Layout;
+
+    // Same resolver the audio thread uses, so the trace can never disagree with what is being
+    // heard about which configuration is engaged.
+    const auto active = processorRef.resolveActiveConfiguration();
+
+    using Configuration = Chorus60AudioProcessor::Configuration;
+    const juce::String stateText = active.which == Configuration::both ? "ENGINE I + II"
+                                  : active.which == Configuration::one ? "ENGINE I"
+                                  : active.which == Configuration::two ? "ENGINE II"
+                                  : "ENGINE BYPASS";
+
+    /*  **The static half, blitted rather than redrawn.** Rebuilt only when the device scale or the
+        readout changes — the readout is in the key because it is the one part of the static half
+        that varies, and leaving it outside the cache would have meant drawing tracked text at 60 Hz
+        to save a rebuild that happens when somebody presses a button. */
+    const float deviceScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+
+    if (staticLayer.isNull() || std::abs (deviceScale - cachedDeviceScale) > 1.0e-3f
+        || cachedStaticKey != stateText)
+    {
+        renderStaticLayer (deviceScale, stateText);
+        cachedDeviceScale = deviceScale;
+        cachedStaticKey = stateText;
+    }
+
+    g.drawImage (staticLayer,
+                  juce::Rectangle<float> (staticRegionX, staticRegionY,
+                                           staticRegionW, staticRegionH),
+                  juce::RectanglePlacement::stretchToFit);
+
+    // --- The live half. The well's gradient and frame are in the static layer above. ---
     const juce::Rectangle<float> outerRect(scopeWellX, scopeWellY, scopeWellW, scopeWellH);
     const auto innerRect = outerRect.reduced(scopeInnerInset);
-
-    juce::ColourGradient bgGradient(Colour::scopeBgTop, innerRect.getCentreX(), innerRect.getY(),
-                                     Colour::scopeBgBottom, innerRect.getCentreX(), innerRect.getBottom(), false);
-    g.setGradientFill(bgGradient);
-    g.fillRect(innerRect);
-    g.setColour(Colour::scopeBorder);
-    g.drawRect(outerRect, 1.0f);
 
     g.saveState();
     g.reduceClipRegion(innerRect.getSmallestIntegerContainer());

@@ -31,6 +31,29 @@ public:
 private:
     void timerCallback() override;
 
+    /*  **The static half, cached.** This component measured 3.398 ms per paint — 22 % of this
+        editor's attributable cost — and it redrew everything on a 60 Hz timer with nothing cached:
+        the title, two status readouts, the well's gradient and its frame, none of which change per
+        frame, alongside the scrolling grid and the trace, which do.
+
+        Tracked text was the expensive part and the one that changed least: tracking is not native,
+        so a tracked string is laid out glyph by glyph, and three of them were measured and drawn
+        sixty times a second while the title never changed at all.
+
+        **Keyed on device scale AND on the strings**, not on component size. The scale is what
+        actually changes the pixels — a component whose bounds never move can still be asked to
+        paint at 2x on one display and 1x on another — and the readouts are the one part of the
+        static half that varies, so they belong in the key rather than outside the cache.
+
+        **`setBufferedToImage` is the trap this avoids**, for the same reason
+        `KnobFilmstripComponent` says so: it re-renders on every repaint, which for a component that
+        repaints at 60 Hz is the problem restated rather than solved. */
+    void renderStaticLayer (float deviceScale, const juce::String& cacheKey);
+
+    juce::Image staticLayer;
+    float cachedDeviceScale = 0.0f;
+    juce::String cachedStaticKey;
+
     Chorus60AudioProcessor& processorRef;
 
     // Depth and Delay Center are per-configuration now, so the scope cannot hold fixed pointers to

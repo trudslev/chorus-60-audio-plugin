@@ -151,9 +151,34 @@ consistent with its 22 % share of the ranking and is the largest single lever on
 cost. It also runs at 60 Hz where the shared CPU harness pumps at 20, so the harness's own editor
 figure understates ModScope specifically.
 
-**Not fixed here.** The finding is that nothing static is cached; splitting the static half into a
-cached layer is a change to a live component and belongs in its own pass with a capture and a
-re-measure, not appended to an investigation.
+**FIXED 2026-08-20, and the win is smaller than the finding suggested.** `ModScope` now renders its
+static half — title, both readouts, the well's gradient and frame — into a layer keyed on **device
+scale AND the readout string**, and blits it. The readout is in the key rather than outside the
+cache because it is the one static-half element that varies, and leaving it out would have meant
+drawing tracked text at 60 Hz to save a rebuild that happens when somebody presses a button.
+
+| | Before | After |
+|---|---|---|
+| `ModScope`, per paint | 3.398 ms | **2.463 ms** |
+| Editor-open cell, 128 @ 48 k | ~37.2 % of a core | **36.03 %** |
+
+**27 % off the component and about one point off the panel** — real, and well short of what "caches
+nothing" implied. The remaining 2.463 ms is the genuinely live half: the scrolling grid, the centre
+line that moves with Delay Center, and a `drawVerticalLine` per visible column for the dry underlay
+plus the trace path. **The static half was not where the time was.** That is worth recording as its
+own result, because "nothing is cached" is a true statement about the code that turned out to be a
+weak predictor of the cost — the same distinction as a mechanism being right in kind and wrong in
+object, arriving one component over.
+
+The next lever here, if it is ever worth taking, is the scrolling grid: it is redrawn line by line
+every frame and could be a cached tile blitted at an offset. Not done, because 1039 px of vertical
+lines is a smaller share than the trace loop beside it and the measurement to separate them has not
+been made.
+
+**The region is the caption row plus the well, not the component's bounds.** `ModScope` spans the
+canvas so the trace can be clipped in panel coordinates but inks about 1039 × 144 of it; caching
+1340 × 812 would have been a 17 MB image to save 3 ms, which is the wrong trade and exactly the kind
+a cache makes silently.
 
 ## Commands
 
