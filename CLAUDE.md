@@ -77,6 +77,48 @@ strings that move when it has.
 
 ---
 
+## MODSCOPE CACHES NOTHING AND REPAINTS ITS STATIC HALF 60 TIMES A SECOND
+
+**3.398 ms per paint, 22 % of this editor's attributable cost, in one component.** The ranking put it
+second behind the three knob groups, and it had no hypothesis attached — so the question asked first
+was the cheap one: *what does it redraw per tick?*
+
+**Everything.** `ModScope` runs `startTimerHz(60)` and calls `repaint()` on every tick, and its
+`paint` has no `setBufferedToImage`, no cached image and no static layer of any kind. Each frame
+redraws:
+
+| | Changes per frame? |
+|---|---|
+| `DELAY MODULATION`, Barlow Bold, **tracked text** | **never** |
+| `250 ms / DIV`, Share Tech Mono, tracked, with `trackedTextWidth` measured per frame | never |
+| `ENGINE I + II` and its variants, same | only when the engine state does |
+| the well's vertical gradient fill and its frame | never |
+| the centre line | never |
+| the scrolling vertical grid | yes — it scrolls |
+| the trace columns | yes |
+
+**Tracked text is the expensive row and the one that changes least.** Tracking is not native, so a
+tracked string is laid out and drawn glyph by glyph; three of them are measured and drawn 60 times a
+second, and the title never changes at all.
+
+**This is the knob-cache finding one level over, and the contrast within this same panel makes it
+sharp.** `KnobFilmstripComponent` caches a static layer and says why — its own comment names
+`setBufferedToImage` as the trap it avoids, since that re-renders on every repaint. The knobs got
+that treatment and the scope did not, on the same panel, by the same hands.
+
+**So the knobs' 8.13 ms is what a CACHED component costs and ModScope's 3.398 ms is what an uncached
+one does**, which also means the two want different fixes: the knobs' cost is in the blit and
+ModScope's is in not having one.
+
+**At 60 Hz that is about 20 % of one core for this component alone** — 3.398 ms × 60 — which is
+consistent with its 22 % share of the ranking and is the largest single lever on this panel's editor
+cost. It also runs at 60 Hz where the shared CPU harness pumps at 20, so the harness's own editor
+figure understates ModScope specifically.
+
+**Not fixed here.** The finding is that nothing static is cached; splitting the static half into a
+cached layer is a change to a live component and belongs in its own pass with a capture and a
+re-measure, not appended to an investigation.
+
 ## Commands
 
 CHORUS-60 builds on macOS (AU + VST3 + Standalone), Windows (VST3 + Standalone), and Linux
