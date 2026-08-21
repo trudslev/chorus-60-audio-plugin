@@ -4,6 +4,7 @@ target_sources(Chorus60Tests PRIVATE
     RealtimeSafetyTests.cpp
     CpuBaselineTests.cpp
     KnobPaintSplitTests.cpp
+    HeaderPaintSplitTests.cpp
     EditorPaintRankingTests.cpp
     NumericalRobustnessTests.cpp
     InvarianceTests.cpp

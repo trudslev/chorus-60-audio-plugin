@@ -77,6 +77,47 @@ strings that move when it has.
 
 ---
 
+## PROGRAMHEADER: THE TIMER IS RIGHT AND THE PAINT WANTS A CACHE — 9.6x STATIC PER LIVE
+
+**The units question again, and this time the answer is the other branch.** `ProgramHeader` repaints
+unconditionally at 20 Hz, and unconditional is **not** a defect here: its own `timerCallback` says
+why — *"the IN/OUT meters need continuous redraw regardless of whether the current program
+changed."* That is true, so this is not the `EngineButtonComponent` case where the timer wants
+guarding. It is the ModScope case, and it is more lopsided:
+
+| Per paint | | |
+|---|---|---|
+| Header block | **551.3 µs** | never changes |
+| Nameplate — wordmark, descriptor, model line | **328.9 µs** | never changes |
+| Three wells + two button faces | **114.4 µs** | never changes |
+| **Static total** | **994.6 µs** | |
+| **Meter values** | **103.8 µs** | the only thing the timer is FOR |
+
+**9.6× static per live. At 20 Hz that is 19.89 ms/s of unchanging pixels to deliver 2.08 ms/s of
+numbers** — about 2 % of a core, of which roughly 90 % is redrawing things that cannot have changed.
+
+**The header block alone is over half of it**, which is worth naming because it is the least
+interesting thing on the panel: a 1308 × 104 gradient with two inset strokes, re-rendered twenty
+times a second behind content that also has not changed.
+
+**So the fix is a cache and its key is small.** What varies is the bank tag, the Program name, the
+caption and the button legends — all of which change on a Program action — and the two meter
+numbers, which change continuously and are 10 % of the cost. Same shape as ModScope's: cache the
+static half keyed on the strings, draw the live sliver over it.
+
+**Not done here.** ModScope's cache returned 27 % where "caches nothing" implied more, so the
+prediction that this one returns ~90 % is a prediction rather than a result, and it is the kind this
+week has already refuted twice.
+
+### The CPU bar fired at 1.122 during this work, and the pre-stated band settled it
+
+`512@48000/editor` came back 41.62 % against a 37.11 % baseline while the machine was building
+continuously. The floor's own note says **7.9 % observed spread against a 10 % bar leaves about two
+points, so a cell failing at 11–12 % should be re-run before it is believed and one failing at 30 %
+is a regression.** Re-run twice on a quiet machine: **34.91 and 34.90** — below baseline, which is
+ModScope's cache showing up. The band was written before this happened and it classified it
+correctly, which is the only test a stated margin gets.
+
 ## ONLY TWO COMPONENTS REPAINT PER FRAME, AND THE RANKING'S BIGGEST ROW IS NOT ONE OF THEM
 
 **The units question, pre-stated before the split and answered by reading rather than by timing.**
