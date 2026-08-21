@@ -98,13 +98,50 @@ public:
             g.strokePath (p, juce::PathStrokeType (2.0f));
         });
 
-        const double traceMs = underlayMs + pathMs;
+        /*  **THE GLOW, which the first version of this split did not replicate at all.** §5 asks
+            for a glow pass — a 7 px stroked outline under a **20 px** DropShadow — then a core pass
+            with a **10 px** one. `DropShadow::drawForPath` renders the path into an image and
+            box-blurs it at that radius; two of them, every frame, over a 1035 px wide trace.
+
+            Its absence is why the parts did not add up: grid, centre line, underlay and a single
+            stroke summed to 66 us against a component measuring 2428. */
+        double glowMs = 0.0;
+        {
+            juce::Path p;
+            for (int c = 0; c < columns; ++c)
+            {
+                const float x = inner.getRight() - (float) c * pixelsPerFrame;
+                const float y = inner.getCentreY() + 20.0f * std::sin ((float) c * 0.2f);
+                if (c == 0) p.startNewSubPath (x, y); else p.lineTo (x, y);
+            }
+
+            glowMs = time (40, [&] (juce::Graphics& g)
+            {
+                juce::Path glowOutline;
+                juce::PathStrokeType (7.0f, juce::PathStrokeType::mitered,
+                                       juce::PathStrokeType::butt).createStrokedPath (glowOutline, p);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f), 20, {0, 0})
+                    .drawForPath (g, glowOutline);
+                g.setColour (Colour::chorusAccent.withAlpha (0.45f));
+                g.fillPath (glowOutline);
+
+                juce::Path coreOutline;
+                juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered,
+                                       juce::PathStrokeType::butt).createStrokedPath (coreOutline, p);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f), 10, {0, 0})
+                    .drawForPath (g, coreOutline);
+            });
+        }
+
+        const double traceMs = underlayMs + pathMs + glowMs;
 
         logMessage ("  --------");
         logMessage ("  grid          " + juce::String (gridMs * 1000.0, 1) + " us");
         logMessage ("  centre line   " + juce::String (centreMs * 1000.0, 1) + " us");
         logMessage ("  underlay      " + juce::String (underlayMs * 1000.0, 1) + " us");
         logMessage ("  trace path    " + juce::String (pathMs * 1000.0, 1) + " us");
+        logMessage ("  GLOW          " + juce::String (glowMs * 1000.0, 1)
+                    + " us   two DropShadow passes, 20 px and 10 px");
         logMessage ("  trace total   " + juce::String (traceMs * 1000.0, 1) + " us");
         logMessage (gridMs > traceMs
             ? "  => THE GRID DOMINATES. The tile pays, and its condition already holds: nothing but "

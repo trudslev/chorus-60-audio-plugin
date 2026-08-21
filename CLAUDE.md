@@ -77,6 +77,52 @@ strings that move when it has.
 
 ---
 
+## MODSCOPE'S COST IS THE GLOW — TWO DropShadow PASSES A FRAME, ~1800x THE GRID
+
+**Found by the parts not adding up, and closed by two controls before anything was touched.**
+
+| Per paint | |
+|---|---|
+| Scrolling grid — 8 lines | 2.6 µs |
+| Centre line | 2.1 µs |
+| Trace underlay — 121 columns | 19.9 µs |
+| Trace path, stroked once | 41.6 µs |
+| Cached-layer blit, 1039 × 144 ARGB | 23.5 µs |
+| **The glow — `DropShadow` at 20 px, then at 10 px** | **4843.9 µs** |
+
+§5 asks for *"a glow pass underneath at 7 px … with a 20 px shadow … then the core pass with a
+10 px shadow"*. `DropShadow::drawForPath` renders the path into an image and box-blurs it at that
+radius, and there are **two of them, every frame, over a 1035 px trace at 60 Hz.**
+
+**Two controls ran first and both had to come back the way they did.**
+
+- **The ranking's method, direct against ranked**: 2428 µs against 2455 µs, **1.01x**. The method
+  attributes nothing — so every row in that ranking stands, including the **8.13 ms** that sent this
+  investigation after the knobs. Had it come back inflated, nothing read off that ranking would have
+  survived.
+- **ModScope's own rebuild count**: 1 build across 128 paints. **This was the one cache of three
+  without a counter**, which is why its 2.5 ms went two rounds unexplained — `KnobComponent` and
+  `ProgramHeader` both assert their layer is built once and nothing here did. A cache with no
+  rebuild count is a cache nobody has checked.
+
+**And the tile mechanism is refuted for the second time over.** Its pre-stated condition holds in the
+strongest form — `gridSpacing` and `pixelsPerFrame` come from four constants, so a tile would never
+rebuild — and the grid is **2.6 µs against a 4844 µs glow**, about 1/1800th of the component. A
+correct mechanism aimed at a rounding error.
+
+**Ownership, and it splits the way the knob cap's did.** *That* there is a glow is §5's and not ours
+to remove. **How it is rendered is ours**: the spec asks for a glow, not for two software box blurs
+at frame rate. A blur is low-frequency by definition, so rendering it at reduced resolution and
+scaling up is the obvious lever, and updating it less often than the trace is the other. Neither is
+a spec change and both want measuring rather than assuming — which is what this whole sequence has
+been about.
+
+**Why the first split missed it.** It replicated the trace as one `strokePath` and no shadows,
+because the loop it was reading from is where the trace is *built* and the glow is thirty lines
+below where the path is *used*. **A synthetic reconstruction measures what the person writing it
+noticed**, which is the same blind spot as an authored enumeration and is caught the same way: the
+parts have to add up, and here they were off by a factor of thirty-seven.
+
 ## MODSCOPE'S LIVE HALF: THE GRID IS 2.7 µs AND THE PARTS DO NOT ACCOUNT FOR THE WHOLE
 
 **The tile mechanism was held and the split refutes it.** A scrolling grid cached as a tile blitted

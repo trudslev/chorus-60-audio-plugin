@@ -53,6 +53,16 @@ private:
     juce::Image staticLayer;
     float cachedDeviceScale = 0.0f;
     juce::String cachedStaticKey;
+    int staticLayerBuilds = 0;
+
+public:
+    /** Rebuild count. **This was the one cache of three without it**, and that gap is why
+        ModScope's 2.5 ms went two rounds unexplained: `KnobComponent` and `ProgramHeader` both
+        assert their layer is built once, and nothing here established the same. A cache with no
+        rebuild count is a cache nobody has checked. */
+    int staticLayerBuildCount() const noexcept { return staticLayerBuilds; }
+
+private:
 
     Chorus60AudioProcessor& processorRef;
 

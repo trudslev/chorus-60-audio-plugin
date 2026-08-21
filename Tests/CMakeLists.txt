@@ -6,6 +6,7 @@ target_sources(Chorus60Tests PRIVATE
     KnobPaintSplitTests.cpp
     HeaderPaintSplitTests.cpp
     ScopeLiveHalfSplitTests.cpp
+    RankingMethodControlTests.cpp
     EditorPaintRankingTests.cpp
     NumericalRobustnessTests.cpp
     InvarianceTests.cpp

@@ -76,6 +76,8 @@ void ModScope::renderStaticLayer (float deviceScale, const juce::String& cacheKe
                                 juce::jmax (1, juce::roundToInt (staticRegionW * deviceScale)),
                                 juce::jmax (1, juce::roundToInt (staticRegionH * deviceScale)), true);
 
+    ++staticLayerBuilds;
+
     juce::Graphics g { staticLayer };
     g.addTransform (juce::AffineTransform::scale (deviceScale)
                         .translated (-staticRegionX * deviceScale, -staticRegionY * deviceScale));
