@@ -191,6 +191,118 @@ public:
                         + "x cheaper than the blur, every frame, no lag");
         }
 
+        /*  **The visual price of what was actually SHIPPED, which is not the split's figure.**
+
+            The 33/255 mean above was measured with the whole glow resampled, core stroke included —
+            and its 255/255 worst case WAS that core stroke, whose hard edge is maximally wrong when
+            scaled. The applied change resamples only the two blurs and draws the 7 px band, the
+            3 px core and the head dot at full resolution.
+
+            So the number that matters is this one: the same construction, blurs at half against
+            blurs at full, with everything sharp identical in both. */
+        {
+            const auto p = buildTrace (1.0f);
+
+            juce::Path glowOutline, coreOutline;
+            juce::PathStrokeType (7.0f, juce::PathStrokeType::mitered,
+                                   juce::PathStrokeType::butt).createStrokedPath (glowOutline, p);
+            juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered,
+                                   juce::PathStrokeType::butt).createStrokedPath (coreOutline, p);
+
+            const auto sharpPart = [&] (juce::Graphics& g)
+            {
+                g.setColour (Colour::chorusAccent.withAlpha (0.45f));
+                g.fillPath (glowOutline);
+                g.setColour (Colour::chorusAccent);
+                g.strokePath (p, juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered,
+                                                        juce::PathStrokeType::butt));
+            };
+
+            /*  **Both renders sit on the scope's own glass, not on transparency.** The first
+                version wrote ARGB images with a transparent ground; a viewer composites those on
+                WHITE, and a red glow over white is a different object from a red glow over
+                `#0B0F11 -> #050708`. The figures were right and the picture was misattributing
+                them — the instrument-versus-subject error, arriving in a presentation. */
+            const auto layGlass = [&] (juce::Graphics& g)
+            {
+                juce::ColourGradient glass (Colour::scopeBgTop, w * 0.5f, 0.0f,
+                                             Colour::scopeBgBottom, w * 0.5f, h, false);
+                g.setGradientFill (glass);
+                g.fillRect (0.0f, 0.0f, w, h);
+            };
+
+            juce::Image before (juce::Image::ARGB, (int) w, (int) h, true);
+            {
+                juce::Graphics g (before);
+                layGlass (g);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f), 20, {0, 0}).drawForPath (g, glowOutline);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f), 10, {0, 0}).drawForPath (g, coreOutline);
+                sharpPart (g);
+            }
+
+            juce::Image after (juce::Image::ARGB, (int) w, (int) h, true);
+            {
+                { juce::Graphics g (after); layGlass (g); }
+                constexpr float s = 0.5f;
+                juce::Image blurLayer (juce::Image::ARGB, juce::roundToInt (w * s),
+                                        juce::roundToInt (h * s), true);
+                {
+                    juce::Graphics bg (blurLayer);
+                    auto gs = glowOutline; gs.applyTransform (juce::AffineTransform::scale (s));
+                    auto cs = coreOutline; cs.applyTransform (juce::AffineTransform::scale (s));
+                    juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f),
+                                       juce::roundToInt (20.0f * s), {0, 0}).drawForPath (bg, gs);
+                    juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f),
+                                       juce::roundToInt (10.0f * s), {0, 0}).drawForPath (bg, cs);
+                }
+                juce::Graphics g (after);
+                g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
+                g.drawImage (blurLayer, juce::Rectangle<float> (0.0f, 0.0f, w, h),
+                              juce::RectanglePlacement::stretchToFit);
+                sharpPart (g);
+            }
+
+            double sum = 0.0; int worst = 0, n = 0, over16 = 0;
+            for (int y = 0; y < (int) h; ++y)
+                for (int x = 0; x < (int) w; ++x)
+                {
+                    const auto a = before.getPixelAt (x, y), b = after.getPixelAt (x, y);
+                    const int d = juce::jmax (std::abs ((int) a.getRed()   - (int) b.getRed()),
+                                               std::abs ((int) a.getGreen() - (int) b.getGreen()),
+                                               std::abs ((int) a.getBlue()  - (int) b.getBlue()),
+                                               std::abs ((int) a.getAlpha() - (int) b.getAlpha()));
+                    sum += d; worst = juce::jmax (worst, d); ++n;
+                    if (d > 16) ++over16;
+                }
+
+            /*  **The two images the ask is judged from.** Written out rather than described,
+                because the delta figures below are a summary and a glow is not a thing anyone should
+                accept or reject from a summary. Everything sharp is identical in both; only the two
+                blurs differ. */
+            if (const auto dir = juce::File (juce::SystemStats::getEnvironmentVariable (
+                                                  "NF_GLOW_IMAGE_DIR", {}));
+                dir.isDirectory())
+            {
+                for (const auto& [img, name] : { std::pair { &before, "glow-current.png" },
+                                                  std::pair { &after,  "glow-half-resolution.png" } })
+                {
+                    juce::PNGImageFormat png;
+                    auto out = dir.getChildFile (name);
+                    out.deleteFile();
+                    if (auto stream = out.createOutputStream())
+                        png.writeImageToStream (*img, *stream);
+                }
+                logMessage ("  wrote both glow renders to " + dir.getFullPathName());
+            }
+
+            logMessage ("  --------");
+            logMessage ("  APPLIED — blurs at half, core and band at full:");
+            logMessage ("    visual delta mean " + juce::String (sum / (double) n, 2)
+                        + "/255, worst " + juce::String (worst) + "/255, "
+                        + juce::String (100.0 * over16 / (double) n, 2)
+                        + " % of pixels differ by more than 16");
+        }
+
         logMessage ("  --------");
         logMessage ("  update-rate lever is 1/N by construction and needs no measurement:");
         logMessage ("    every 2nd frame -> " + juce::String (fullMs * 500.0, 1)
