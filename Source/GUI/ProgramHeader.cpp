@@ -381,8 +381,35 @@ bool ProgramHeader::keyPressed(const juce::KeyPress& key)
     return false;
 }
 
-void ProgramHeader::paint(juce::Graphics& g)
+namespace
 {
+    // The inked region: the shared header block, plus a pixel each side for its own drop shadow.
+    constexpr float staticRegionX = (float) nf::HeaderGeometry::blockX - 2.0f;
+    constexpr float staticRegionY = (float) nf::HeaderGeometry::blockY - 2.0f;
+    constexpr float staticRegionW = (float) nf::HeaderGeometry::blockW + 4.0f;
+    constexpr float staticRegionH = (float) nf::HeaderGeometry::blockH + 6.0f;
+}
+
+/*  Everything on the header EXCEPT the two meter values. Rendered once per (device scale, key) and
+    blitted by `paint`.
+
+    **The region is the header block, not the component.** `ProgramHeader` spans the canvas so its
+    menu can be laid out and its hit areas can be narrowed in panel coordinates, but it inks
+    1308 x 104 of it. Caching the whole canvas would be a 17 MB image to save 1 ms — the wrong trade,
+    and the kind a cache makes silently. */
+void ProgramHeader::renderStaticLayer (float deviceScale, const juce::String& key)
+{
+    juce::ignoreUnused (key);
+
+    staticLayer = juce::Image (juce::Image::ARGB,
+                                juce::jmax (1, juce::roundToInt (staticRegionW * deviceScale)),
+                                juce::jmax (1, juce::roundToInt (staticRegionH * deviceScale)), true);
+    ++staticLayerBuilds;
+
+    juce::Graphics g { staticLayer };
+    g.addTransform (juce::AffineTransform::scale (deviceScale)
+                        .translated (-staticRegionX * deviceScale, -staticRegionY * deviceScale));
+
     using namespace Chorus60Theme;
     using namespace Chorus60Theme::Layout;
 
@@ -577,12 +604,10 @@ void ProgramHeader::paint(juce::Graphics& g)
 
         The suite's meter ruling makes the widest string **five** characters, so the fit is not a
         matter of opinion — `MeterReadoutBudgetTests` measures it against this well. */
-    const auto meterFont = monoFont(monoFontHeightForCssPx(Layout::lcdCssPx));
-    const float meterTracking = trackingPxForEm(Layout::lcdTrackingEm, Layout::lcdCssPx);
-    drawTrackedText(g, Layout::formatMeterDb(processorRef.getInputMeterDb()), meterFont, meterTracking,
-                     inWindowRect, juce::Justification::centred, Colour::ledWindowText);
-    drawTrackedText(g, Layout::formatMeterDb(processorRef.getOutputMeterDb()), meterFont, meterTracking,
-                     outWindowRect, juce::Justification::centred, Colour::ledWindowText);
+    /*  **The two meter values are NOT drawn here — they are the live half.** They are the only
+        reason this component's timer is unconditional, and they are 103.8 us against the 994.6 us
+        above. Drawing them into the cached layer would put the one thing that changes every tick
+        into the one thing that must not be rebuilt every tick. `paint` draws them over the blit. */
 
     // SAVE / STORE and DELETE / CANCEL, per section 13.
     //
@@ -657,3 +682,63 @@ void ProgramHeader::paint(juce::Graphics& g)
     drawButton(deleteButtonRect, "DELETE", "CANCEL",
                ! namingMode && isButtonEnabled(HeaderButton::deleteOrCancel), namingMode);
 }
+/*  The blit, plus the only two things that change every tick.
+
+    **9.6x static per live, measured before this cache existed**: 994.6 us of block, nameplate, wells
+    and button faces that cannot have changed, against 103.8 us of meter values. At 20 Hz that was
+    19.89 ms/s of unchanging pixels to deliver 2.08 ms/s of numbers. */
+void ProgramHeader::paint (juce::Graphics& g)
+{
+    using namespace Chorus60Theme;
+
+    const float deviceScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+    const auto key = staticCacheKey();
+
+    if (staticLayer.isNull() || std::abs (deviceScale - cachedDeviceScale) > 1.0e-3f
+        || cachedStaticKey != key)
+    {
+        renderStaticLayer (deviceScale, key);
+        cachedDeviceScale = deviceScale;
+        cachedStaticKey = key;
+    }
+
+    g.drawImage (staticLayer,
+                  juce::Rectangle<float> (staticRegionX, staticRegionY,
+                                           staticRegionW, staticRegionH),
+                  juce::RectanglePlacement::stretchToFit);
+
+    // The live half. Same font, tracking and rects the static renderer uses for the wells they sit
+    // in - taken from the same constants rather than restated, so the value cannot drift out of its
+    // own well.
+    const juce::Rectangle<float> inWindowRect ((float) nf::HeaderGeometry::inWellX,
+                                                (float) nf::HeaderGeometry::bandY,
+                                                (float) nf::HeaderGeometry::meterWellW,
+                                                (float) nf::HeaderGeometry::bandH);
+    const juce::Rectangle<float> outWindowRect ((float) nf::HeaderGeometry::outWellX,
+                                                 (float) nf::HeaderGeometry::bandY,
+                                                 (float) nf::HeaderGeometry::meterWellW,
+                                                 (float) nf::HeaderGeometry::bandH);
+
+    const auto meterFont = monoFont (monoFontHeightForCssPx (Layout::lcdCssPx));
+    const float meterTracking = trackingPxForEm (Layout::lcdTrackingEm, Layout::lcdCssPx);
+
+    drawTrackedText (g, Layout::formatMeterDb (processorRef.getInputMeterDb()), meterFont,
+                      meterTracking, inWindowRect, juce::Justification::centred,
+                      Colour::ledWindowText);
+    drawTrackedText (g, Layout::formatMeterDb (processorRef.getOutputMeterDb()), meterFont,
+                      meterTracking, outWindowRect, juce::Justification::centred,
+                      Colour::ledWindowText);
+}
+
+/*  **What varies, and nothing else.** The meter values are deliberately absent: a key including them
+    would rebuild every tick and cache nothing, which is the failure this split was run to avoid. */
+juce::String ProgramHeader::staticCacheKey() const
+{
+    return juce::String ((int) displayedId.bank) + displayedId.id
+         + "|" + displayedId.displayName
+         + "|" + juce::String ((int) displayedIsModified)
+         + "|" + juce::String ((int) namingMode) + typedName
+         + "|" + juce::String ((int) menuOpen)
+         + "|" + readout.textAt (juce::Time::getMillisecondCounter());
+}
+

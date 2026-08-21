@@ -149,6 +149,35 @@ private:
     // every tick. The deadline itself lives in `readout`.
     bool readoutWasShowing = false;
 
+    /*  **The static half, cached — 9.6x the live half per paint.** Measured before it was built:
+        the header block is 551.3 us, the nameplate 328.9, the wells and button faces 114.4 — 994.6 us
+        that cannot have changed — against 103.8 us of meter values, which is the only thing this
+        component's 20 Hz timer exists for.
+
+        **The key is what varies, and the meter values are deliberately NOT in it.** A key including
+        them would rebuild every tick and cache nothing, which is the failure this whole split was
+        run to avoid. What is in it: the Program identity and its dirty marker, the naming state and
+        the typed name, whether the menu is open, and the live parameter readout — everything that
+        decides a string on the glass. During a knob drag the readout changes per frame and the layer
+        rebuilds per frame; that is correct rather than a defect, because the glass genuinely differs
+        every frame while a control moves, and it stops the moment the drag does.
+
+        Keyed on device scale as well, which is what actually changes the pixels — a component whose
+        bounds never move can still be asked to paint at 2x on one display and 1x on another. */
+    void renderStaticLayer (float deviceScale, const juce::String& key);
+    juce::String staticCacheKey() const;
+
+    juce::Image staticLayer;
+    float cachedDeviceScale = 0.0f;
+    juce::String cachedStaticKey;
+    int staticLayerBuilds = 0;
+
+public:
+    /** Rebuild count, so a test can assert the cache is a cache rather than a per-frame redraw. */
+    int staticLayerBuildCount() const noexcept { return staticLayerBuilds; }
+
+private:
+
     // Dresses the dropdown as an extension of the PROGRAM glass. Owned here so it outlives every
     // menu this component opens.
     Chorus60MenuLookAndFeel menuLookAndFeel;

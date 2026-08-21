@@ -105,9 +105,26 @@ caption and the button legends — all of which change on a Program action — a
 numbers, which change continuously and are 10 % of the cost. Same shape as ModScope's: cache the
 static half keyed on the strings, draw the live sliver over it.
 
-**Not done here.** ModScope's cache returned 27 % where "caches nothing" implied more, so the
-prediction that this one returns ~90 % is a prediction rather than a result, and it is the kind this
-week has already refuted twice.
+**DONE 2026-08-21, and the prediction held — which is why the split was worth running first.**
+
+| | Before | After |
+|---|---|---|
+| `ProgramHeader`, per paint | 1.546 ms | **0.114 ms** |
+| Editor-open cell, 128 @ 48 k | 36.03 % of a core | **30.80 %** |
+
+**93 % off the component and about five points off the panel.** One layer build across 400 paints,
+so the cache is a cache.
+
+**The contrast with ModScope is the whole argument for measuring before caching.** Both components
+"cached nothing"; ModScope's static half was 27 % of its cost and this one's was 90 %, and the split
+said so in advance. The same fix returned 27 % in one place and 93 % in the other, and nothing about
+reading the code would have separated them.
+
+**The key is what varies and the meter values are deliberately absent from it** — Program identity
+and dirty marker, naming state and typed name, menu-open, and the live parameter readout. A key
+including the meters would rebuild every tick and cache nothing, which is the failure the split was
+run to avoid. During a knob drag the readout changes per frame and the layer rebuilds per frame;
+that is correct, because the glass genuinely differs every frame while a control moves.
 
 ### The CPU bar fired at 1.122 during this work, and the pre-stated band settled it
 
