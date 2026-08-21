@@ -250,23 +250,82 @@ void ModScope::paint(juce::Graphics& g)
 
     if (!firstPoint)
     {
-        // Glow pass: soft 20px shadow first, then the 7px-wide stroke itself on top (section 5:
-        // "glow pass underneath at 7px rgba(255,43,28,.45) with a 20px shadow in rgba(255,43,28,.80)").
         juce::Path glowOutline;
         juce::PathStrokeType(7.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::butt)
             .createStrokedPath(glowOutline, tracePath);
-        juce::DropShadow glowShadow(Colour::chorusAccent.withAlpha(0.80f), 20, {0, 0});
-        glowShadow.drawForPath(g, glowOutline);
-        g.setColour(Colour::chorusAccent.withAlpha(0.45f));
-        g.fillPath(glowOutline);
-
-        // Core pass: 10px shadow behind the actual 3px hard-mitred trace (section 5: "then the core
-        // pass with a 10px shadow... Mitre joins... do not smooth it").
         juce::Path coreOutline;
         juce::PathStrokeType(3.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::butt)
             .createStrokedPath(coreOutline, tracePath);
-        juce::DropShadow coreShadow(Colour::chorusAccent.withAlpha(0.70f), 10, {0, 0});
-        coreShadow.drawForPath(g, coreOutline);
+
+        /*  **§5's two shadows, rendered at HALF RESOLUTION and scaled up.** They were 4600 us of a
+            component measuring 2523 — `juce::DropShadow` is a software box blur and there are two of
+            them, every frame, over a 1035 px trace at 60 Hz. Halving each axis and each radius is
+            **5.3x** cheaper, measured over four runs.
+
+            **A blur is low-frequency by definition**, which is what makes this a rendering change
+            rather than a look change: there is nothing in a 20 px blur that a half-resolution
+            raster cannot carry. The one thing that resamples badly is a hard edge, and the split
+            measured exactly that — a 33/255 mean delta whose 255/255 worst case was the trace's own
+            3 px core stroke.
+
+            **So the core does not go through here.** It, the 7 px band and the head dot are all
+            drawn at full resolution below; only the two blurs are scaled. That is why the visual
+            price of this change is not the split's 33/255 — see this casting's CLAUDE.md for the
+            figure measured with the core excluded.  */
+        {
+            constexpr float blurScale = 0.5f;
+
+            /*  **The raster is PADDED past the clip, and the first version was not.** A
+                half-resolution raster frays at its own boundary where a full-resolution one does
+                not — the resampler has no data beyond the last texel and the blur has no source
+                past the last pixel. The first version sized the layer to `innerRect` exactly and
+                blitted it to `innerRect` exactly, so that boundary landed **on the scope's clip
+                edge**: a faint hard stop at the left and right ends of the trace, which is a look
+                change rather than a rendering one.
+
+                Caught by the chief designer reading the diff rather than the panel — the worst pixel
+                in the accepted comparison sat at **x = 1031 of 1035**, four pixels from the right
+                edge, which is the fray and not the glow. 24/255 and structural.
+
+                The pad is the widest blur plus the widest outline it is applied to, so it is derived
+                from what actually spreads rather than chosen: nothing the blur can reach is outside
+                the raster, and everything frayed is outside the clip. */
+            constexpr float blurPad = 20.0f + 7.0f;   // §5's widest radius + its widest outline
+            const auto paddedRect = innerRect.expanded (blurPad);
+
+            const auto toLayer = juce::AffineTransform::translation (-paddedRect.getX(), -paddedRect.getY())
+                                     .scaled (blurScale, blurScale);
+
+            juce::Image blurLayer (juce::Image::ARGB,
+                                    juce::jmax (1, juce::roundToInt (paddedRect.getWidth() * blurScale)),
+                                    juce::jmax (1, juce::roundToInt (paddedRect.getHeight() * blurScale)),
+                                    true);
+            {
+                juce::Graphics bg { blurLayer };
+
+                auto glowScaled = glowOutline; glowScaled.applyTransform (toLayer);
+                auto coreScaled = coreOutline; coreScaled.applyTransform (toLayer);
+
+                // Radii scale with the raster: a 20 px blur at half size is a 10 px blur, and
+                // leaving them at 20 would double the glow rather than reproduce it.
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f),
+                                   juce::roundToInt (20.0f * blurScale), {0, 0})
+                    .drawForPath (bg, glowScaled);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f),
+                                   juce::roundToInt (10.0f * blurScale), {0, 0})
+                    .drawForPath (bg, coreScaled);
+            }
+
+            g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
+            // Blitted to the PADDED rect, so the raster's own edges land outside `innerRect` and
+            // the clip already in force removes them.
+            g.drawImage (blurLayer, paddedRect, juce::RectanglePlacement::stretchToFit);
+        }
+
+        // The 7 px band itself, at FULL resolution — it is a fill rather than a blur, so it costs
+        // little and has an edge worth keeping.
+        g.setColour(Colour::chorusAccent.withAlpha(0.45f));
+        g.fillPath(glowOutline);
 
         g.setColour(Colour::chorusAccent);
         g.strokePath(tracePath, juce::PathStrokeType(3.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::butt));

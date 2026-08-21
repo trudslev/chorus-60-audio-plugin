@@ -102,10 +102,23 @@ public:
         /*  The visual cost, as a figure. Render the glow at `scale`, scale it back up, and compare
             it to the full-resolution one pixel by pixel — so "slightly softer" is measured rather
             than asserted. */
+        /*  **Every comparison here lays the scope's own glass first.** An earlier version diffed
+            ARGB images with a TRANSPARENT ground, so it measured alpha-channel differences in an
+            unrendered image — and a viewer composites such an image on white, where a red glow is a
+            different object. It reported 31.76/255 where the composited answer is 3.33. The figure
+            was the instrument, not the subject, and the conclusion drawn from it was retracted. */
+        const auto glassOnly = [&] (juce::Graphics& g)
+        {
+            juce::ColourGradient glass (Colour::scopeBgTop, w * 0.5f, 0.0f,
+                                         Colour::scopeBgBottom, w * 0.5f, h, false);
+            g.setGradientFill (glass);
+            g.fillRect (0.0f, 0.0f, w, h);
+        };
+
         const auto visualDelta = [&] (float scale)
         {
             juce::Image full (juce::Image::ARGB, (int) w, (int) h, true);
-            { juce::Graphics fg (full); renderGlow (fg, 1.0f); }
+            { juce::Graphics fg (full); glassOnly (fg); renderGlow (fg, 1.0f); }
 
             juce::Image small (juce::Image::ARGB, juce::roundToInt (w * scale),
                                 juce::roundToInt (h * scale), true);
@@ -114,6 +127,7 @@ public:
             juce::Image up (juce::Image::ARGB, (int) w, (int) h, true);
             {
                 juce::Graphics ug (up);
+                glassOnly (ug);
                 ug.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
                 ug.drawImage (small, juce::Rectangle<float> (0.0f, 0.0f, w, h),
                                juce::RectanglePlacement::stretchToFit);
@@ -189,6 +203,180 @@ public:
             logMessage ("  stroke stack, no blur  " + juce::String (stackMs * 1000.0, 1)
                         + " us   " + juce::String (fullMs / stackMs, 0)
                         + "x cheaper than the blur, every frame, no lag");
+        }
+
+        /*  **The visual price of what was actually SHIPPED, which is not the split's figure.**
+
+            The 33/255 mean above was measured with the whole glow resampled, core stroke included —
+            and its 255/255 worst case WAS that core stroke, whose hard edge is maximally wrong when
+            scaled. The applied change resamples only the two blurs and draws the 7 px band, the
+            3 px core and the head dot at full resolution.
+
+            So the number that matters is this one: the same construction, blurs at half against
+            blurs at full, with everything sharp identical in both. */
+        {
+            const auto p = buildTrace (1.0f);
+
+            juce::Path glowOutline, coreOutline;
+            juce::PathStrokeType (7.0f, juce::PathStrokeType::mitered,
+                                   juce::PathStrokeType::butt).createStrokedPath (glowOutline, p);
+            juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered,
+                                   juce::PathStrokeType::butt).createStrokedPath (coreOutline, p);
+
+            const auto sharpPart = [&] (juce::Graphics& g)
+            {
+                g.setColour (Colour::chorusAccent.withAlpha (0.45f));
+                g.fillPath (glowOutline);
+                g.setColour (Colour::chorusAccent);
+                g.strokePath (p, juce::PathStrokeType (3.0f, juce::PathStrokeType::mitered,
+                                                        juce::PathStrokeType::butt));
+            };
+
+            /*  **Both renders sit on the scope's own glass, not on transparency.** The first
+                version wrote ARGB images with a transparent ground; a viewer composites those on
+                WHITE, and a red glow over white is a different object from a red glow over
+                `#0B0F11 -> #050708`. The figures were right and the picture was misattributing
+                them — the instrument-versus-subject error, arriving in a presentation. */
+            const auto layGlass = [&] (juce::Graphics& g)
+            {
+                juce::ColourGradient glass (Colour::scopeBgTop, w * 0.5f, 0.0f,
+                                             Colour::scopeBgBottom, w * 0.5f, h, false);
+                g.setGradientFill (glass);
+                g.fillRect (0.0f, 0.0f, w, h);
+            };
+
+            juce::Image before (juce::Image::ARGB, (int) w, (int) h, true);
+            {
+                juce::Graphics g (before);
+                layGlass (g);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f), 20, {0, 0}).drawForPath (g, glowOutline);
+                juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f), 10, {0, 0}).drawForPath (g, coreOutline);
+                sharpPart (g);
+            }
+
+            /*  **`after` now renders the PADDED construction that ships**, which is the whole
+                point of this arm: the unpadded one put its raster boundary on the clip edge, and
+                the chief designer found it in the diff — worst pixel at x = 1031 of 1035, four from
+                the right, which is fray rather than glow. Both variants are built below so the
+                move is shown rather than asserted. */
+            const auto renderHalfRes = [&] (juce::Image& dest, float pad)
+            {
+                { juce::Graphics g (dest); layGlass (g); }
+
+                constexpr float s = 0.5f;
+                const juce::Rectangle<float> padded (-pad, -pad, w + pad * 2.0f, h + pad * 2.0f);
+
+                juce::Image layer (juce::Image::ARGB,
+                                    juce::roundToInt (padded.getWidth() * s),
+                                    juce::roundToInt (padded.getHeight() * s), true);
+                {
+                    juce::Graphics bg (layer);
+                    const auto toLayer = juce::AffineTransform::translation (-padded.getX(), -padded.getY())
+                                             .scaled (s, s);
+                    auto gs = glowOutline; gs.applyTransform (toLayer);
+                    auto cs = coreOutline; cs.applyTransform (toLayer);
+                    juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f),
+                                       juce::roundToInt (20.0f * s), {0, 0}).drawForPath (bg, gs);
+                    juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f),
+                                       juce::roundToInt (10.0f * s), {0, 0}).drawForPath (bg, cs);
+                }
+
+                juce::Graphics g (dest);
+                g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
+                g.drawImage (layer, padded, juce::RectanglePlacement::stretchToFit);
+                sharpPart (g);
+            };
+
+            juce::Image unpadded (juce::Image::ARGB, (int) w, (int) h, true);
+            renderHalfRes (unpadded, 0.0f);
+
+            juce::Image after (juce::Image::ARGB, (int) w, (int) h, true);
+            renderHalfRes (after, 27.0f);
+
+            /*  Where the worst pixel IS, not just how big it is. The designer's caveat is entirely
+                about location: 24/255 in the middle of a falloff is invisible, and 24/255 four
+                pixels from the clip is a hard stop at the end of the trace. */
+            const auto worstAt = [&] (const juce::Image& variant)
+            {
+                int wx = 0, wy = 0, wd = 0;
+                for (int y = 0; y < (int) h; ++y)
+                    for (int x = 0; x < (int) w; ++x)
+                    {
+                        const auto p = before.getPixelAt (x, y), q = variant.getPixelAt (x, y);
+                        const int d = juce::jmax (std::abs ((int) p.getRed()   - (int) q.getRed()),
+                                                   std::abs ((int) p.getGreen() - (int) q.getGreen()),
+                                                   std::abs ((int) p.getBlue()  - (int) q.getBlue()));
+                        if (d > wd) { wd = d; wx = x; wy = y; }
+                    }
+                return std::tuple<int,int,int> { wd, wx, wy };
+            };
+
+            {
+                const auto [du, xu, yu] = worstAt (unpadded);
+                const auto [dp, xp, yp] = worstAt (after);
+                logMessage ("  --------");
+                logMessage ("  unpadded raster: worst " + juce::String (du) + "/255 at x="
+                            + juce::String (xu) + " of " + juce::String ((int) w)
+                            + ", y=" + juce::String (yu)
+                            + (xu < 8 || xu > (int) w - 8 ? "   <- AT THE CLIP EDGE" : ""));
+                logMessage ("  padded raster:   worst " + juce::String (dp) + "/255 at x="
+                            + juce::String (xp) + " of " + juce::String ((int) w)
+                            + ", y=" + juce::String (yp)
+                            + (xp < 8 || xp > (int) w - 8 ? "   <- STILL AT THE EDGE" : "   (away from both edges)"));
+            }
+
+            double sum = 0.0; int worst = 0, n = 0, over16 = 0;
+            for (int y = 0; y < (int) h; ++y)
+                for (int x = 0; x < (int) w; ++x)
+                {
+                    const auto a = before.getPixelAt (x, y), b = after.getPixelAt (x, y);
+                    const int d = juce::jmax (std::abs ((int) a.getRed()   - (int) b.getRed()),
+                                               std::abs ((int) a.getGreen() - (int) b.getGreen()),
+                                               std::abs ((int) a.getBlue()  - (int) b.getBlue()),
+                                               std::abs ((int) a.getAlpha() - (int) b.getAlpha()));
+                    sum += d; worst = juce::jmax (worst, d); ++n;
+                    if (d > 16) ++over16;
+                }
+
+            /*  **The two images the ask is judged from.** Written out rather than described,
+                because the delta figures below are a summary and a glow is not a thing anyone should
+                accept or reject from a summary. Everything sharp is identical in both; only the two
+                blurs differ. */
+            /*  **The variable ENABLES the write; it does not choose where.** It was
+                `NF_GLOW_IMAGE_DIR` and the test wrote to whatever path it named — a test that
+                writes where it is told is a test that will one day be told somewhere unfortunate,
+                and this suite already keeps its Program directory behind a process-wide redirect
+                for exactly that reason.
+
+                The destination is derived from the running binary instead, so it is always inside
+                the build tree that produced it and cannot be aimed. The evidence is just as good
+                from a fixed location — and the name says what it now does rather than what it used
+                to take, which is the calibration-constant lesson applied to an environment
+                variable. */
+            if (juce::SystemStats::getEnvironmentVariable ("NF_WRITE_GLOW_RENDERS", {}).isNotEmpty())
+            {
+                const auto dir = juce::File::getSpecialLocation (juce::File::currentExecutableFile)
+                                     .getParentDirectory().getChildFile ("glow-renders");
+                dir.createDirectory();
+
+                for (const auto& [img, name] : { std::pair { &before, "glow-current.png" },
+                                                  std::pair { &after,  "glow-half-resolution.png" } })
+                {
+                    juce::PNGImageFormat png;
+                    auto out = dir.getChildFile (name);
+                    out.deleteFile();
+                    if (auto stream = out.createOutputStream())
+                        png.writeImageToStream (*img, *stream);
+                }
+                logMessage ("  wrote both glow renders to " + dir.getFullPathName());
+            }
+
+            logMessage ("  --------");
+            logMessage ("  APPLIED — blurs at half, core and band at full:");
+            logMessage ("    visual delta mean " + juce::String (sum / (double) n, 2)
+                        + "/255, worst " + juce::String (worst) + "/255, "
+                        + juce::String (100.0 * over16 / (double) n, 2)
+                        + " % of pixels differ by more than 16");
         }
 
         logMessage ("  --------");
