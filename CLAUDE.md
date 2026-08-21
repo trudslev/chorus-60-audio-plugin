@@ -77,6 +77,42 @@ strings that move when it has.
 
 ---
 
+## MODSCOPE'S LIVE HALF: THE GRID IS 2.7 µs AND THE PARTS DO NOT ACCOUNT FOR THE WHOLE
+
+**The tile mechanism was held and the split refutes it.** A scrolling grid cached as a tile blitted
+at an offset is sound and its condition holds in the strongest form — `gridSpacing` and
+`pixelsPerFrame` are computed from four constants, so only `gridScrollPhase` varies and the tile
+would **never rebuild**. It is aimed at the wrong object:
+
+| Per paint | |
+|---|---|
+| Scrolling grid — 8 lines | **2.7 µs** |
+| Centre line | 2.1 µs |
+| Trace underlay — 121 columns | 16.9 µs |
+| Trace path — 121 points, stroked | **42.8 µs** |
+| **Trace total** | **59.7 µs** |
+
+The grid is **22× smaller than the trace**. Caching it would have been a correct mechanism applied to
+2.7 µs. Fifth time this week that holding a hypothesis and measuring first changed the target.
+
+**AND THE PARTS DO NOT ACCOUNT FOR THE WHOLE, WHICH IS THE LARGER FINDING.** Grid, centre line and
+trace sum to **66 µs**. `ModScope` measures **2523 µs** per paint in the ranking. **Two orders
+apart.** So the live half is not the cost either, and the static half is cached — which leaves the
+component's cost unexplained by anything examined so far.
+
+**One candidate refuted already, by a control rather than by argument.** A non-opaque child spanning
+the whole 1340 × 812 canvas might be composited whole regardless of what it draws. A bare
+`Component` painting **nothing** at those bounds, through the same holder, costs **1.0 µs**. Size is
+not it.
+
+**Filed as open and unexplained rather than closed.** What remains unexamined is the static layer's
+own blit, the real loop's per-column work against the synthetic one this split replicated — the
+genuine one calls `setColour` inside the loop and strokes the path more than once for its glow — and
+whatever the ranking's subtract-the-floor method attributes that a direct timing would not. The
+arithmetic check is what makes this a finding rather than a result: **if the parts do not add up, the
+attribution is wrong and no row in it can be read**, which is the same guard that caught a 2.00x
+generation sum being a multiplication table.
+
 ## PROGRAMHEADER: THE TIMER IS RIGHT AND THE PAINT WANTS A CACHE — 9.6x STATIC PER LIVE
 
 **The units question again, and this time the answer is the other branch.** `ProgramHeader` repaints
