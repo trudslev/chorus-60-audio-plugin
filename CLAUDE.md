@@ -77,6 +77,50 @@ strings that move when it has.
 
 ---
 
+## ONLY TWO COMPONENTS REPAINT PER FRAME, AND THE RANKING'S BIGGEST ROW IS NOT ONE OF THEM
+
+**The units question, pre-stated before the split and answered by reading rather than by timing.**
+The split was to be `drawGroupHeading` against the `drawKnobScale` loop, then ticks against numerals.
+It was not run, because the prior question — *is this a per-frame cost at all* — settles it:
+**`GroupPrintedLayer` is not repainted at frame rate.** It repaints on `setBypassed`, on a page
+change, and on a parent repaint; and `Chorus60EditorContent::timerCallback` calls `repaint()` only
+inside `if (nowPoweredDown != poweredDown)`. Nothing drives it per frame.
+
+So the row is not the lever, which is the branch that was pre-stated for exactly this outcome. The
+split would have decomposed a cost that a host pays on user action.
+
+**What actually repaints at frame rate, checked one timer at a time:**
+
+| Component | Timer | Repaints |
+|---|---|---|
+| **`ModScope`** | 60 Hz | **unconditional, every tick** |
+| **`ProgramHeader`** | 20 Hz | **unconditional, every tick** |
+| `EngineButtonComponent` | 60 Hz | guarded — only on change |
+| `ImageSwitch` | 60 Hz | guarded — only on change |
+| `Chorus60EditorContent` | 60 Hz | only when bypass changes |
+| `DimmableGroup` / `GroupPrintedLayer` | — | bypass or page change |
+| `KnobComponent` | — | on drag |
+
+**The continuous cost of this editor is two components: `ModScope` at 2.463 ms × 60 ≈ 148 ms/s and
+`ProgramHeader` at 1.546 ms × 20 ≈ 31 ms/s — about 18 % of a core between them.** The three knob
+groups, the largest row in the ranking at 8.13 ms, contribute **nothing continuous**.
+
+**This is a correction to how the ranking must be read, not to the ranking.** It paints every child
+every frame, which is the right construction for comparing panels against each other and the wrong
+one for reading a host cost off a single row. The figures are per-PAINT; **what turns a per-paint
+figure into a cost is the repaint rate, and that is a property of the component's timer rather than
+of its paint.** A row can be first by a wide margin and cost nothing.
+
+**And the same correction applies to category 7's editor cell in both directions at once.** It pumps
+at 20 Hz and paints the whole panel: that **overstates** everything repainting on user action —
+which is most of the panel — and **understates `ModScope`**, which runs at 60. Two errors in
+opposite directions inside one number, which is why it is recorded as a full-panel worst case rather
+than as what an editor costs.
+
+**Third time today that asking what a thing does beat asking why it costs**, and the first time the
+answer was that the question did not apply. The other two: ModScope redrawing its static half, and
+the knobs drawing no filmstrip.
+
 ## THE KNOBS ARE ~1 % OF THE "KNOB GROUPS" — THE COST IS THE PRINTED LAYER BESIDE THEM
 
 **The split was scoped to decide between two levers and the answer is that neither is the cost.**
