@@ -102,10 +102,23 @@ public:
         /*  The visual cost, as a figure. Render the glow at `scale`, scale it back up, and compare
             it to the full-resolution one pixel by pixel — so "slightly softer" is measured rather
             than asserted. */
+        /*  **Every comparison here lays the scope's own glass first.** An earlier version diffed
+            ARGB images with a TRANSPARENT ground, so it measured alpha-channel differences in an
+            unrendered image — and a viewer composites such an image on white, where a red glow is a
+            different object. It reported 31.76/255 where the composited answer is 3.33. The figure
+            was the instrument, not the subject, and the conclusion drawn from it was retracted. */
+        const auto glassOnly = [&] (juce::Graphics& g)
+        {
+            juce::ColourGradient glass (Colour::scopeBgTop, w * 0.5f, 0.0f,
+                                         Colour::scopeBgBottom, w * 0.5f, h, false);
+            g.setGradientFill (glass);
+            g.fillRect (0.0f, 0.0f, w, h);
+        };
+
         const auto visualDelta = [&] (float scale)
         {
             juce::Image full (juce::Image::ARGB, (int) w, (int) h, true);
-            { juce::Graphics fg (full); renderGlow (fg, 1.0f); }
+            { juce::Graphics fg (full); glassOnly (fg); renderGlow (fg, 1.0f); }
 
             juce::Image small (juce::Image::ARGB, juce::roundToInt (w * scale),
                                 juce::roundToInt (h * scale), true);
@@ -114,6 +127,7 @@ public:
             juce::Image up (juce::Image::ARGB, (int) w, (int) h, true);
             {
                 juce::Graphics ug (up);
+                glassOnly (ug);
                 ug.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
                 ug.drawImage (small, juce::Rectangle<float> (0.0f, 0.0f, w, h),
                                juce::RectanglePlacement::stretchToFit);
@@ -240,26 +254,75 @@ public:
                 sharpPart (g);
             }
 
-            juce::Image after (juce::Image::ARGB, (int) w, (int) h, true);
+            /*  **`after` now renders the PADDED construction that ships**, which is the whole
+                point of this arm: the unpadded one put its raster boundary on the clip edge, and
+                the chief designer found it in the diff — worst pixel at x = 1031 of 1035, four from
+                the right, which is fray rather than glow. Both variants are built below so the
+                move is shown rather than asserted. */
+            const auto renderHalfRes = [&] (juce::Image& dest, float pad)
             {
-                { juce::Graphics g (after); layGlass (g); }
+                { juce::Graphics g (dest); layGlass (g); }
+
                 constexpr float s = 0.5f;
-                juce::Image blurLayer (juce::Image::ARGB, juce::roundToInt (w * s),
-                                        juce::roundToInt (h * s), true);
+                const juce::Rectangle<float> padded (-pad, -pad, w + pad * 2.0f, h + pad * 2.0f);
+
+                juce::Image layer (juce::Image::ARGB,
+                                    juce::roundToInt (padded.getWidth() * s),
+                                    juce::roundToInt (padded.getHeight() * s), true);
                 {
-                    juce::Graphics bg (blurLayer);
-                    auto gs = glowOutline; gs.applyTransform (juce::AffineTransform::scale (s));
-                    auto cs = coreOutline; cs.applyTransform (juce::AffineTransform::scale (s));
+                    juce::Graphics bg (layer);
+                    const auto toLayer = juce::AffineTransform::translation (-padded.getX(), -padded.getY())
+                                             .scaled (s, s);
+                    auto gs = glowOutline; gs.applyTransform (toLayer);
+                    auto cs = coreOutline; cs.applyTransform (toLayer);
                     juce::DropShadow (Colour::chorusAccent.withAlpha (0.80f),
                                        juce::roundToInt (20.0f * s), {0, 0}).drawForPath (bg, gs);
                     juce::DropShadow (Colour::chorusAccent.withAlpha (0.70f),
                                        juce::roundToInt (10.0f * s), {0, 0}).drawForPath (bg, cs);
                 }
-                juce::Graphics g (after);
+
+                juce::Graphics g (dest);
                 g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
-                g.drawImage (blurLayer, juce::Rectangle<float> (0.0f, 0.0f, w, h),
-                              juce::RectanglePlacement::stretchToFit);
+                g.drawImage (layer, padded, juce::RectanglePlacement::stretchToFit);
                 sharpPart (g);
+            };
+
+            juce::Image unpadded (juce::Image::ARGB, (int) w, (int) h, true);
+            renderHalfRes (unpadded, 0.0f);
+
+            juce::Image after (juce::Image::ARGB, (int) w, (int) h, true);
+            renderHalfRes (after, 27.0f);
+
+            /*  Where the worst pixel IS, not just how big it is. The designer's caveat is entirely
+                about location: 24/255 in the middle of a falloff is invisible, and 24/255 four
+                pixels from the clip is a hard stop at the end of the trace. */
+            const auto worstAt = [&] (const juce::Image& variant)
+            {
+                int wx = 0, wy = 0, wd = 0;
+                for (int y = 0; y < (int) h; ++y)
+                    for (int x = 0; x < (int) w; ++x)
+                    {
+                        const auto p = before.getPixelAt (x, y), q = variant.getPixelAt (x, y);
+                        const int d = juce::jmax (std::abs ((int) p.getRed()   - (int) q.getRed()),
+                                                   std::abs ((int) p.getGreen() - (int) q.getGreen()),
+                                                   std::abs ((int) p.getBlue()  - (int) q.getBlue()));
+                        if (d > wd) { wd = d; wx = x; wy = y; }
+                    }
+                return std::tuple<int,int,int> { wd, wx, wy };
+            };
+
+            {
+                const auto [du, xu, yu] = worstAt (unpadded);
+                const auto [dp, xp, yp] = worstAt (after);
+                logMessage ("  --------");
+                logMessage ("  unpadded raster: worst " + juce::String (du) + "/255 at x="
+                            + juce::String (xu) + " of " + juce::String ((int) w)
+                            + ", y=" + juce::String (yu)
+                            + (xu < 8 || xu > (int) w - 8 ? "   <- AT THE CLIP EDGE" : ""));
+                logMessage ("  padded raster:   worst " + juce::String (dp) + "/255 at x="
+                            + juce::String (xp) + " of " + juce::String ((int) w)
+                            + ", y=" + juce::String (yp)
+                            + (xp < 8 || xp > (int) w - 8 ? "   <- STILL AT THE EDGE" : "   (away from both edges)"));
             }
 
             double sum = 0.0; int worst = 0, n = 0, over16 = 0;

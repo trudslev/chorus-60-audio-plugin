@@ -275,12 +275,30 @@ void ModScope::paint(juce::Graphics& g)
         {
             constexpr float blurScale = 0.5f;
 
-            const auto toLayer = juce::AffineTransform::translation (-innerRect.getX(), -innerRect.getY())
+            /*  **The raster is PADDED past the clip, and the first version was not.** A
+                half-resolution raster frays at its own boundary where a full-resolution one does
+                not — the resampler has no data beyond the last texel and the blur has no source
+                past the last pixel. The first version sized the layer to `innerRect` exactly and
+                blitted it to `innerRect` exactly, so that boundary landed **on the scope's clip
+                edge**: a faint hard stop at the left and right ends of the trace, which is a look
+                change rather than a rendering one.
+
+                Caught by the chief designer reading the diff rather than the panel — the worst pixel
+                in the accepted comparison sat at **x = 1031 of 1035**, four pixels from the right
+                edge, which is the fray and not the glow. 24/255 and structural.
+
+                The pad is the widest blur plus the widest outline it is applied to, so it is derived
+                from what actually spreads rather than chosen: nothing the blur can reach is outside
+                the raster, and everything frayed is outside the clip. */
+            constexpr float blurPad = 20.0f + 7.0f;   // §5's widest radius + its widest outline
+            const auto paddedRect = innerRect.expanded (blurPad);
+
+            const auto toLayer = juce::AffineTransform::translation (-paddedRect.getX(), -paddedRect.getY())
                                      .scaled (blurScale, blurScale);
 
             juce::Image blurLayer (juce::Image::ARGB,
-                                    juce::jmax (1, juce::roundToInt (innerRect.getWidth() * blurScale)),
-                                    juce::jmax (1, juce::roundToInt (innerRect.getHeight() * blurScale)),
+                                    juce::jmax (1, juce::roundToInt (paddedRect.getWidth() * blurScale)),
+                                    juce::jmax (1, juce::roundToInt (paddedRect.getHeight() * blurScale)),
                                     true);
             {
                 juce::Graphics bg { blurLayer };
@@ -299,7 +317,9 @@ void ModScope::paint(juce::Graphics& g)
             }
 
             g.setImageResamplingQuality (juce::Graphics::mediumResamplingQuality);
-            g.drawImage (blurLayer, innerRect, juce::RectanglePlacement::stretchToFit);
+            // Blitted to the PADDED rect, so the raster's own edges land outside `innerRect` and
+            // the clip already in force removes them.
+            g.drawImage (blurLayer, paddedRect, juce::RectanglePlacement::stretchToFit);
         }
 
         // The 7 px band itself, at FULL resolution — it is a fill rather than a blur, so it costs
