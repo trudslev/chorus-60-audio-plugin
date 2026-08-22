@@ -13,10 +13,62 @@ kind is the only kind anyone should try to fix by adding a file.
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
 | **Archivo Expanded Bold** (+ the variable file) | elmer — wordmark | **OFL 1.1** | **ships** — landed this call, `elmer/fonts/` |
-| Librestile Extended | chorus-60 — wordmark | licensed, embeddable | ships |
-| Tudor Victors | gatecrasher — wordmark | licensed, embeddable | ships |
+| **Librestile Extended** | chorus-60 — wordmark | **SIL Open Font License** — *ocelothe2k1, 2024*, read from the delivered file's own name table | **ships**, and now on evidence rather than assertion |
+| **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
 | **Permanent Marker** | fifth-member — nameplate, tape strings | **not embeddable** | **ABSENT BY DECISION.** Letterforms baked into `fifth-member/plate/fifth-member-plate-3x.png` |
+
+## "Licensed, embeddable" was a claim nobody could check
+
+**Two rows carried those words identically and the two faces are not alike.** The phrase named a
+conclusion without naming its evidence, and that is what kept the question invisible for nine
+exports: a row asserting a licence reads exactly like a row recording one.
+
+**Both were answered from the files themselves** (2026-08-22), by reading the `name` table of the
+`.ttf` each casting delivers, which is the one piece of evidence that travels with the binary:
+
+| Face | nameID 0 / 13 as delivered | Verdict |
+|---|---|---|
+| `LibrestileExtBold.ttf` | *"SIL Open Font License. Made by ocelothe2k1, 2024"* | **OFL. Embeddable, ships.** Nothing was bought and nothing needed to be |
+| `TudorVictors.ttf` | *"Typeface by Chequered Ink. © 2020. All Rights Reserved"*, vendor URL `chequered.ink` | **Not redistributable.** Cannot ship in a binary at either price |
+
+**They differ, and the answer for one was not the answer for the other** — which is the reason to
+check a sibling on its own evidence rather than by inheritance from the row above it. Librestile's
+outcome is unchanged; only its justification is, and that is not a small difference: it is now a
+fact in the register instead of a hope.
+
+**A licence column states where the claim comes from, from here on.** OFL and the embedded name
+record are checkable; "licensed" is not. Two rows still say only "OFL" — Barlow Condensed and Share
+Tech Mono, both Google Fonts and both carrying their OFL text in-file; **worth reading their name
+tables the same way** rather than trusting the pattern that just failed twice.
+
+## Gatecrasher's wordmark: artwork, not a face
+
+**It takes TapeRot's treatment**, which this suite has already run once. Cut at **3×** with the face
+**checked loaded at cut time** — `document.fonts.check("36px TudorVictors")` returned true against a
+single loaded face before the raster was taken, so the letterforms are Tudor Victors and not the
+`'Barlow Condensed'` fallback sitting behind it in the stack. That check is the whole point of the
+procedure: a fallback cut looks like a successful cut.
+
+| | |
+|---|---|
+| Path | `gatecrasher/assets/gatecrasher-wordmark.png` (and `designs/assets/gatecrasher/`) |
+| Raster | **699 × 120** at 3× |
+| Drawn | **233 × 40** |
+| Ground | transparent — the header's own gradient shows through, so no plate colour is baked |
+| Ink | `#1b1e21`, per-letter rotation ±2.4° and vertical drift ±1.2 px, all eleven glyphs as §8 sets them |
+
+**This is a standalone cut, not a plate.** Gatecrasher has no plate to bake into — the rewrite
+deleted it and the panel is entirely code-drawn — which makes it unlike Fifth Member, whose
+Permanent Marker letterforms live inside `fifth-member-plate-3x.png` because there was a plate
+already going out. **Same reason, two different artefacts**, and §2's "one binary ships" line on
+Gatecrasher inverts: the font stops shipping and a PNG starts.
+
+The cut is trimmed to its ink plus a stated **3 px** margin on all four sides, and placed at
+**left −4.67, top +2.33** inside the header's 303 × 84 text box — the offsets that put the ink
+exactly where the code-drawn glyphs were, since the rotated bbox overhung its own line box. The
+descriptor line below it holds position by an explicit `margin-top: 48px`, the 8 + 38 + 2 it used
+to inherit from the flow.
 
 ## The 500 weight — **open, owed to two castings**
 
@@ -166,13 +218,21 @@ chose. Two extra binaries are cheaper than one silent substitution.
 
 | Prototype declares | Resolves at `designs/fonts/` |
 |---|---|
-| `TudorVictors.ttf` | yes |
-| `LibrestileExtBold.ttf` | yes |
+| *(Gatecrasher declared `TudorVictors.ttf`)* | **no longer declared** — the prototype places the wordmark artwork instead, so nothing asks for a face that cannot ship. Export 11 |
+| `LibrestileExtBold.ttf` | yes — and it may, being OFL |
 | *(TapeRot declared `ImpactLabelReversed.ttf`)* | **no longer declared** — the prototype places the wordmark artwork instead, so nothing asks for a face that cannot ship. See `designs/ABSENT.md` |
 
 **Librestile Extended's "ships" row above was accurate as an intent and wrong as a fact** in export 3:
 the face was in no location in that bundle, so Chorus-60's runtime nameplate — Librestile Extended
 28 / 32 — could not be checked against its own prototype. It ships at `designs/fonts/` from export 4.
+
+**`TudorVictors.ttf` is gone from `designs/fonts/` too, and one more file had to move with it** —
+`designs/Header Part - Six Materials.dc.html`, the six-casting materials study, was the only other
+file declaring the face. Withdrawing a font that cannot be redistributed is not optional, so
+deleting it orphaned that declaration; the study takes **the same artwork at the same offsets**
+rather than being left to fall back to Barlow Condensed and quietly compare the wrong letterforms.
+**A withdrawal is a two-file change on this casting, not one** — worth knowing before the next
+licence answer comes back.
 
 
 **TapeRot was the last measurement-unsafe artefact in the delivery and is closed in export 9.** Its
