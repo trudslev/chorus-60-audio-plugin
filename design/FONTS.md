@@ -8,7 +8,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | Face | Used by | Licence | State |
 |---|---|---|---|
 | Barlow Condensed SemiBold | all six — panel lettering (call 7) | OFL | **ships in all six** — reflect-84 and taperot landed this call |
-| Barlow Condensed **Medium (500)** | **gatecrasher (5 §8 rows), taperot (2), fifth-member (1)** | OFL | **ships in fifth-member only** — owed to gatecrasher and taperot, see below |
+| Barlow Condensed **Medium (500)** | **gatecrasher (4 §8 rows), taperot (1), fifth-member (1)** — counted against the tables, not by grep | OFL 1.408 | **ships in all three** — closed 2026-08-22, see below |
 | Share Tech Mono | all six — the shared LCD face, meter values | OFL | **ships in all six** — reflect-84 and elmer landed this call |
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
@@ -70,7 +70,7 @@ exactly where the code-drawn glyphs were, since the rotated bbox overhung its ow
 descriptor line below it holds position by an explicit `margin-top: 48px`, the 8 + 38 + 2 it used
 to inherit from the flow.
 
-## The 500 weight — **open, owed to two castings**
+## The 500 weight — **CLOSED**
 
 **Ruled 2026-08-21: 500 was intended and the file is what moves.** Deliver the same OFL
 `BarlowCondensed-Medium.ttf` already cut for Fifth Member to **`gatecrasher/fonts/`** and
@@ -78,16 +78,56 @@ to inherit from the flow.
 600 — eight roles across two panels ask for 500 deliberately (units, scale numerals, scope
 legends and header data all sit one step below their labels, and that step is the hierarchy).
 
-Until it lands both builds draw those seven roles in **SemiBold (600)** and must say so at the
-call site. Gatecrasher's rewrite made the substitution silently; that is the part which should
-not persist — an undeclared substitution is the failure this register exists for.
+**Both directories now hold it** — `gatecrasher/fonts/` and `taperot/fonts/`, delivered 2026-08-22.
+No casting that asks for 500 now draws it in 600, and no substitution remains to declare.
+
+**The delivered file, from its own tables:** `BarlowCondensed-Medium.ttf`, **680 glyphs**, `usWeightClass` **500**, 1000 upem, typo ascender/descender 1000 / −200, version **1.408**, *Barlow Project Authors* / Tribby Type, **OFL**. This is TapeRot's cut rather than Fifth Member's 694-glyph one — the same cut now sits in both castings, which is a better outcome than the ruling asked for: one file, one metric set, two directories.
+
+**It went through three states in three days and only the last is a delivery:** ruled (the weight
+stands), reached TapeRot's build directly, then reached both bundle directories. **The middle state
+was the dangerous one** — from the build side a half delivery reads exactly like a whole one, and
+this register briefly said both "ships in fifth-member only" and "ships in taperot" while neither
+was quite true of the bundle.
+
+**TapeRot's copy is a different cut from Fifth Member's, and that was checked rather than assumed:
+680 glyphs against 694, same release.** It is identical on every metric the type scale depends on
+and carries the same 525 codepoints, so it is fit for purpose. Recorded because **the ruling said
+"the same OFL file" and this is not byte-identical to it** — a ruling naming a file and a delivery
+satisfying it by equivalence are different things, and the second needs saying out loud or the next
+reader assumes the first.
+
+**Gatecrasher’s four roles** — unit, scale numeral, scope legend (`500/600`), scope header data —
+draw at 500 from this export. Its `labelFont` substitution note comes out with the next build
+change; **the prototype never substituted**, having drawn `font-weight: 500` at all four roles
+throughout, so no artwork moves and there is nothing to re-check on the panel.
+
+**`tools/check_font_sets.py` is the closure condition** — the missing arm described below, now
+written. Its last complaint was:
+
+    ** Barlow Condensed 500   asked by 3: has ['fifth-member', 'taperot'] · LACKS ['gatecrasher']
+
+**It should now be quiet on this face.** Worth running rather than assumed — the whole point of the
+arm is that nobody’s reading closed it.
+
+### This register's own figures were wrong, and by the mechanism it exists to catch
+
+It said gatecrasher asked in **5** rows and taperot in **2**. Counted against the tables instead of
+by mentions: **gatecrasher asks in 4 §8 rows** — unit, scale numeral, scope legend (`500/600`) and
+scope header data — and **taperot in 1**, the scale numeral. The extras were §3.2's restatement of
+the numeral-ring role in each casting, counted twice because a grep over mentions cannot tell a role
+from a reference to it. **Seven roles was five.**
+
+**This register inherited both numbers from the ask that raised them rather than checking them**,
+which is the same act it was written to prevent one level down: a figure republished is a figure
+claimed. Row counts here are now counted against §8's table and §3's restatements are named as
+restatements.
 
 **The check that missed it is the finding.** A bundle delivering *fewer* files than a casting
 needs passes every arm: forward finds every path CMake names, reverse finds every delivered file
 read, and the set comparison diffs a directory against **its own** previous state. Nothing asks
 whether two castings with the same §8 row got the same font set. **Add that arm** — group §8 rows
-by (face, weight) across castings and assert the delivered sets match. Seventh instance of a fix
-not travelling between castings.
+by (face, weight) across castings and assert the delivered sets match. **Written — `tools/check_font_sets.py`**, and it is the closure condition
+above rather than a report. Seventh instance of a fix not travelling between castings.
 
 ## The omissions — **closed**
 
