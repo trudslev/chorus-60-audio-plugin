@@ -17,7 +17,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
 | **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings, scribble strips | **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. Redistribution permitted outright | **SHIPS in both**, via `juce_add_binary_data`, and always has. Fifth Member's letterforms are **also** baked into `fifth-member-plate-3x.png` — both are true |
-| **Special Elite** | fifth-member — **two documented roles**: right-ear stencil, recessed foot-label window | **Apache 2.0** — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **REMOVED FROM THE BUILD 2026-08-23 AND THE REMOVAL SHOULD BE REVERTED.** It was classified ORPHAN; it is a **WIRE**. See below |
+| **Special Elite** | **nothing draws it** — two roles in README prose, implemented in no artefact; one use in a **rejected** icon concept | **Apache 2.0** — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **ORPHAN. The removal was correct and stands.** This register's reopening is retracted — see below |
 
 ## Who owns which column — ruled **(a)**, 2026-08-23
 
@@ -361,10 +361,57 @@ count disagreeing 4-to-1 is more useful than either number was.
 was wrong by one.** It is the tell again: the baked clause was true, and being true it made the
 arithmetic look finished at three.
 
-## Special Elite — **REOPENED. It was a WIRE and the removal should be reverted**
+## Special Elite — **ORPHAN after all. This register's reopening is RETRACTED**
 
-**Found 2026-08-23, after the removal shipped, in `uploads/Fifth Member Audio Plugin/README.md` —
-the casting's own source document.** Special Elite has **two specified roles**, and a third use in the
+**The original removal was correct. The reopening below was wrong, and it caused a face to be restored
+to five binaries and a waiver to be added to a working tool.** Three checks would have prevented it,
+all available in the file the reopening was reading:
+
+1. **`IconStencil.dc.html` is a rejected concept.** The README's own artefact table says
+   *"Rejected icon concept 1d (rack-ear stencil). Context only."* The chosen icon is **1b**,
+   `IconPulse.dc.html`, the phosphor repeat train. **The reopening cited a rejected design as a live
+   consumer**, with the row saying so in the same document.
+2. **Icons never carry a font dependency at all.** The README: *"Outline this type on export — never
+   ship the icon with a live font dependency."* Deliverables are an SVG with outlined type and PNGs.
+   So even the chosen icon needs no embedded face.
+3. **The two panel roles are in README prose and in no artefact.** Not in the original
+   `Fifth Member.dc.html` (zero Special Elite sites), not in its `GUI-SPEC.md` (zero), not in
+   `BUILD-HANDOFF.md` (zero), not in the delivered prototype, not in the build. **Six artefacts
+   including the casting's own specification, none of which implements it.**
+
+**So nothing draws Special Elite anywhere, and nothing ever did.** ORPHAN is the correct verdict on
+the correct evidence, and the tool's waiver should come out with the face.
+
+### The error, because it is the eighth instance and the first one to move a binary the wrong way
+
+**A README is not a specification, and presence in prose is not implementation.** The reopening found
+two role descriptions and treated them as the spec — while `GUI-SPEC.md`, which *is* the spec, does
+not mention the face. That is this project's own rule inverted: it had already written that **absence
+from a document that does not cover the thing is not evidence**, and then read **presence in a
+document that is not authoritative** as proof.
+
+**And it was made one turn after writing the practice note about retractions**, which is the part
+worth keeping. The tell held exactly as documented — true clauses, false conclusion — and knowing the
+tell by name did not catch it. **What would have caught it is the mechanical step: before asserting a
+role exists, open the artefact that would implement it.** The reopening asserted from three quotations
+and opened nothing.
+
+### What is genuinely open, and it is small
+
+**The README describes two panel elements that no artefact has ever implemented** — the right-ear
+stencil (11 px / .22 em / `rgba(38,35,31,.55)`) and the recessed foot-label window in Special Elite
+(11 px / .10 em / `#a09883`, `CH 4 — GTR / STAGE LEFT`, where the panel draws Permanent Marker 15 px).
+
+**That is a design question, not a licensing or build one:** either the prose is stale and should be
+struck, or two elements were specified and never built. **Neither answer embeds a font today**, because
+until something draws them the face has no reader. If they are wanted, the face returns with them and
+§8 gains two rows at the same time.
+
+### The reopening, kept for the record
+
+**— retracted, see above —** Found 2026-08-23, after the removal shipped, in
+`uploads/Fifth Member Audio Plugin/README.md`, **which is a handoff README rather than the casting's
+specification**; Special Elite has **two specified roles**, and a third use in the
 plugin icon:
 
 | Role | Specification |
@@ -406,10 +453,11 @@ Marker 15 px**, where the README puts it in **Special Elite 11 px / .10 em / `#a
 recessed window. That also revises the marker count: **one of Fifth Member's four Permanent Marker
 sites is a Special Elite site wearing the wrong face.**
 
-### What is asked
+### What was asked — **withdrawn**
 
-1. **Do not delete the face.** Revert the removal from `juce_add_binary_data`, the theme, BinaryData
-   and the licence file — six embedded faces, not five.
+1. ~~**Do not delete the face.** Revert the removal.~~ **Wrong.** Re-remove it; the waiver comes out
+   with it. And the count in this line was wrong twice over — six was stated against a tree that had
+   already dropped Barlow Bold on a separate ruling, so the correct figure was five either way.
 2. **The two roles are design work and are not being re-cut unasked.** The prototype needs the ear
    stencil restored and the foot-label window re-voiced; both are visible changes to a delivered
    panel and want a decision, not a silent edit.
