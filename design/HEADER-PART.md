@@ -493,3 +493,47 @@ on it, no string taken from it. In one pass it was found carrying a wrong model 
 descriptor, a string lifted from the wrong row, an ink worse than the body it was meant to have
 fixed, and two block materials that do not ship. Its geometry demonstration — one part in six
 materials, at a glance — is what it is for, and that survives intact.
+
+
+---
+
+## Centred tracked strings pair `text-indent` with `letter-spacing` (2026-08-23)
+
+**The pair is intended, and it is a correctness idiom rather than a house habit.** A tracked string's
+advance carries **n** trackings for n characters, not n − 1 — the trailing letter-space sits inside the
+line box, `text-align: center` centres a line that includes it, and the glyphs land **half a tracking
+left of true centre**. `text-indent` of the same value cancels it exactly. Measured on `REVERB TANK`,
+Barlow Condensed 600 at 12 px / .28 em in a 216 px box, ink centre off an 8× render:
+
+| Rendering | Ink centre against box centre |
+|---|---|
+| `letter-spacing` alone | **−1.562 px** |
+| `letter-spacing` + `text-indent` | **+0.125 px** |
+| the JUCE build | **−0.250 px** |
+
+**The builds are already right.** They agree with the paired rendering to 0.375 px, so **no build site
+moves** — the 32 unpaired sites were the prototypes disagreeing with their own builds, not the reverse.
+
+**Applied to 32 sites across four castings** (chorus-60 2, elmer 8, gatecrasher 15, taperot 7),
+matching each site's own `letter-spacing` value, in both the root prototypes and `designs/`. All six
+panels now agree.
+
+### It is only correct for centred text, and the 32 were all centred
+
+**Do not blanket-apply it.** `text-indent` shifts the line's start edge, so for a **left-flowing**
+string it *introduces* the offset it removes from a centred one — one tracking to the right. For
+**right-aligned** text it is a no-op and leaves the trailing space as a gap at the right edge, which
+wants a negative margin instead if it ever matters.
+
+Counted before touching anything: **every one of the 32 unpaired sites carries `text-align: center`**,
+so the idiom applies to all of them and to nothing else. The four castings also hold **8 tracked
+right-aligned and left-aligned sites** between them — those are correctly left alone.
+
+### The 37 paired sites with no `text-align` are deliberately not touched
+
+fifth-member and reflect-84 carry the pair on **37 further sites that are not centred** (23 and 14).
+Those are left-flowing or positioned strings where the indent is a **one-tracking rightward offset**,
+not a cancellation — and they were laid out with it in place, so removing it would move ink that
+currently matches its build. **The reference panels are the reference including these**, per the ask.
+Worth knowing that the idiom is doing two different things in those two files, and only one of them
+is the centring fix.
