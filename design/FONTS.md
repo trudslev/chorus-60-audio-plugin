@@ -70,6 +70,63 @@ exactly where the code-drawn glyphs were, since the rotated bbox overhung its ow
 descriptor line below it holds position by an explicit `margin-top: 48px`, the 8 + 38 + 2 it used
 to inherit from the flow.
 
+## Reflect-84's Jost and IBM Plex Mono (2026-08-23, export 14)
+
+**§8 declared five faces; `reflect-84/fonts/` held two.** `Jost-Medium.ttf` (500) and
+`IBMPlexMono-Regular.ttf` (400) delivered with their own licences, and the Barlow `OFL.txt` renamed
+**`BarlowCondensed-OFL.txt`** — three families, three genuinely different licence documents (4471 /
+4478 / 4455 chars), so a bare `OFL.txt` in a shared directory is a filename waiting to be overwritten.
+
+**The prototype had been pulling both from the Google Fonts CDN.** That is the mechanism worth adding
+to this register: **a CDN link renders correctly and delivers nothing**, so it fails in the most
+comfortable direction — the panel is right on every machine with a network while the bundle ships two
+families short. **Sweep the other five castings' prototypes for CDN-only families**; this one was
+found by reading §8 against a directory listing, not by any arm.
+
+**`reflect-84/fonts/` had no `ABSENT.md` and now has one saying the set is complete.** Six exports of
+a missing marker reading as nothing-to-report is the same failure as an unchecked claim: **a directory
+that makes no claim cannot be caught being wrong.** Every fonts directory in this bundle should carry
+one, whether it reports an absence or its absence of absences.
+
+## Reflect-84's 500 and 700 (2026-08-23)
+
+**Barlow Condensed Medium and Bold delivered to `reflect-84/fonts/` with `OFL.txt`.** Fetched from
+`google/fonts` `ofl/barlowcondensed/` per that casting's own provenance rule — the build owning its
+font sources rather than inheriting a sibling's bundle.
+
+**Read from the files on arrival, they are the 680-glyph cut, not the 694 the ask described — and the
+Medium is byte-identical to export 12's** (97960 bytes, `27d58d15…`). So there is **no mixed cut on
+this casting** and, better, **the suite now runs one cut of Barlow Condensed across five castings and
+three weights**: 1000 upem, typo 1000 / −200 / 0, win 1075 / 274, cap 700 on all three, x-height the
+only thing that moves. **Nobody chose that; it is worth writing down before it drifts.**
+
+**A ruling accepting the mixture was written and is retracted** — it reasoned carefully about a state
+that did not exist, from a figure this register took from the ask and did not read off the files. Same
+mechanism as the row counts in the section below, one export later.
+
+**One thing could not be reproduced:** the ask's byte-equality of the Bold against Fifth Member's
+delivered copy. `fifth-member/fonts/` holds only `ABSENT.md` — **no Barlow Condensed at any weight is
+in that directory**, which is its own question, and the fifth-member column of the 500-weight table
+below rests on the same absent evidence. Carried on the build's word and marked as such.
+
+### And the arm written in export 12 passed this casting twice
+
+`tools/check_font_sets.py` reported reflect-84 clean while it was two weights short, for two
+unrelated reasons — **both of which are properties of checkers generally and not of this casting:**
+
+1. **It matched weights by substring.** `"bold" in "semibold"` is true, so a SemiBold satisfied a
+   Bold ask; **the same collision sits under ExtraBold/Bold and ExtraLight/Light.** Fixed to
+   longest-match-then-equality. Every other name-matched check in this suite is worth reading for
+   the same shape.
+2. **It reads §8's type table, and the 500 was only in §2.2's prose.** §8's ALGORITHM row is now
+   split — caption 600, corners 500 / 700 — so the requirement sits where the tool looks. **A
+   checker that reads one table makes that table the contract**; anything stated only in prose is
+   outside every arm this suite has, which is worth a sweep rather than a fix.
+
+**Export 12's closing line was that a checked set had closed the last font debt. It had not** — a
+third casting was two weights short at the time, and the arm said otherwise. The arm is better now;
+what it is not is finished.
+
 ## The 500 weight — **CLOSED**
 
 **Ruled 2026-08-21: 500 was intended and the file is what moves.** Deliver the same OFL
