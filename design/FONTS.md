@@ -13,10 +13,11 @@ kind is the only kind anyone should try to fix by adding a file.
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
 | **Archivo Expanded Bold** (+ the variable file) | elmer — wordmark | **OFL 1.1** | **ships** — landed this call, `elmer/fonts/` |
-| **Librestile Extended** | chorus-60 — wordmark | **SIL Open Font License** — *ocelothe2k1, 2024*, read from the delivered file's own name table | **ships**, and now on evidence rather than assertion |
+| **Librestile Extended Bold** | chorus-60 — wordmark | **OFL 1.1** · © 2024 ocelothe2k1 · Reserved Font Name **"Librestile"** · `https://github.com/ocelothe/Librestile` — the shipped `.ttf` carries **no nameID 13 and no nameID 14**, so its whole in-file claim is nameID 0, *"SIL Open Font License. Made by ocelothe2k1, 2024"*, which names no version. Version, RFN and the verbatim notice are read from the repo's own `LICENSE`, 2026-08-23 | **ships** |
 | **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
-| **Permanent Marker** | fifth-member — nameplate, tape strings | **not embeddable** | **ABSENT BY DECISION.** Letterforms baked into `fifth-member/plate/fifth-member-plate-3x.png` |
+| **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings | **Apache 2.0** · © 2010 Font Diner, Inc. · nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `http://www.apache.org/licenses/LICENSE-2.0` | **SHIPS — in both.** This row said *not embeddable, ABSENT BY DECISION* until 2026-08-23 and both halves were wrong: the file's own name table declares Apache 2.0, which permits redistribution, and `juce_add_binary_data` has been embedding it in two castings. The letterforms are ALSO baked into `fifth-member-plate-3x.png`, which is what made the absence claim look self-consistent |
+| **Special Elite** | fifth-member — typewriter strings | **Apache 2.0** · © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **SHIPS**, and had **no row in this register at all** until 2026-08-23 |
 
 ## "Licensed, embeddable" was a claim nobody could check
 
