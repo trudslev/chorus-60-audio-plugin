@@ -523,7 +523,23 @@ panels now agree.
 **Do not blanket-apply it.** `text-indent` shifts the line's start edge, so for a **left-flowing**
 string it *introduces* the offset it removes from a centred one — one tracking to the right. For
 **right-aligned** text it is a no-op and leaves the trailing space as a gap at the right edge, which
-wants a negative margin instead if it ever matters.
+wants the box widened by one tracking (or a negative right margin) instead.
+
+**A case was recorded here and then withdrawn, which is worth keeping.** Gatecrasher's AMBIENCE
+labels were reported as sitting wrong; they were a mirrored right/left pair, so this asymmetry was
+present and measurable, and they were widened 98 → 99.8 to correct it. **It was 1.8 px of a ~30 px
+error** — the labels were hand-placed in a horizontal band while the detents are diagonal, and they
+are now centred on the numeral ring, where no alignment asymmetry exists at all.
+
+**The lesson is about the order of measurement, not about tracking:** a defect this register had
+already predicted was found on the reported element, was real, and was **not the reported fault**.
+Having a rule that explains a symptom makes it the first explanation reached for and the last one
+questioned. **Measure the gross geometry before the sub-pixel refinement** — the 30 px was visible in
+a screenshot and the 1.8 px needed an 8× render.
+
+**Where else this pattern sits:** reflect-84 has 2 tracked right-aligned sites, gatecrasher 4 (these),
+taperot and chorus-60 and elmer 1 each. **Only mirrored pairs need the correction**; a lone one is
+invisible and moving it risks disagreeing with a build that was laid out around it.
 
 Counted before touching anything: **every one of the 32 unpaired sites carries `text-align: center`**,
 so the idiom applies to all of them and to nothing else. The four castings also hold **8 tracked
