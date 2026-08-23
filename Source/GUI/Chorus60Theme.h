@@ -1251,9 +1251,11 @@ namespace Chorus60Theme
         return typeface;
     }
 
-    inline juce::Font labelFont(float heightPx)
+    inline juce::Font labelFont(float cssPx)
     {
-        return juce::Font(juce::FontOptions(heightPx).withTypeface(barlowSemiBoldTypeface()));
+        // `withPointHeight` IS the CSS em size; `FontOptions(h)` is ascent+descent, a
+        // face-specific multiple of it. The retired converters existed to bridge those two.
+        return juce::Font(juce::FontOptions(barlowSemiBoldTypeface()).withPointHeight(cssPx));
     }
     /*  **The wordmark takes a CSS px directly, via `withPointHeight`, and does NOT get a calibrated
         ratio like the other two faces.**
@@ -1272,13 +1274,17 @@ namespace Chorus60Theme
         return juce::Font(juce::FontOptions().withTypeface(librestileTypeface())
                                               .withPointHeight(cssPx));
     }
-    inline juce::Font labelFontBold(float heightPx)
+    inline juce::Font labelFontBold(float cssPx)
     {
-        return juce::Font(juce::FontOptions(heightPx).withTypeface(barlowBoldTypeface()));
+        // `withPointHeight` IS the CSS em size; `FontOptions(h)` is ascent+descent, a
+        // face-specific multiple of it. The retired converters existed to bridge those two.
+        return juce::Font(juce::FontOptions(barlowBoldTypeface()).withPointHeight(cssPx));
     }
-    inline juce::Font monoFont(float heightPx)
+    inline juce::Font monoFont(float cssPx)
     {
-        return juce::Font(juce::FontOptions(heightPx).withTypeface(shareTechMonoTypeface()));
+        // `withPointHeight` IS the CSS em size; `FontOptions(h)` is ascent+descent, a
+        // face-specific multiple of it. The retired converters existed to bridge those two.
+        return juce::Font(juce::FontOptions(shareTechMonoTypeface()).withPointHeight(cssPx));
     }
 
     // The spec quotes every type size as CSS px, but a juce::Font's height parameter is
@@ -1286,44 +1292,32 @@ namespace Chorus60Theme
     // Passing a spec size straight to labelFont() therefore renders noticeably small. These convert,
     // calibrating the ratio once off a reference string measured directly from the artwork, so one
     // real measurement scales every size on the panel. Same trap as Gatecrasher's.
-    inline float fontHeightForTrackedWidth(const juce::Font& probeFont, float probeHeight,
-                                            const juce::String& text, float trackingPx, float targetWidthPx)
-    {
-        const float glyphsAtProbe = trackedTextWidth(text, probeFont, 0.0f);
-        const float trackingTotal = trackingPx * (float) juce::jmax(0, text.length() - 1);
-        if (glyphsAtProbe <= 0.0f)
-            return probeHeight;
-        return juce::jmax(1.0f, (targetWidthPx - trackingTotal) * probeHeight / glyphsAtProbe);
-    }
-
     inline float trackingPxForEm(float em, float cssPx) { return em * cssPx; }
 
-    inline float labelFontHeightForCssPx(float cssPx)
-    {
-        static const float ratio = [&]
-        {
-            constexpr float probeHeight = 40.0f, refCssPx = 10.0f, refWidth = 79.4f;
-            return fontHeightForTrackedWidth(labelFont(probeHeight), probeHeight, "DECORRELATION",
-                                              trackingPxForEm(0.18f, refCssPx), refWidth)
-                 / refCssPx;
-        }();
-        return cssPx * ratio;
-    }
+    /*  **BOTH CONVERTERS ARE IDENTITIES NOW, AND THE CALIBRATION MACHINERY IS GONE.**
 
-    inline float monoFontHeightForCssPx(float cssPx)
-    {
-        // Share Tech Mono's own ratio, calibrated the same way: section 5 states 9.6 px of advance
-        // per character at 15 CSS px with .10em tracking, so the glyph advance alone is 8.1 px.
-        static const float ratio = [&]
-        {
-            constexpr float probeHeight = 40.0f, refCssPx = 15.0f;
-            const float refWidth = 8.1f * 10.0f + trackingPxForEm(0.10f, refCssPx) * 9.0f;
-            return fontHeightForTrackedWidth(monoFont(probeHeight), probeHeight, "0000000000",
-                                              trackingPxForEm(0.10f, refCssPx), refWidth)
-                 / refCssPx;
-        }();
-        return cssPx * ratio;
-    }
+        They fitted ONE reference string to ONE stated width and scaled the whole panel by the
+        result — `DECORRELATION` at 10 CSS px against a stated 79.4, and ten zeros at 15 against a
+        stated 8.1 px of advance each. `withPointHeight` sets the em directly and needs no reference
+        at all, which is what the wordmark above already does and says it does.
+
+        **This one was RIGHT, and that is the reason to remove it.** Computed from the font this
+        casting embeds, the label ratio came to **1.20899** against Barlow Condensed's own
+        `(ascent − descent) / upem` of **1.200** — 0.75 % out, invisible. Gatecrasher had the
+        identical construction and was **8.7 %** out on its labels and **15.7 %** on its mono,
+        every label on that panel oversize, because one reference figure said `INTERNAL` at 9 CSS px
+        was 38.00 px wide where it is 35.565.
+
+        So the difference between the two castings is not method, it is **which figure somebody
+        happened to measure well** — and nothing here pins that. The coincidence is unpinned and
+        unrestatable: no test asserts 1.20899 is near 1.200, and a re-measured reference could move
+        it by any amount without anything noticing. Removing the mechanism is a fix at the mechanism
+        rather than at the instance, and it leaves **zero castings on a reference-fitted converter**.
+
+        `fontHeightForTrackedWidth` goes with them — these were its only two callers, and a helper
+        kept for nobody is the unconsumed-constant shape one level up. */
+    inline float labelFontHeightForCssPx(float cssPx) { return cssPx; }
+    inline float monoFontHeightForCssPx(float cssPx)  { return cssPx; }
 
     /*  **THE HEADER'S MATERIAL. Every one of these was silkscreen for one revision.**
 
