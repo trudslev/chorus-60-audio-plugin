@@ -119,19 +119,24 @@ grounds with inks or the sweep cries wolf — was written in the same pass that 
 figure is cheap to compute and that is exactly what makes it dangerous: the arithmetic was right
 throughout, applied to the wrong rectangle.
 
-### 2.3 Elmer's unlit KNEE legend — **SUPERSEDED BY §2.2, which retracts this case**
+### 2.3 ~~Elmer's unlit KNEE legend — the functional reading was never available~~ — **SUPERSEDED by §2.2**
 
-> **Read §2.2 first.** It states that `#8E8A7D` appears nowhere in the built panel and that §4B
-> withdrew the role, so the case below does not exist. This section was left asserting it as
-> *"Confirmed"* in the delivered file — **a retraction added above stale prose that was never
-> struck**, which is the shape `elmer/CLAUDE.md` already records: *a spec revision that adds a
-> section is the moment to check what the old one said.* Kept unedited below rather than
-> deleted, because its closing argument — that a ceiling check belongs before a floor argument,
-> since an unreachable option in a two-way decision is not an option — is sound and is the
-> reason the mechanism exists. Only its worked example is withdrawn.
+**The worked example below is withdrawn: there is no such legend.** `#8E8A7D` is in no built panel,
+and §4B withdrew the unlit-legend role before this sweep ran — §2.2 has the measurements. **Kept
+unedited because its closing argument is sound and is why the mechanism in §1 exists**: a ceiling check
+belongs before a floor argument, because an unreachable option is not an option. Only the example is
+gone.
 
+**And this section is the failure it now records.** §2.2 was rewritten to retract this case while this
+heading and its first word stayed as written — **a retraction added elsewhere in the document, above
+stale prose that was never struck.** Two readers met a file that contradicted itself, one section
+apart, and both times the correction existed and had simply not been carried to the sentence that
+asserted the opposite. **A retraction is not filed until the thing it retracts says so where it
+stands.**
 
-**Confirmed.** `#8E8A7D` is L **.254**, mid-band, ceiling **6.08**. It was ruled at **3.0** for the
+**Withdrawn text follows.**
+
+~~Confirmed.~~ `#8E8A7D` is L **.254**, mid-band, ceiling **6.08**. It was ruled at **3.0** for the
 state-legend reason, which stands on its own. But had that ruling gone the other way, **7:1 could not
 have been delivered** — the best any ink achieves on that ground is 6.08, and only in black.
 

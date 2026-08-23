@@ -17,7 +17,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
 | **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings, scribble strips | **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. Redistribution permitted outright | **SHIPS in both**, via `juce_add_binary_data`, and always has. Fifth Member's letterforms are **also** baked into `fifth-member-plate-3x.png` — both are true |
-| **Special Elite** | ~~fifth-member~~ — **nothing** | Apache 2.0 — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **REMOVED from the build 2026-08-23, so it no longer ships.** This row read *"ships"* as delivered while this same file's *"Special Elite — CLOSED: it was the unused embed"* section said otherwise — the row and the body disagreeing inside one document. `Font::stencil` had zero consumers and §1's RACK 4 ear mark is Barlow Condensed SemiBold at 11 px / 3.74 tracking, matching the prototype's `.34 em` exactly. Gone from `juce_add_binary_data`, the theme, BinaryData and the shipped bundle |
+| **Special Elite** | fifth-member — **two documented roles**: right-ear stencil, recessed foot-label window | **Apache 2.0** — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **REMOVED FROM THE BUILD 2026-08-23 AND THE REMOVAL SHOULD BE REVERTED.** It was classified ORPHAN; it is a **WIRE**. See below |
 
 ## Who owns which column — ruled **(a)**, 2026-08-23
 
@@ -40,6 +40,22 @@ drift per export.
 
 **Until the generated table arrives, the rows below stand corrected and are the interim record.**
 When it lands, they are replaced by a citation, not edited again.
+
+## The failure mode: a retraction that does not reach the sentence it retracts
+
+**Two delivered files disagreed with themselves this week, the same way.** `FONTS.md`'s Special Elite
+row read *ships* while a section further down said *CLOSED: it was the unused embed*.
+`CONTRAST-CEILING.md` §2.3 opened with *Confirmed* while §2.2, immediately above, retracted the case.
+Both corrections were written; **neither was carried to the line that asserted the opposite.**
+
+**A summary row and its body are two homes for one fact**, which this register already has a rule for
+— it is why *Used by* / *Licence* / *State* moved to the build, and why `MANIFEST.md` reads
+*"Identity: see `BUNDLE.md`"*. **The rule was applied to figures across files and not to a heading
+three paragraphs from its own correction.**
+
+**Practice: a retraction is not filed until the thing it retracts says so where it stands.** Strike
+the row, strike the heading, then add the reasoning. A correction placed elsewhere in the same
+document is invisible to a reader who stops at the row — and the row is what a reader stops at.
 
 ## The failure mode: a true clause carrying a false one
 
@@ -345,7 +361,66 @@ count disagreeing 4-to-1 is more useful than either number was.
 was wrong by one.** It is the tell again: the baked clause was true, and being true it made the
 arithmetic look finished at three.
 
-## Special Elite — **CLOSED: it was the unused embed**
+## Special Elite — **REOPENED. It was a WIRE and the removal should be reverted**
+
+**Found 2026-08-23, after the removal shipped, in `uploads/Fifth Member Audio Plugin/README.md` —
+the casting's own source document.** Special Elite has **two specified roles**, and a third use in the
+plugin icon:
+
+| Role | Specification |
+|---|---|
+| **Right-ear stencil** | Special Elite **11 px**, letter-spacing **.22 em**, `rgba(38,35,31,.55)` |
+| **Recessed foot-label window** | Special Elite **11 px**, letter-spacing **.10 em**, `#a09883`, text `CH 4 — GTR / STAGE LEFT` |
+| `IconStencil.dc.html` | Special Elite **76 px**, `#191713` at .86 opacity |
+
+That README also states the casting's typographic rule outright: *"anything applied by a human with a
+marker or a stencil is in Permanent Marker or Special Elite. Three voices, no exceptions."​* **Special
+Elite is one of Fifth Member's three voices, not a stray file.**
+
+### The evidence that closed it was about a different element
+
+The closure rested on §1's **RACK 4 ear mark** being `Font::label(11.0f)` at tracking **3.74f**,
+matching the prototype's `font-weight: 600; font-size: 11px; letter-spacing: .34em` with no
+`font-family` — 0.34 × 11 = 3.74 exactly. **That arithmetic is correct and it proves the rotated ear
+text is Barlow.**
+
+**But the README specifies two separate elements on the ears**, one sentence apart:
+
+> *Rotated text on ears: 11 px Barlow Condensed 600, letter-spacing **.34em**, rotated −90°.*
+> … *Right ear stencil: Special Elite 11 px, letter-spacing **.22em**.*
+
+**Same ear, same size, different tracking, different face.** The 3.74 match confirmed the neighbour
+and was read as ruling on the stencil. **Seventh instance of the tell, and the first to cost a
+deletion rather than a wrong row** — and the exactness of the match is what made it conclusive.
+
+### The prototype is short both roles, which is why the build looked clean
+
+The delivered prototype has **zero** Special Elite sites. It has the `.34em` rotated ear text
+(`RACK 4 · MON WORLD`, Barlow, correct) and no ear stencil. **So build and design agreed — both were
+missing the same two roles**, and agreement between two artefacts that lost the same thing is
+indistinguishable from correctness. **`check_font_sets.py` reading from the binary cannot find this
+either:** the face had no reader because nothing draws it in either tree.
+
+**And one prototype string is in the wrong voice.** `CH 4 — GTR / STAGE LEFT` is drawn in **Permanent
+Marker 15 px**, where the README puts it in **Special Elite 11 px / .10 em / `#a09883`** inside the
+recessed window. That also revises the marker count: **one of Fifth Member's four Permanent Marker
+sites is a Special Elite site wearing the wrong face.**
+
+### What is asked
+
+1. **Do not delete the face.** Revert the removal from `juce_add_binary_data`, the theme, BinaryData
+   and the licence file — six embedded faces, not five.
+2. **The two roles are design work and are not being re-cut unasked.** The prototype needs the ear
+   stencil restored and the foot-label window re-voiced; both are visible changes to a delivered
+   panel and want a decision, not a silent edit.
+3. **`fifth-member/GUI-SPEC.md` §8 needs both rows** — they are absent, which is why every arm on
+   both sides read the face as unwanted.
+
+### What the original closure got right
+
+`Font::stencil` genuinely had zero consumers, and the RACK 4 mark genuinely is Barlow. **The build was
+short a role, exactly as `Font::labelMedium` is** — the same WIRE case, one classification apart, and
+the tool's own two headings had the right pair of names for it all along.
 
 **Settled from the artefact.** `Font::stencil` had zero consumers and its only caller was itself.
 The role its name implied — §1's RACK 4 ear mark — is drawn with `Font::label(11.0f)` at tracking
@@ -358,9 +433,10 @@ set in.
 bundle; Fifth Member now embeds five faces, and the licence file is 19,767 bytes with zero occurrences
 of the name, byte-identical in the installed `.vst3`. A comment stands where the builder was.
 
-**It is the calibration-constant shape again: named for what it suggested rather than for what it
-did.** A face called *stencil* beside a stencilled ear mark is a coincidence that reads as a
-causal link, and the register inherited the reading rather than the fact.
+**And the name was not misleading after all.** `Font::stencil` was named for the **ear stencil**, a
+role the README specifies and both trees had lost — so the identifier was the last surviving record of
+it. Read as a calibration-constant coincidence, it was in fact the correct name for a missing element;
+**the name outlived the thing it named, and was deleted for looking like a mistake.**
 
 **Two more with no consumer, reported and not acted on: `Font::labelMedium` and `Font::labelBold`.**
 Both at zero in Fifth Member while Barlow Medium and Bold are embedded — **the opposite case**, since
