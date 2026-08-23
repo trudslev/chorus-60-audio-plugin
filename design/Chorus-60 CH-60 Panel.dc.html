@@ -9,8 +9,11 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin" />
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
 <style>
+
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 600; src: url('fonts/BarlowCondensed-SemiBold.ttf') format('truetype'); font-display: block; }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 700; src: url('fonts/BarlowCondensed-Bold.ttf') format('truetype'); font-display: block; }
+  @font-face { font-family: 'Share Tech Mono'; src: url('fonts/ShareTechMono-Regular.ttf') format('truetype'); font-display: block; }
   @font-face { font-family: 'Librestile Ext'; src: url('fonts/LibrestileExtBold.ttf') format('truetype'); font-display: swap; }
   body { margin: 0; background: #3d4245; }
   a { color: #6fa8dc; }
@@ -22,7 +25,7 @@
 
   <div style="position:absolute;left:16px;top:16px;width:1308px;height:104px;box-sizing:border-box;border-radius:5px;background:linear-gradient(180deg,#24292c,#171a1c);box-shadow:inset 0 0 0 1px #0a0c0d, inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.5);">
     <div style="position:absolute;left:22px;top:14px;width:303px;height:84px;">
-      <div style="font-family:'Librestile Ext','Barlow Condensed',sans-serif;font-size:28px;line-height:32px;letter-spacing:.02em;color:#e6ebee;white-space:nowrap;">CHORUS-60</div>
+      <div onClick="{{ aboutOpen }}" title="About" style="font-family:'Librestile Ext','Barlow Condensed',sans-serif;font-size:28px;line-height:32px;letter-spacing:.02em;color:#e6ebee;white-space:nowrap;;cursor:help">CHORUS-60</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;line-height:17px;letter-spacing:.26em;color:#e6ebee;margin-top:16px;">BBD CHORUS PROCESSOR</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.20em;color:#b6bec2;">MODEL CH-60 · STEREO</div>
     </div>
@@ -120,13 +123,43 @@
   </div>
 
   <div style="position:absolute;left:24px;top:782px;width:400px;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#8a9196;">CH-60 · SN 0061</div>
-  <div style="position:absolute;left:924px;top:782px;width:400px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#8a9196;">CHORUS-60 · v1.0</div>
+  <div onClick="{{ aboutOpen }}" title="About" style="position:absolute;right:38px;top:768px;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 10px;border-radius:2px;background:linear-gradient(180deg,#191c1e,#212527);box-shadow:inset 0 0 0 1px #131618, inset 0 1px 3px rgba(0,0,0,.55);cursor:help;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#cdd4d8;" style-hover="background:linear-gradient(180deg,#212527,#2a2f32);color:#e5a021;">CHORUS-60 &middot; v1.0.0</div>
 
+  <sc-if value="{{ aboutIsOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ aboutClose }}" style="position:absolute;inset:0;z-index:60;background:rgba(8,9,11,.72);cursor:default;"></div>
+    <div style="position:absolute;z-index:61;left:230px;top:136px;width:880px;height:540px;box-sizing:border-box;border-radius:3px;background:linear-gradient(#0b0d0f,#07090a);box-shadow:inset 0 0 0 1px #242a2d, 0 24px 60px rgba(0,0,0,.7);">
+      <div style="position:absolute;left:40px;top:40px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:34px;line-height:40px;letter-spacing:.10em;color:#e6ebee;">CHORUS-60</div>
+      <div style="position:absolute;left:40px;top:84px;font-family:'Share Tech Mono',monospace;font-size:18px;line-height:24px;letter-spacing:.14em;color:#e5a021;">MODEL CH-60 &nbsp;&middot;&nbsp; VERSION 1.0.0</div>
+      <div style="position:absolute;left:40px;top:120px;width:800px;height:1px;background:rgba(242,245,246,.18);"></div>
+      <div style="position:absolute;left:40px;top:144px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:20px;line-height:26px;letter-spacing:.20em;color:#e6ebee;">NEON FOUNDRY</div>
+      <div style="position:absolute;left:40px;top:174px;font-family:'Share Tech Mono',monospace;font-size:18px;line-height:24px;letter-spacing:.14em;color:#e5a021;">SUITE RELEASE 1.2.1</div>
+      <div style="position:absolute;left:40px;top:210px;width:800px;height:1px;background:rgba(242,245,246,.18);"></div>
+      <div style="position:absolute;left:40px;top:234px;width:150px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;line-height:24px;letter-spacing:.22em;color:#9aa2a6;">LICENCE</div>
+      <div style="position:absolute;left:200px;top:234px;font-family:'Share Tech Mono',monospace;font-size:18px;line-height:24px;letter-spacing:.10em;color:#e6ebee;">AGPLv3 &nbsp;&middot;&nbsp; SOURCE AVAILABLE</div>
+      <div style="position:absolute;left:40px;top:270px;width:150px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;line-height:24px;letter-spacing:.22em;color:#9aa2a6;">REPOSITORY</div>
+      <a href="https://github.com/trudslev/chorus-60-audio-plugin" target="_blank" rel="noopener" style="position:absolute;left:200px;top:270px;font-family:'Share Tech Mono',monospace;font-size:18px;line-height:24px;letter-spacing:.10em;color:#e5a021;text-decoration:none;border-bottom:1px solid #e5a02180;" style-hover="color:#f0b445;border-bottom-color:#f0b445;">github.com/trudslev/chorus-60-audio-plugin</a>
+      <div style="position:absolute;left:40px;top:306px;width:150px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;line-height:24px;letter-spacing:.22em;color:#9aa2a6;">FOUNDRY</div>
+      <a href="https://neonfoundry.io" target="_blank" rel="noopener" style="position:absolute;left:200px;top:306px;font-family:'Share Tech Mono',monospace;font-size:18px;line-height:24px;letter-spacing:.10em;color:#e5a021;text-decoration:none;border-bottom:1px solid #e5a02180;" style-hover="color:#f0b445;border-bottom-color:#f0b445;">neonfoundry.io</a>
+      <div style="position:absolute;left:40px;top:342px;width:800px;height:1px;background:rgba(242,245,246,.18);"></div>
+      <div style="position:absolute;left:40px;top:366px;width:150px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;line-height:24px;letter-spacing:.22em;color:#9aa2a6;">TYPEFACES</div>
+      <div style="position:absolute;left:200px;top:366px;width:640px;font-family:'Barlow Condensed',sans-serif;font-weight:500;font-size:18px;line-height:24px;letter-spacing:.04em;color:#e6ebee;text-wrap:pretty;">Barlow Condensed, Share Tech Mono and Librestile Extended, all under the SIL Open Font License.</div>
+      <div style="position:absolute;left:40px;top:426px;width:800px;font-family:'Barlow Condensed',sans-serif;font-weight:500;font-size:16px;line-height:21px;letter-spacing:.04em;color:#9aa2a6;text-wrap:pretty;">Full licence text ships as THIRD-PARTY-LICENCES.txt in this bundle&rsquo;s Resources.</div>
+      <div onClick="{{ aboutClose }}" style="position:absolute;left:744px;top:470px;width:96px;height:30px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:3px;background:linear-gradient(180deg,#212527,#191c1e);box-shadow:inset 0 0 0 1px #242a2d;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;line-height:20px;letter-spacing:.22em;text-indent:.22em;color:#e6ebee;" style-hover="color:#e5a021;">CLOSE</div>
+    </div>
+  </sc-if>
 </div>
 </div>
+
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:892},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;I&quot;,&quot;II&quot;,&quot;I+II&quot;,&quot;OFF&quot;],&quot;default&quot;:&quot;I&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Engine page&quot;},&quot;image&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;STEREO&quot;,&quot;MONO&quot;],&quot;default&quot;:&quot;STEREO&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Engine page&quot;},&quot;programState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;factory&quot;,&quot;factory-edited&quot;,&quot;user&quot;,&quot;user-edited&quot;,&quot;naming&quot;],&quot;default&quot;:&quot;factory&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Panel state&quot;}}">
 class Component extends DCLogic {
+  state = { aboutOpen: false };
+  componentDidMount() {
+    this._esc = (e) => { if (e.key === 'Escape') this.setState({ aboutOpen: false }); };
+    window.addEventListener('keydown', this._esc);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._esc); }
+
   // 270° sweep, −135 … +135 (KnobFilmstripComponent.cpp:7).
   a(f) { return -135 + f * 270; }
 
@@ -235,6 +268,9 @@ class Component extends DCLogic {
     });
 
     return {
+      aboutIsOpen: !!this.state.aboutOpen,
+      aboutOpen: () => this.setState({ aboutOpen: true }),
+      aboutClose: () => this.setState({ aboutOpen: false }),
       caption: naming ? 'NAME PROGRAM' : 'PROGRAM',
       bankTag, programName, naming, knobs,
       saveInk: (!naming && edited ? lit : idle).ink, saveGlow: (!naming && edited ? lit : idle).glow,

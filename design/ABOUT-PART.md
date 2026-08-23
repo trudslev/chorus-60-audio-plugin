@@ -3,9 +3,37 @@
 **Suite-wide contract. One part, six castings.** This file lives in `shared/` and is never copied
 into a casting folder — a figure duplicated six times disagrees with itself within a round.
 
-**Revision 1** · geometry and behaviour only. **The six materials come after** and are §9. Every
-figure below is either **measured** off the rendered part (`About Part — Shared Geometry`, 1×) or
-**computed** from a stated law, and says which.
+**Revision 2** · geometry, behaviour **and the six materials** (§9). Every figure below is either
+**measured** off the rendered part (`About Part — Shared Geometry`, 1×) or **computed** from a stated
+law, and says which.
+
+**This header said *“revision 1 · geometry and behaviour only · the six materials come after”* until
+2026-08-23**, three change sets after §9 was written and two corrections had landed in the body — the
+same row-versus-body split this bundle has now recorded three times, here in the one line a reader
+reaches first.
+
+---
+
+## 0 · What is not built yet
+
+**This part is specified and unimplemented.** Nothing in §1–§9 exists on any of the six panels; the
+only rendering is the study in `designs/`. Outstanding, in the order it has to happen:
+
+| | |
+|---|---|
+| ~~Five castings' stamp rows~~ | **DONE, change set 35.** All six now carry an About section of their own: chorus-60 §11, elmer §9, gatecrasher §13, taperot §11, fifth-member §13, reflect-84 §11 — tab box and well, box position from this file's law against each canvas height, the ink triple with its measured ratio, the repository slug and the embedded-face list. **None restates the shared geometry** |
+| ~~Five prototypes~~ | **DONE, change set 38. All six are fitted** — tab, veil, box, both affordances, `help` cursor, Escape / veil-click / CLOSE |
+| ~~The study's faces~~ | **DONE, change set 36.** Eleven faces in `designs/fonts/`, all six panels and the study on local `@font-face`. **Permanent Marker is the one face with no file in the tree**, so elmer and fifth-member keep a CDN link for it alone |
+| **The cursor asset** | **cut, change set 38** — `shared/assets/about-cursor-1x.png` and `-2x.png`, to §2c |
+
+**The box y differs per casting** and is the only figure that does: 136 at chorus-60's 812, 125 at
+TapeRot's 790, 80 at Gatecrasher's 700, 60 at Elmer's 660, 54 at Reflect-84's 648, 236 at Fifth
+Member's 1012. **Fifth Member is also the one x exception** — **282**, not 230, because its frame is
+1340 inside a 1444 canvas and §4's law is frame-local.
+
+**None of that is a defect in the specification.** It is the difference between a part being decided
+and a part being fitted, and it is stated here because a complete-looking contract with §9 filled in
+reads as done.
 
 **Asset format: nothing in the About part is baked.** Every element is drawn at runtime. It carries
 no artwork on any casting, including the two whose wordmarks are artwork — see §8.
@@ -69,7 +97,7 @@ figure where there are two.
 | Bottom edge | **canvas height − 20** | Law |
 | Height | **24** | Computed — 13 px line box + 5.5 padding each side. Even, so 0.5× lands on whole pixels |
 | Width | **shrink-to-fit**, padding 10 each side | The strings differ in length by casting: `v1.0` to `GL-87 · SN 0042 · v1.0` |
-| Face | casting's own mono, **10 / 13**, tracking as the casting already sets it | Unchanged from the stamp today |
+| Face | **the face that casting's stamp already uses, at the size it already uses** | see below |
 | Construction | **inset ring, not a border** | `HEADER-PART.md` §3 applies unchanged |
 
 **The stamp's ink moves from flavour class to functional class.** Today it is the dimmest text on
@@ -79,9 +107,60 @@ casting re-inks it to **7:1 or better against the well's own face** — not agai
 no ink can achieve on two of the six. Figures in §9.2. This is the only change the About part makes
 to a panel in its resting state, and it is not optional.
 
-**Hover** lightens the well one step and takes the ink to the casting's accent. **The recess is the
-resting affordance** — a shallow etched plate reads pressable on hardware at rest, which a
-hover-only underline does not.
+**Hover** lightens the well one step and takes the ink to the casting's accent, **and the cursor
+becomes `help`.**
+
+**Revision 2 said the tab takes "the casting's own mono at 10 / 13" and that was wrong for two
+castings.** Fifth Member's stamp is Barlow Condensed 600 at 11 / 13 / .26 em by its own §8 foot-strip
+row, and Reflect-84's is Barlow Condensed 600 at 10 / 13 / .1 em. **Forcing mono on them would have
+re-typed a string the casting had already specified**, to satisfy a figure describing what the other
+four happened to do. The tab takes **the stamp's existing face and size**; the recess, ink, cursor and
+handlers are what the part adds. Same reasoning as §2d: the part specifies the result, not the
+mechanism, and a casting that already reads correctly is already conformant.
+
+### 2a · Two affordances, because one was undiscoverable
+
+**Revision 2's claim that “a shallow etched plate reads pressable on hardware at rest” is struck. It is
+backwards.** On hardware **raised** reads pressable and **recessed reads engraved** — a recessed legend
+plate is precisely the thing you do not press. The reasoning had picked the least discoverable spot on
+the panel and then justified it with a hardware idiom running the wrong way.
+
+**Two further problems with the stamp alone:** a 10 px dim string in the bottom-right corner is where
+nothing is, so a hover-only reveal never fires; and **there is no hardware convention to borrow,
+because hardware has no About box.** Any affordance here is a software convention in hardware
+clothes, and the only question is which one.
+
+**So the wordmark opens it too, and is the primary affordance.** That is the software convention that
+actually exists, and it is the largest element on every panel. **The objection that ruled it out was a
+build objection answering a discoverability question** — *"a hit region over a bitmap"* is about
+drawing, and a hit region needs only the box, which is known geometry (`HEADER-PART.md` §2: the
+nameplate zone, 303 × 84). Gatecrasher's and TapeRot's wordmarks are artwork; their **boxes** are not.
+
+| Affordance | Why it is there |
+|---|---|
+| **Wordmark** — primary | discoverable; the maker's mark is where you look for the maker |
+| **Version stamp** — secondary | someone hunting a version number looks exactly there, and it must be drawn anyway for reflow and semver |
+
+**Neither becomes a control.** A maker's mark and a build identifier are the two things on these
+panels that are pure identification, which is why clicking either is not a control action.
+
+**The wordmark's hit box is the nameplate zone, not the letterforms** — `HEADER-PART.md` §2:
+**303 × 84**, shared and identical in all six. Deliberately the zone rather than the ink: it is one
+figure for six castings, it is already specified, and **it is immune to the artwork-versus-text
+difference** that made the wordmark look unusable as an affordance in the first place. A hit region
+over a bitmap and a hit region over live text are the same rectangle.
+
+### 2b · The cursor is `help`, not `pointer`
+
+**On both affordances.** `pointer` says *this acts*; `help` says *this explains something*, which is
+what an About box is. It is the one signal that costs no ink, changes nothing in the resting panel,
+and fires on an ordinary sweep.
+
+**JUCE has no help cursor in `StandardCursorType`.** The nearest standard is
+`PointingHandCursor`, which says the wrong thing. **So this needs a custom cursor image** — stated
+here rather than discovered at implementation, because the idiom is available in CSS and not in the
+toolkit's standard set. If a custom cursor is refused, `PointingHandCursor` is the fallback and the
+distinction is lost, not the affordance.
 
 ---
 
@@ -332,10 +411,10 @@ lists by licence, not by oversight.
 | Casting | Credit line |
 |---|---|
 | chorus-60 | Barlow Condensed, Share Tech Mono and **Librestile Extended**, all under the SIL Open Font License. |
-| elmer | Barlow Condensed, IBM Plex Mono, Share Tech Mono and **Archivo Expanded**, all under the SIL Open Font License. |
+| elmer | Barlow Condensed, IBM Plex Mono, Share Tech Mono and **Archivo Expanded** under the SIL Open Font License, and **Permanent Marker** under the Apache License 2.0. |
 | gatecrasher | Barlow Condensed and Share Tech Mono, both under the SIL Open Font License. |
 | taperot | Barlow Condensed and Share Tech Mono, both under the SIL Open Font License. |
-| fifth-member | Barlow Condensed, Share Tech Mono and **Permanent Marker**, all under the SIL Open Font License. |
+| fifth-member | Barlow Condensed and Share Tech Mono under the SIL Open Font License, and **Permanent Marker** under the Apache License 2.0. |
 | reflect-84 | Barlow Condensed, IBM Plex Mono, Share Tech Mono and **Jost**, all under the SIL Open Font License. |
 
 **Gatecrasher's and TapeRot's lines are the short ones, and that is the licence showing through.**
@@ -344,8 +423,33 @@ so naming them here would assert an embedding their licences forbid. Both are ac
 in `THIRD-PARTY-LICENCES.txt`. **A reader comparing two About boxes will notice the shorter list; the
 answer is that it is shorter because it is true.**
 
-**Every face named above is OFL**, so the credit line is one sentence in every casting and the
-licence family never has to be given per face.
+**Two castings name two licence families.** Elmer and Fifth Member embed **Permanent Marker**, which
+is **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14
+`apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. The other four credit OFL faces only and
+are one sentence each.
+
+**Revision 2's claim that "every face named above is OFL, so the licence family never has to be given
+per face" is struck**, along with the two lines that rested on it: Fifth Member's said *"all under the
+SIL Open Font License"* about a face that is not, and **Elmer's omitted the face entirely** while
+§8's rule is to credit what the casting embeds. **The same error facing opposite ways, one line
+apart** — and both written after `FONTS.md` had already corrected its own row on this face.
+
+### Why this face has now been recorded wrongly three times
+
+**Because the letterforms genuinely are baked into Fifth Member's plate.** Every time the face comes
+up, *"it's in the artwork"* explains the observation completely — and it is **true**, which is what
+makes it load-bearing. It accounts for the absence, it accounts for the licence-sounding caution, and
+it never prompts the one question that settles it. **The `name` table went unread across three
+separate records**, because each time a true fact stood next to the false one and did its explaining
+for it.
+
+**This suite's recurring shape, at its clearest: you can name evidence for the clause's neighbour but
+not for the clause.** Here the neighbour is a plate.
+
+**And baked was never the whole story.** Elmer draws it live — the `CH 24 — MIX BUS / GLUE` scribble
+strip — and Fifth Member draws it twice on the right ear, because the ear sits **outside** the plate's
+1340-wide blit at x 52 and the plate cannot reach it. A face can be baked in one place and drawn in
+another on the same panel, and the licence question is indifferent to both.
 
 ### 9.4 What each casting changes in its resting panel
 

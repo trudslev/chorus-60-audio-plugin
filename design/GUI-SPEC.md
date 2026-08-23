@@ -323,3 +323,42 @@ the changelog is a gap by construction, not an omission.
   clamp, its format at both ends, and the sign convention — plus a fourth item that is a
   process question rather than a figure: how a shared-part change reaches six bodies. Nothing
   on this panel changes either way.
+
+
+---
+
+## 11 · The About part — this casting's material
+
+**Shared contract: `../shared/ABOUT-PART.md` revision 2.** Nothing here restates its geometry; these
+are the five figures that are **this casting's** and the two coordinates that depend on its canvas.
+**Fitted in the prototype, change set 38.**
+
+### 11.1 The tab
+
+| | |
+|---|---|
+| Right edge | **1302** · bottom edge **792** (canvas height 812 − 20), height **24**, width shrink-to-fit on padding 10 |
+| Well face | `#191c1e → #212527` |
+| Ink | `#cdd4d8` — **10.31:1** on the well's lighter stop |
+| Face | Share Tech Mono **10 / 13**, this casting's own mono |
+| Hover | well one step lighter, ink to `#e5a021` |
+
+**The ink is measured against the well, not the fascia** — `../shared/CONTRAST-CEILING.md` §1: no ink
+reaches 7:1 on a ground of luminance 0.100–0.300, and a mid-value fascia is exactly that. The recess
+is a surface this casting chooses.
+
+### 11.2 The box
+
+| | |
+|---|---|
+| Position | **230, 136** — x from §4's law, y = (812 − 540) / 2 |
+| Surface | `#0b0d0f`, this casting's display glass — **a screen, not a plate** |
+| Body ink | `#e6ebee` — **16.21:1** |
+| Dim ink | `#9aa2a6` — **7.50:1** |
+| Accent / links | `#e5a021` — **8.70:1** |
+| Repository | `github.com/trudslev/chorus-60-audio-plugin` |
+
+**Typeface credits, embedded faces only:** Barlow Condensed, Share Tech Mono and **Librestile Extended**, all under the SIL Open Font License.
+
+**The dim ink is the tight one across the suite** — TapeRot's 7.12 is the narrowest margin, so **no
+casting may darken its dim ink to taste.**
