@@ -498,19 +498,26 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
                                              Layout::footerLineBox),
                      juce::Justification::centredLeft, Colour::captionTertiary);
 
-    // Footer, right. Drawn rather than baked because it names the engine state.
-    // fromUTF8 on each literal, not on the assembled String: juce::String's char* constructor
-    // assumes the platform default encoding, so a raw UTF-8 middot went in as two Latin-1
-    // characters and came out as "Â·".
-    const juce::String midDot = juce::String::fromUTF8("\xc2\xb7");
-    const juce::String footer = "BBD 1024 STAGE " + midDot + " "
-                              + (poweredDown ? "BYPASS" : "ENGAGED")
-                              // **Derived, not a literal.** It read "v1.0" hard-coded, which was
-                              // true only by coincidence until the suite went to 1.0.0 and would
-                              // have quietly lied at the first 1.1. NF_VERSION_SHORT comes from
-                              // PROJECT_VERSION in CMakeLists, so the panel and the plugin's
-                              // reported version cannot disagree.
-                              + " " + midDot + " v" NF_VERSION_SHORT;
+    /*  Footer, right. **STATIC - it named the engine state until 2026-08-23, and nothing on the
+        fascia may.** It read `BBD 1024 STAGE - ENGAGED` / `- BYPASS`, so a printed panel legend
+        rewrote itself under the player as they hit OFF. Live state belongs on the LCD and nowhere
+        else: printed text is material, and material does not change. The delivered prototype has
+        said `CHORUS-60 - v1.0` here all along, and this was the one element on the panel that
+        disagreed with it in CONTENT rather than in position.
+
+        Losing the engine state costs nothing that is not already said twice - the engine lamps
+        light, the three group boxes dim to `powerDownMultiply`, and the LCD carries the Program.
+
+        Middle dot from a codepoint, never a UTF-8 literal: `juce::String`'s `const char*`
+        constructor decodes **Latin-1**, so a raw UTF-8 middot went in as two characters and came
+        out as a stray glyph. `charToString` is what the rest of this suite uses.
+
+        **The version is derived, not a literal.** It read `v1.0` hard-coded, which was true only by
+        coincidence until the suite went to 1.0.0 and would have quietly lied at the first 1.1.
+        NF_VERSION_SHORT comes from PROJECT_VERSION in CMakeLists, so the panel and the plugin's
+        reported version cannot disagree.  */
+    const juce::String midDot = juce::String::charToString (juce::juce_wchar (0x00B7));
+    const juce::String footer = "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT;
     const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerY,
                                              400.0f, Layout::footerLineBox);
     drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(Layout::footerCssPx)),

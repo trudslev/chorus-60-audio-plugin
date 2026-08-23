@@ -654,23 +654,57 @@ namespace Chorus60Theme
         constexpr float powerDownMultiply = 0.50f;
 
         // ---- Section 4: the engine button column -----------------------------------------------
-        //
-        // 132 x 132 at x 26, distributed rather than centred: all four vertical gaps come out at
-        // 41 px, which is the JN-80's own packed-block rhythm. Do not re-centre the stack.
-        constexpr float buttonX = 26.0f, buttonW = 132.0f, buttonH = 132.0f;
-        constexpr float buttonIIY = 183.0f, buttonIY = 356.0f, buttonOffY = 528.0f;
+        /*  **DERIVED FROM THE COLUMN, which was already declared six hundred lines above and read
+            by nothing.**
+
+            `buttonColumnX/Y/W/H` = 24, 196, 132, 534 is the prototype's own container. The three
+            buttons were three literals beside it and disagreed with it in both axes: x 26 against
+            its 24, and tops 183 / 356 / 528 against the 230.5 / 397 / 563.5 the column gives. So
+            the whole stack sat between 35 and 48 px HIGH, worst at the top, where the gap under the
+            CHORUS badge is what a reader takes for the intended space.
+
+            **The old comment's figure was not reachable from anything.** It said "all four vertical
+            gaps come out at 41 px": three 132 px buttons in a 534 px column leave 138, which is
+            four gaps of **34.5**, and 41 is not derivable from the old tops either — 183 leaves a
+            NEGATIVE 13 px above it inside a column starting at 196. It was a true figure about an
+            earlier column, kept while the column moved, with the constant that would have settled
+            it sitting unread in the same file. Same shape as this casting's unconsumed
+            `buttonCapTop`, except that here the unread constant was the RIGHT one.
+
+            The fix is the move this casting already makes for its parameter ranges: read the one
+            source, so a consumer cannot drift from it without moving all of it. "Do not re-centre
+            the stack" from the old comment is kept and is now structural rather than an
+            instruction — an even distribution is what the column produces.  */
+        constexpr float buttonW = 132.0f, buttonH = 132.0f;
+        constexpr float buttonX = buttonColumnX;
+        constexpr float buttonGapY = (buttonColumnH - 3.0f * buttonH) / 4.0f;            // 34.5
+        constexpr float buttonIIY  = buttonColumnY + buttonGapY;                         // 230.5
+        constexpr float buttonIY   = buttonColumnY + buttonGapY * 2.0f + buttonH;        // 397
+        constexpr float buttonOffY = buttonColumnY + buttonGapY * 3.0f + buttonH * 2.0f; // 563.5
         constexpr float pressAnimMs = 110.0f;
         constexpr float pressOffsetPx = 3.0f;
 
-        // Lamp sprites are 96 x 96 with the glow baked into the transparent margin, drawn CENTRED on
-        // the lamp position rather than placed by their top-left. The OFF button has no lamp - that
-        // position is empty on the hardware and stays empty here.
-        constexpr float lampSpriteD = 96.0f;
-        constexpr float lampIICentreX = 182.5f, lampIICentreY = 250.0f;
-        constexpr float lampICentreX = 182.5f, lampICentreY = 422.5f;
+        /*  Lamp sprites are 96 x 96 with the glow baked into the transparent margin, drawn CENTRED
+            on the lamp position rather than placed by their top-left. The OFF button has no lamp -
+            that position is empty on the hardware and stays empty here.
 
-        // Letter block: 16 px right of the button, then 12 px past the 15 px lamp.
-        constexpr float engineLetterX = 202.0f, engineLetterW = 80.0f;
+            The lamp sits in the legend row, which the prototype starts 16 px right of the button
+            and holds 26 px tall against the button's own centre line — so the bulb's centre is the
+            button's centre, and it moves when the stack does. */
+        constexpr float lampSpriteD = 96.0f;
+        constexpr float lampD = 15.0f;                    // the visible bulb inside the sprite
+        constexpr float legendRowGapFromButton = 16.0f;
+        constexpr float lampCentreX = buttonColumnX + buttonColumnW
+                                    + legendRowGapFromButton + lampD * 0.5f;             // 179.5
+        constexpr float lampIICentreX = lampCentreX, lampIICentreY = buttonIIY + buttonH * 0.5f;
+        constexpr float lampICentreX  = lampCentreX, lampICentreY  = buttonIY  + buttonH * 0.5f;
+
+        // Letter block: the legend row is `lamp, 14 px gap, label`, so the label's left edge is the
+        // bulb's right edge plus that gap. It read 202 against the prototype's 201, and the comment
+        // above it said "12 px past the 15 px lamp" - which gives 199, a third figure agreeing with
+        // neither the constant it annotated nor the panel.
+        constexpr float engineLetterX = lampCentreX + lampD * 0.5f + 14.0f;              // 201
+        constexpr float engineLetterW = 80.0f;
 
         // ---- Section 5: the PROGRAM LCD ---------------------------------------------------------
         //
@@ -1057,10 +1091,16 @@ namespace Chorus60Theme
 
         /*  The footer's two strings, both on §1's y 782 with a 13 px line box.
 
-            The RIGHT one carries live engine state (`... ENGAGED ...` / `... BYPASS ...`), which is
-            why it was drawn even when the plate baked everything else. The LEFT one — `CH-60 · SN
+            **BOTH are static as of 2026-08-23.** The RIGHT one carried live engine state
+            (`... ENGAGED ...` / `... BYPASS ...`), which is why it had a drawing site back when
+            the plate baked everything else — and that is exactly what made it wrong: it is printed
+            panel text, and printed text does not rewrite itself. It reads `CHORUS-60 · v<version>`
+            now, which is what the delivered prototype has always shown. The LEFT one — `CH-60 · SN
             0061` — is static, was baked, and is **absent from the new plate with no drawing site**;
-            it is one of the rows the plate survey added to this casting's enumeration. */
+            it is one of the rows the plate survey added to this casting's enumeration.
+
+            So the reason the two rows exist is no longer the reason they differ, and neither is a
+            candidate for baking again while this casting draws its own fascia. */
         constexpr float footerLeftX = 24.0f;
         constexpr float footerRight = 1324.0f;
         constexpr float footerCssPx = 10.0f, footerTrackingEm = 0.10f;   // §8's footer row
