@@ -227,4 +227,21 @@ if(APPLE)
             target_sources(Chorus60_${_nf_fmt} PRIVATE "${NF_LICENCE_FILE}")
         endif()
     endforeach()
+else()
+    # **Windows and Linux: the VST3 is a bundle DIRECTORY too**, and it is the format that ships
+    # there, so the licence belongs inside it for the same reason it does on macOS - the .vst3 is
+    # what someone receives on its own. JUCE puts the binary at <bundle>/Contents/<arch>, so
+    # Contents/Resources is one level up from TARGET_FILE_DIR.
+    #
+    # The Standalone off Apple is a bare executable with no bundle to put anything in; it reaches
+    # the user through the installer or the tarball instead.
+    if(TARGET Chorus60_VST3)
+        add_custom_command(TARGET Chorus60_VST3 POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E make_directory
+                    "$<TARGET_FILE_DIR:Chorus60_VST3>/../Resources"
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                    "${NF_LICENCE_FILE}"
+                    "$<TARGET_FILE_DIR:Chorus60_VST3>/../Resources/THIRD-PARTY-LICENCES.txt"
+            VERBATIM)
+    endif()
 endif()
