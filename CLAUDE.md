@@ -1022,5 +1022,12 @@ values as authored, and the rule is that case is decided at the source, not that
   index 0; the `07 WIDE ENSEMBLE` that appears throughout the spec is an illustrative LCD string, not
   a bank entry). Values are structurally verified - ranges, the both-engines invariant, and a
   per-Program round trip asserting every stored value survives its parameter's mapping unchanged -
-  but the bank has not had a by-ear pass.
+  but the bank has not had a full by-ear pass.
+
+  **PARTLY LISTENED TO NOW, 2026-08-23, and it wants tweaking.** Sune spot-listened to several of
+  the nine and reported there is "some tweaking to do" — deferred deliberately, not scheduled.
+  Recorded because the line above reads as *nobody has listened yet*, which stopped being true, and
+  would otherwise have the next session report the bank as merely unverified when it is in fact
+  known-imperfect. What is NOT known is which Programs, or in which direction; that is the
+  listen-through, and it has not happened.
 - **Decay and Density** are intentionally automation-only parameters with no panel control.
