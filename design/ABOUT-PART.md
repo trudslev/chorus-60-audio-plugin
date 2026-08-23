@@ -315,9 +315,10 @@ measured. **A contrast requirement has to name the two colours it compares**, no
 region.
 
 **The finding generalised past this part** and is now suite-wide in `CONTRAST-CEILING.md`: a 7:1
-floor is unreachable on any ground of relative luminance **0.100 to 0.300**, whatever the ink. The
-sweep found two castings exposed on their own fasciae and confirmed that Elmer's unlit KNEE legend
-could never have taken the functional reading.
+floor is unreachable on any ground of relative luminance **0.100 to 0.300**, whatever the ink. **The
+law stands and the sweep found no live case in any casting** — its first pass claimed three and all
+three were its own pairing errors. This part's own §9.2 finding is the one real instance in the suite,
+and it was found by measuring the element against the surface it sits in.
 
 **Hover** takes the ink to the casting's accent from §9.1 and lightens the well one step. Each accent
 clears 7:1 on its own well face, since the wells are darker than the glass in every casting except

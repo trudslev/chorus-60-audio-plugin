@@ -1,36 +1,17 @@
 # NEON FOUNDRY — THE CONTRAST CEILING
 
-> ## CORRECTIONS — recorded 2026-08-23, after this document was delivered
->
-> **Three of §2's cases do not exist. The §1 law and §2.4's veil finding are unaffected**, because
-> both are properties of arithmetic rather than of any casting — which is exactly why neither shared
-> the failure. All three retractions have one cause: **grounds and inks paired by pattern rather
-> than by what stands on what.**
->
-> | §2 case | Correction |
-> |---|---|
-> | **Gatecrasher `#8e959a`, ceiling 6.92** | Resolves in the theme's favour. `fasciaDark` `#BDC2C7` is right; `#8e959a` describes the two 16 px side rails, **which carry no text**. Nothing in the theme changes |
-> | **Elmer `#34322a` at 5.24, "an ink problem"** | **There is no ink error.** The control-label ink is `#0e0d08`, 8.62 and 7.94 on the two fascia stops. `#34322a` occurs once in the casting — the footer version stamp, a *flavour* role clearing its own 4.5 floor at 5.24 |
-> | **Elmer unlit KNEE `#8E8A7D`, ceiling 6.08** | **The role does not exist.** §4B deleted it, the built shoe carries no legend on either face, and `#8E8A7D` appears nowhere on the panel. 6.08 describes a construction that was replaced |
->
-> **§3.5 is the rule all three broke** — *a dead-band ground is only a fault where a functional role
-> stands on it* — and it is stated in this very document. Two of the three grounds carry no text at
-> all and the third is not drawn.
->
-> **The consequence is that the ceiling mechanism has no live case to catch today**, and that is the
-> correct position for a guard rather than a reason to doubt it. `tools/check_contrast.py` computes
-> the ceiling and reports *unreachable* separately from *missed*; both directions were proved by
-> **causing** them, because neither could be found. The lowest ceiling among all declared grounds in
-> the suite is **8.28** — no declared ground is in the 0.100–0.300 band.
->
-> The document is otherwise unchanged and is kept as delivered.
-
 **Suite-wide. Applies to every casting and every functional role.** Written 2026-08-23, from the
 `ABOUT-PART.md` §9.2 finding that a 7:1 instruction can be **unsatisfiable** rather than merely
 demanding.
 
-**Every figure below is computed** by the WCAG relative-luminance formula from hexes read out of the
-six delivered prototypes.
+**Every figure below is computed** by the WCAG relative-luminance formula. **Revision 2** — revision 1
+claimed three live exposures and **all three were its own errors**; §2 now reports figures read off the
+built panels, element inward. The law in §1 is unaffected and was never in question.
+
+**The pattern in all three is one mistake:** a luminance figure is trivial to compute, so it was
+computed early and often, against grounds and inks assembled by pattern-matching the source instead of
+by asking what stands on what. **Cheap arithmetic applied to an unverified pairing produces confident
+nonsense**, and it produced it three times in one file before anything was measured.
 
 ---
 
@@ -84,29 +65,71 @@ sit on the `#121210` body at 8–10:1. **Flagged and cleared:** a dead-band grou
 where a functional role stands on it, and this is the case that shows why the sweep pairs grounds
 with inks rather than listing grounds alone.
 
-### 2.2 Real exposure — two castings
+### 2.2 Real exposure — **none. The sweep found no live case at all.**
 
-| Casting | Ground | L | Ceiling | Ink in use | Verdict |
-|---|---|---|---|---|---|
-| **gatecrasher** | `#8e959a` (darkest fascia stop) | **.296** | **6.92** | `#16191c` → 5.81 | **7:1 unreachable** |
-| gatecrasher | `#9aa1a6` (mid stop) | .351 | 8.02 | `#16191c` → 6.74 | reachable, **not met** |
-| gatecrasher | `#b4babe` (lightest stop) | .485 | 10.71 | `#16191c` → 9.00 | met ✓ |
-| **elmer** | `#aca596` (darker fascia stop) | .379 | 8.58 | `#34322a` → **5.24** | reachable, **not met** |
-| elmer | `#b3ac9d` | .415 | 9.30 | `#34322a` → 5.69 | reachable, **not met** |
-| **elmer** | `#8E8A7D` (unlit KNEE legend) | **.254** | **6.08** | ruled at 3.0 | **7:1 unreachable** |
+Both remaining Elmer rows are retracted. Measured off the built panel rather than off a grep:
 
-**Gatecrasher's fascia is a 90° gradient that crosses the band's top edge.** A control label is one
-ink over all three stops, so **the same role passes at one end of the panel and cannot pass at the
-other** — 9.00 on the light stop, 6.92 as a ceiling on the dark one. This is not fixable by re-inking:
-the label is already near-black. It is fixable only by lifting the darkest stop above L 0.300, or by
-accepting a lower floor for that role and saying so.
+| Casting | Ground | Ink actually on it | Ratio | Verdict |
+|---|---|---|---|---|
+| elmer | `#b3ac9d` (fascia, top) | `#0e0d08` control labels | **8.62** | passes ✓ |
+| elmer | `#aca596` (fascia, bottom) | `#0e0d08` control labels | **7.94** | passes ✓ |
+| elmer | `#aca596` | `#34322a` footer stamp | 5.24 | **flavour** role, floor 4.5 — passes ✓ |
 
-**Elmer's labels are reachable and simply have not been cut dark enough.** `#34322a` gives 5.24; the
-floor needs `#1a1913` (7.19) or darker. That is an ordinary miss, not a ceiling problem, and it is the
-distinction this sweep exists to draw: **one of these two castings has a specification problem and the
-other has an ink problem, and before the ceiling was computed they looked identical.**
+**`#34322a` is not a control-label ink.** It occurs **once** in the whole casting, on the footer
+version stamp — a flavour role clearing its own 4.5 floor. The control labels are `#0e0d08`, which
+the sweep never tested because the sweep tested a list of inks it had assembled by grepping the file
+rather than the ink each role actually uses. **Same defect as §2.2b, one section apart: the pairing
+was fabricated on both sides.**
 
-### 2.3 Elmer's unlit KNEE legend — the functional reading was never available
+**And the KNEE ceiling case does not exist.** `#8E8A7D` appears nowhere in the built panel. The shoe's
+real faces are `#dcd6c6 → #bdb6a4` live (L .669–.481) and `#413b31 → #2e2921` idle (L .052–.024) —
+both clear of the band, in opposite directions. More to the point, **the built shoe carries no legend
+on either face.** Its own source says so:
+
+> *Both legends print permanently, one weight and one ink, on the fascia beneath their own half — so
+> there is no unlit-legend role to give a floor to.*
+
+**§4B withdrew that role.** The legends sit on the fascia at `#0e0d08`, 7.94 and up: functional and
+passing. So the "unlit KNEE legend" whose ceiling this file computed to two decimal places is a role
+that was **deleted before the sweep ran**, and its hex came from a spec paragraph describing the
+construction §4B replaced.
+
+**The state ruling at 3.0 stands** — it was never about this. Nothing needs re-arguing, and the note
+that "the functional reading was never available" is void rather than reassuring: there was no
+legend, no ground, and no reading.
+
+### 2.2b Gatecrasher was a false positive, and it was this file's own error
+
+**Retracted.** Revision 1 of this sweep reported Gatecrasher's fascia as a 90° gradient crossing the
+band, with a control-label role passing at one end of the panel and capped at 6.92 at the other. It
+offered three routes out. **All three were answers to a fault that does not exist.**
+
+**Gatecrasher's fascia is the 2 px brushed-steel repeat its own §0 states:**
+`repeating-linear-gradient(90deg, #c3c8cc 0 2px, #bdc2c7 2px 4px)`, L **.535–.556**, ceiling ~12, and
+`#16191c` measures **9.84** on it. The `#8e959a` gradient is the panel's **two 16 px side rails** —
+edge shading, 16 px of a 1340 px panel, carrying no text.
+
+**That is the same construct this file had already cleared on Fifth Member one section earlier**, and
+the reason the error is worth keeping: **the sweep was fed the first gradient a regex matched in each
+file rather than the ground each label actually stands on.** On Fifth Member the rail was obviously a
+rail; on Gatecrasher it was first in the file, so it read as the fascia. **§3's own rule — pair
+grounds with inks or the sweep cries wolf — was written in the same pass that broke it.**
+
+**A ground is identified by what stands on it, not by where it appears in the source.** A luminance
+figure is cheap to compute and that is exactly what makes it dangerous: the arithmetic was right
+throughout, applied to the wrong rectangle.
+
+### 2.3 Elmer's unlit KNEE legend — **SUPERSEDED BY §2.2, which retracts this case**
+
+> **Read §2.2 first.** It states that `#8E8A7D` appears nowhere in the built panel and that §4B
+> withdrew the role, so the case below does not exist. This section was left asserting it as
+> *"Confirmed"* in the delivered file — **a retraction added above stale prose that was never
+> struck**, which is the shape `elmer/CLAUDE.md` already records: *a spec revision that adds a
+> section is the moment to check what the old one said.* Kept unedited below rather than
+> deleted, because its closing argument — that a ceiling check belongs before a floor argument,
+> since an unreachable option in a two-way decision is not an option — is sound and is the
+> reason the mechanism exists. Only its worked example is withdrawn.
+
 
 **Confirmed.** `#8E8A7D` is L **.254**, mid-band, ceiling **6.08**. It was ruled at **3.0** for the
 state-legend reason, which stands on its own. But had that ruling gone the other way, **7:1 could not
@@ -152,9 +175,12 @@ worst position, one cannot enter it.
    panel" is not checkable and may not be satisfiable.
 2. **Compute the ceiling before arguing the floor.** \u00a72.3 is the case: a two-way ruling where one
    side was unavailable and nobody knew.
-3. **Gatecrasher and Elmer are open**, for different reasons — a specification problem and an ink
-   problem. Neither is a re-cut of artwork.
+3. **No casting is open.** Every ground/ink pair in the six panels clears its own floor. The law in
+   §1 is sound and its application in §2 was wrong three times out of three — **the sweep's value is
+   the law and the bypass finding, not its findings.**
 4. **A checker asserting 7:1 must exempt the veiled state**, or it will fail five castings for a
    reason that is correct and irrelevant.
 5. **A dead-band ground is only a fault where a functional role stands on it.** Fifth Member's rails
-   are the counter-example; pair grounds with inks or the sweep cries wolf six times.
+   and Gatecrasher's rails are both counter-examples — **and this file caught the first and missed
+   the second.** Identify the ground by what stands on it. Pair grounds with inks, from the element
+   inward, never from the stylesheet down.

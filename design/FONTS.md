@@ -13,44 +13,58 @@ kind is the only kind anyone should try to fix by adding a file.
 | IBM Plex Mono | elmer, reflect-84 — numerals, units, model line | OFL | ships |
 | Jost | reflect-84 — wordmark | OFL | ships |
 | **Archivo Expanded Bold** (+ the variable file) | elmer — wordmark | **OFL 1.1** | **ships** — landed this call, `elmer/fonts/` |
-| **Librestile Extended Bold** | chorus-60 — wordmark | **OFL 1.1** · © 2024 ocelothe2k1 · Reserved Font Name **"Librestile"** · `https://github.com/ocelothe/Librestile` — the shipped `.ttf` carries **no nameID 13 and no nameID 14**, so its whole in-file claim is nameID 0, *"SIL Open Font License. Made by ocelothe2k1, 2024"*, which names no version. Version, RFN and the verbatim notice are read from the repo's own `LICENSE`, 2026-08-23 | **ships** |
+| **Librestile Extended** | chorus-60 — wordmark | **OFL — and the only face here whose licence cannot be settled from the file.** Name: file, nameID 0, *"SIL Open Font License. Made by ocelothe2k1, 2024"*. **Version 1.1: author's repo only** — the file carries **no nameID 13 and no nameID 14**, so it names no version, alone among these faces. **Year 2024: the file**, agreeing with that repo's `LICENSE` — while the same repo's `SIL Open Font License.txt` says **2023**. Reserved Font Name `"Librestile"` and the verbatim notice: repo `LICENSE`, read 2026-08-23 | **ships.** The 2023/2024 disagreement is deliberately left visible — **2024 governs, because that is what the redistributed file declares** |
 | **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
-| **Permanent Marker** | **elmer AND fifth-member** — elmer's scribble strip (`PanelBackground::paintFooter`), fifth-member's tape strings | **Apache 2.0** · © 2010 Font Diner, Inc. · nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `http://www.apache.org/licenses/LICENSE-2.0` | **SHIPS — in both.** This row said *not embeddable, ABSENT BY DECISION* until 2026-08-23 and both halves were wrong: the file's own name table declares Apache 2.0, which permits redistribution, and `juce_add_binary_data` has been embedding it in two castings. The letterforms are ALSO baked into `fifth-member-plate-3x.png`, which is what made the absence claim look self-consistent |
-| **Special Elite** | ~~fifth-member~~ — **nothing** | Apache 2.0 · © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **REMOVED 2026-08-23, and it never had a row here.** It was embedded and wrapped in a `stencil()` builder that **nothing called**. The name is what made it read as the face §1's RACK 4 ear mark is set in; that mark is drawn with Barlow Condensed SemiBold at 11 px / 3.74 tracking, and the delivered prototype sets it `font-weight: 600; font-size: 11px; letter-spacing: .34em` with **no font-family**, so it inherits Barlow — 0.34 em × 11 px = 3.74 px exactly. No §8 asks for the face and no prototype declares it. Bytes in a shipped binary carrying an Apache obligation for no drawing site |
+| **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings, scribble strips | **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. Redistribution permitted outright | **SHIPS in both**, via `juce_add_binary_data`, and always has. Fifth Member's letterforms are **also** baked into `fifth-member-plate-3x.png` — both are true |
+| **Special Elite** | ~~fifth-member~~ — **nothing** | Apache 2.0 — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **REMOVED from the build 2026-08-23, so it no longer ships.** This row read *"ships"* as delivered while this same file's *"Special Elite — CLOSED: it was the unused embed"* section said otherwise — the row and the body disagreeing inside one document. `Font::stencil` had zero consumers and §1's RACK 4 ear mark is Barlow Condensed SemiBold at 11 px / 3.74 tracking, matching the prototype's `.34 em` exactly. Gone from `juce_add_binary_data`, the theme, BinaryData and the shipped bundle |
 
-## The Permanent Marker row was FALSE IN BOTH HALVES, and a neighbouring fact held it up
+## Who owns which column — ruled **(a)**, 2026-08-23
 
-**Not a stale row.** Stale means it was true once and the world moved; this one was wrong in both
-clauses on the day it was written, and stayed wrong through nine exports:
+**The *Used by*, *Licence* and *State* columns become the build's, generated and delivered each
+round. This register cites that table and does not restate it.** What stays here is what only a
+designer can state: **which face a panel is designed in, what is baked and why, why a face was
+chosen, and what a substitution costs.**
 
-| It said | It is |
-|---|---|
-| *"not embeddable"* | **Apache 2.0** — nameID 13 says so, and Apache permits redistribution outright |
-| *"ABSENT BY DECISION"* | **embedded in two castings**, elmer and fifth-member, by `juce_add_binary_data` |
+**The reasoning is the argument the ask makes: the columns that go wrong have a machine-checkable
+source, and the columns that are valuable do not.** Ground truth for the first three is each
+casting's `juce_add_binary_data` block, which is not in this bundle — so an authored copy of it here
+is a transcription with no way to be checked, which is the definition of the thing this file exists
+to catch.
 
-**What kept it upright is the clause that IS true.** The letterforms genuinely are baked into
-`fifth-member-plate-3x.png`. So the row read as coherent — *not embeddable, therefore baked into the
-plate, and here is the plate* — and the true half supplied the evidence a reader would look for
-before doubting the false half. Nobody had to be careless; the row answered its own obvious
-follow-up question.
+**This is the mechanism that closed the export-stamp divergence**, and it is the second time it has
+been the answer: `MANIFEST.md` reads *"Identity: see `BUNDLE.md`"* with no restated figures, and the
+stamp has not diverged since. **A figure with two homes has two values eventually.** `FONTS.md` has
+**seven landings** — the root and all six castings — so an authored fact here has seven chances to
+drift per export.
 
-**Same shape as the plate enumeration that came out thirteen rows short**, and as the
-`Application Support` paragraph in the root `CLAUDE.md` where a true clause carried a false one, and
-as *"Wordmark — stays baked, it is the CHORUS badge"*, true about the badge and false about the
-nameplate. The family is: **a claim reads as checked because a fact standing next to it is checked.**
-The tell is that you cannot name evidence for the specific clause — only for its neighbour.
+**Until the generated table arrives, the rows below stand corrected and are the interim record.**
+When it lands, they are replaced by a citation, not edited again.
 
-**And it was found by deriving, not by reading.** Enumerating from each casting's own
-`juce_add_binary_data` block and from the generated `BinaryData.h` produced a list this table could
-not: two faces that ship and were not registered. Reading the table again — carefully, twice, by
-someone looking for exactly this — returns the same coherent row every time.
+## The failure mode: a true clause carrying a false one
 
-**Elmer's copy is not a leftover, which was the first hypothesis and was refuted.** It was checked
-before being licensed: `Font::marker` is built at `PanelBackground.cpp:424` and drawn at 469 in
-`Colour::markerInk`, inside `paintFooter`, which `paint()` calls unconditionally. It draws that
-casting's scribble strip, `CH 24 — MIX BUS / GLUE`. Had nothing drawn it, the right move was
-deleting it rather than licensing it.
+**Permanent Marker's row was false in both halves on the day it was written and survived nine
+exports.** Not stale — stale means true once. It read *"not embeddable, therefore baked into the
+plate, and here is the plate"*, and the plate clause **is true**: the letterforms genuinely are baked
+into `fifth-member-plate-3x.png`. Both things are true at once, which the corrected row now says
+explicitly.
+
+**So the true clause supplied exactly the evidence a reader would check before doubting the false
+one.** Nobody was careless; the row answered its own obvious follow-up question. That is what makes
+this family expensive:
+
+- the plate enumeration that came out **thirteen rows short**, because every row in it was ink and
+  every missing one was material;
+- *"Wordmark — stays baked, it is the CHORUS badge"* — true about the badge, false about the
+  nameplate;
+- `CLAUDE.md`'s paragraph where a true clause about JUCE carried a false one, and six castings wrote
+  to the wrong directory for a day;
+- and, in this suite's own documents, **three contrast exposures computed to two decimals against
+  grounds nothing stood on** — the arithmetic true throughout, the pairing invented.
+
+**The tell: you can name evidence for the clause's neighbour but not for the clause.** Worth applying
+when writing a row, which is where it is cheap — the checking is the expensive end, and by then the
+row already reads as coherent.
 
 ## "Licensed, embeddable" was a claim nobody could check
 
@@ -70,6 +84,14 @@ exports: a row asserting a licence reads exactly like a row recording one.
 check a sibling on its own evidence rather than by inheritance from the row above it. Librestile's
 outcome is unchanged; only its justification is, and that is not a small difference: it is now a
 fact in the register instead of a hope.
+
+**The licences were not shipping at all until 2026-08-23**, and that is a separate fault from any row
+above. Embedding a font in a binary is redistribution, and OFL 1.1 and Apache 2.0 both require the
+notice and licence to travel with it. The `OFL.txt` files sat under `design/` — a **build-input**
+directory — so **the fonts went in as bytes and the licences went nowhere.** Each casting now
+generates `THIRD-PARTY-LICENCES.txt` into `Contents/Resources/`. **A licence file in a build-input
+directory looks exactly like a licence file that ships**, which is why `ABOUT-PART.md` §8 can now
+honestly point a reader at it.
 
 **A licence column states where the claim comes from, from here on.** OFL and the embedded name
 record are checkable; "licensed" is not. Two rows still say only "OFL" — Barlow Condensed and Share
@@ -95,7 +117,10 @@ procedure: a fallback cut looks like a successful cut.
 **This is a standalone cut, not a plate.** Gatecrasher has no plate to bake into — the rewrite
 deleted it and the panel is entirely code-drawn — which makes it unlike Fifth Member, whose
 Permanent Marker letterforms live inside `fifth-member-plate-3x.png` because there was a plate
-already going out. **Same reason, two different artefacts**, and §2's "one binary ships" line on
+already going out. **Note the difference in kind: Fifth Member bakes an Apache-2.0 face it also
+embeds, for plate-export reasons; Gatecrasher bakes a face it may not embed at all. Baked and
+unlicensed are independent**, and reading them as one sentence is what kept Permanent Marker's row
+wrong for nine exports. **Same reason, two different artefacts**, and §2's "one binary ships" line on
 Gatecrasher inverts: the font stops shipping and a PNG starts.
 
 The cut is trimmed to its ink plus a stated **3 px** margin on all four sides, and placed at
@@ -235,6 +260,134 @@ casting's `fonts/` or is one of the two by-decision absences below, whose letter
 because a marker naming a file that is now present is worse than no marker. **TapeRot's stays**, and
 that is deliberate: its directory is still short one face on purpose, and without the marker that
 shortness reads as the omission that just got fixed. Fifth Member's stays for the same reason.
+
+## The prototypes' font links over-declare, on all six — and that is where strays come from
+
+**A `fonts.googleapis.com` link is a weight declaration that nobody owns.** Every casting requested
+`Barlow+Condensed:wght@400;500;600;700` while drawing two or three of those weights, and Elmer also
+still requested **`Archivo Black`** — the face *Elmer's wordmark: Archivo, not Archivo Black* below
+corrected away from. The correction landed in the spec and in the drawing, and the link kept asking.
+
+**Trimmed to what each casting draws** (root prototypes and `designs/`):
+
+| Casting | Was | Now |
+|---|---|---|
+| chorus-60 | `@400;500;600;700` | `@600;700` |
+| elmer | `@400;500;600;700` + `Archivo Black` | `@500;600`, Archivo Black dropped |
+| gatecrasher | `@400;500;600;700` | `@500;600` |
+| taperot | `@400;500;600;700` | `@500;600` |
+| fifth-member | `@400;500;600;700` | `@500;600` |
+| reflect-84 | `@500;600;700` | **unchanged** — it sets weight through template holes, so a source scan cannot enumerate it; §2.2's selected corner label is a live 700 |
+
+**This is the likeliest source of the embedded strays** — Gatecrasher's Bold and Regular against a §8
+asking only 500 and 600. An over-declaring link is a plausible-looking list of weights that no role
+requires, sitting in the artefact a build reads for guidance. **It over-declares silently and in the
+direction that makes a stray look intended.**
+
+**Elmer's Barlow 700 was a stray too, and only the DOM said so.** The source shows a 700 site; the
+rendered panel reports `Barlow Condensed:700` **unloaded** with exactly one element at weight 700 —
+the wordmark, in **Archivo** 700. Trimmed to `@500;600`. **Reflect-84 is left alone for the mirror
+reason:** its weights arrive through holes, and the same scan that found Elmer's stray reported
+Reflect-84 as not drawing 700 when §2.2 demonstrably does.
+
+**Both halves of that are the same lesson at different ends: a source scan under-counts what holes
+supply and over-counts what a link merely requests.** Neither number is the drawing.
+
+*(One flagged and withdrawn before reporting: a DOM sweep of Elmer reported eight elements rendering
+in Times. They are its `<style>` and `<script>` nodes — the query counted leaf nodes with text
+content and those qualify. Noted because the previous three retractions in this project all reached a
+document first.)*
+
+## Fifth Member's Permanent Marker sites: **four, and all four bake**
+
+**Measured in the rendered DOM 2026-08-23**, by walking each marker element up to its nearest
+`[data-plate]` ancestor rather than by proximity in the source:
+
+| String | Size | Plate flag on the nearest ancestor |
+|---|---|---|
+| `FIFTH MEMBER` | 27 px | **none — renders into the plate** |
+| `CH 4 — GTR / STAGE LEFT` | 15 px | **none — renders into the plate** |
+| `DLY 4` | 12 px | **none — renders into the plate** |
+| `HALDEN HALL · LOAD-IN 06` | 14 px | **none — renders into the plate** |
+
+**Neither of the two readings offered below was right, and neither was the build's first count.**
+Settled 2026-08-23: `Font::marker` is **one definition inside a tape lambda called twice**, drawing
+`DLY 4` at 12 px and `HALDEN HALL · LOAD-IN 06` at 14 px — exactly two of the four above, at exactly
+those sizes.
+
+**They are drawn because the plate cannot reach them.** The plate cut is 1340 × 1012 blitted at
+`frameX = 52`, spanning canvas x **52…1392**; both tape boxes sit at **1396…1440**, on the right ear,
+`earWidth = 52` either side of a 1444 canvas. **The plate stops 4 px short of them.** So no
+double-print is possible and no role is missing.
+
+**Final reconciliation: four bake in the prototype's continuous canvas; two of those fall outside the
+delivered plate cut and must be drawn; two fall inside and correctly are not.**
+
+**The error in this file's own reading was a missing premise, not a missing measurement.** It said
+*baked and drawn-on-top look identical from the design side* — true **only if the plate reaches the
+element**, and the plate's extent was never checked against the elements' coordinates. A conditional
+stated as a symmetry. The DOM ancestry measurement was correct and the count of four was correct;
+what was wrong was treating “renders into the plate” as “is contained by the plate”.
+
+**That leaves one of two things, and the build side can tell which:**
+
+- the runtime consumer draws a string the plate already carries, in which case it is **drawn twice**
+  and the plate's copy is underneath it — invisible while the two agree, and a mismatch the moment
+  either moves;
+- or it draws a fifth string the prototype does not have, in which case the **design** is short a
+  role.
+
+**“Baked” and “missing” look identical from the build side, and “baked” and “drawn on top of the
+bake” look identical from the design side.** Neither side can close this alone, which is why the
+count disagreeing 4-to-1 is more useful than either number was.
+
+**The first reconciliation offered — “the plate bakes the other three” — was the natural one and it
+was wrong by one.** It is the tell again: the baked clause was true, and being true it made the
+arithmetic look finished at three.
+
+## Special Elite — **CLOSED: it was the unused embed**
+
+**Settled from the artefact.** `Font::stencil` had zero consumers and its only caller was itself.
+The role its name implied — §1's RACK 4 ear mark — is drawn with `Font::label(11.0f)` at tracking
+**3.74f**, and the delivered prototype sets that element `font-weight: 600; font-size: 11px;
+letter-spacing: .34em` with **no `font-family`**, so it inherits the panel's Barlow. **0.34 em × 11 px
+= 3.74 px exactly**, so build and design already agreed and the face was never the one that mark is
+set in.
+
+**Removed** from `juce_add_binary_data`, the theme, BinaryData, the licence file and the shipped
+bundle; Fifth Member now embeds five faces, and the licence file is 19,767 bytes with zero occurrences
+of the name, byte-identical in the installed `.vst3`. A comment stands where the builder was.
+
+**It is the calibration-constant shape again: named for what it suggested rather than for what it
+did.** A face called *stencil* beside a stencilled ear mark is a coincidence that reads as a
+causal link, and the register inherited the reading rather than the fact.
+
+**Two more with no consumer, reported and not acted on: `Font::labelMedium` and `Font::labelBold`.**
+Both at zero in Fifth Member while Barlow Medium and Bold are embedded — **the opposite case**, since
+§8 asks for Medium, so the build is short a role rather than carrying a stray. Corroborated from this
+side: the prototype has **one** `font-weight: 500` site (the model line, 12 px / .30 em) and **zero**
+at 700. **So Medium has one design consumer and no build consumer, and Bold has neither.** Bold is a
+candidate for removal on the Special Elite reasoning; Medium is a missing wire, not a stray file.
+
+### The original query, for the record
+
+**Verified on this side:** `Permanent Marker` is declared in **two** prototypes — Elmer once, at
+28.5 px for `CH 24 — MIX BUS / GLUE`, and Fifth Member four times including the `FIFTH MEMBER`
+nameplate at 27 px. That corroborates the correction from the drawings as well as from
+`PanelBackground.cpp`.
+
+**`Special Elite` is declared by none of the six.** It is embedded in fifth-member's binary and no
+delivered prototype names it. Two possibilities and they want different answers:
+
+- **the build draws something the prototype does not** — then the prototype is short a role and
+  `fifth-member/GUI-SPEC.md` §8 needs the row;
+- **it is an unused embed** — then it is bytes in a shipped binary for nothing, and its Apache notice
+  is a licence obligation carried for no benefit.
+
+**This is the inverse of every font question so far** — all seven prior ones were a casting asking
+for a face it did not have. A face present and unasked-for is new, and the arm that finds it is not
+the one that finds the others: **`check_font_sets.py` compares §8's rows against delivered files and
+would report this as clean, because §8 has no row to be short.**
 
 ## The gate, and why it was a gate
 
