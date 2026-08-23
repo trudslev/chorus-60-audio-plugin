@@ -1,9 +1,13 @@
 THIRD-PARTY LICENCES — CHORUS-60
 =================================
 
-This product embeds the typefaces listed below directly in its binary. Embedding a font file in a
-shipped binary is redistribution, so the copyright notice and licence for each one travels with the
-product here, as those licences require.
+This product is licensed under the GNU Affero General Public License, version 3. Its own LICENSE
+file carries that text in full.
+
+It redistributes the third-party components listed below inside its binary — the JUCE Framework,
+the parts of JUCE's own bundled dependencies that it compiles, and several typefaces. Each carries
+its own licence, and those licences require the notice and terms to accompany what is
+redistributed, which is why they are here rather than only in the source repository.
 
 Every fact below is read from the embedded font file's own `name` table, except where a PROVENANCE
 note says otherwise and names the source it came from.
@@ -12,6 +16,45 @@ GENERATED FILE — do not edit by hand. It is produced by
 tools/generate_third_party_licences.py from chorus-60/CMakeLists.txt's own
 juce_add_binary_data block, so a face added without a licence is a generation failure rather than
 something nobody notices.
+
+==============================================================================
+THE JUCE FRAMEWORK
+==============================================================================
+
+JUCE 8.0.14
+    Copyright (c) Raw Material Software Limited
+    Licence: GNU Affero General Public License, version 3 — the same licence this product uses,
+             which is what makes the combined work consistent.
+
+    JUCE is dual-licensed under AGPLv3 and a commercial JUCE licence. THE VERSION DECIDES WHICH
+    TERMS APPLY — they changed at JUCE 8 — so this was read from the pinned tree's own LICENSE.md
+    at build/_deps/juce-src, not from documentation or from memory. The AGPLv3 path is the one
+    taken here. Full text: this product's LICENSE file, and https://www.gnu.org/licenses/agpl-3.0
+
+    JUCE bundles third-party dependencies of its own. The 14 below are the ones reachable
+    from the 14 JUCE modules this product actually compiles, derived from each module's own
+    `dependencies:` declaration rather than from JUCE's full list — which is longer, and would
+    credit code this binary does not contain. Some are compiled only on one platform (the
+    AudioUnitSDK on macOS, ASIO on Windows, Oboe on Android); they are listed because the source
+    this product is built from includes them.
+
+    AAX            Proprietary Avid AAX License/GPLv3
+    ASIO           Proprietary Steinberg ASIO License/GPLv3
+    AudioUnitSDK   Apache 2.0
+    FLAC           BSD
+    HarfBuzz       Old MIT
+    LV2            ISC
+    Oboe           Apache 2.0
+    Ogg Vorbis     BSD
+    SheenBidi      Apache
+    VST3           MIT
+    jpeglib        Independent JPEG Group License
+    pnglib         zlib
+    pslextensions  Public domain
+    zlib           zlib
+
+    Each dependency's full licence text is in the JUCE source tree at the path
+    JUCE's own LICENSE.md gives for it, under modules/ .
 
 ==============================================================================
 TYPEFACES
