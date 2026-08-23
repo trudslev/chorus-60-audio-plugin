@@ -16,8 +16,41 @@ kind is the only kind anyone should try to fix by adding a file.
 | **Librestile Extended Bold** | chorus-60 — wordmark | **OFL 1.1** · © 2024 ocelothe2k1 · Reserved Font Name **"Librestile"** · `https://github.com/ocelothe/Librestile` — the shipped `.ttf` carries **no nameID 13 and no nameID 14**, so its whole in-file claim is nameID 0, *"SIL Open Font License. Made by ocelothe2k1, 2024"*, which names no version. Version, RFN and the verbatim notice are read from the repo's own `LICENSE`, 2026-08-23 | **ships** |
 | **Tudor Victors** | gatecrasher — wordmark | **© Chequered Ink 2020, All Rights Reserved** — read from the delivered file's own name table. No licence was bought, and the available licences grant use of the face to make things, not the right to redistribute the file | **ABSENT BY LICENSING.** Letterforms ship as artwork: `gatecrasher/assets/gatecrasher-wordmark.png` |
 | **Impact Label Reversed** | taperot — wordmark | **donationware, not embeddable** | **ABSENT BY DECISION.** Letterforms ship as artwork: `taperot/assets/taperot-wordmark.png` |
-| **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings | **Apache 2.0** · © 2010 Font Diner, Inc. · nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `http://www.apache.org/licenses/LICENSE-2.0` | **SHIPS — in both.** This row said *not embeddable, ABSENT BY DECISION* until 2026-08-23 and both halves were wrong: the file's own name table declares Apache 2.0, which permits redistribution, and `juce_add_binary_data` has been embedding it in two castings. The letterforms are ALSO baked into `fifth-member-plate-3x.png`, which is what made the absence claim look self-consistent |
+| **Permanent Marker** | **elmer AND fifth-member** — elmer's scribble strip (`PanelBackground::paintFooter`), fifth-member's tape strings | **Apache 2.0** · © 2010 Font Diner, Inc. · nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `http://www.apache.org/licenses/LICENSE-2.0` | **SHIPS — in both.** This row said *not embeddable, ABSENT BY DECISION* until 2026-08-23 and both halves were wrong: the file's own name table declares Apache 2.0, which permits redistribution, and `juce_add_binary_data` has been embedding it in two castings. The letterforms are ALSO baked into `fifth-member-plate-3x.png`, which is what made the absence claim look self-consistent |
 | **Special Elite** | fifth-member — typewriter strings | **Apache 2.0** · © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **SHIPS**, and had **no row in this register at all** until 2026-08-23 |
+
+## The Permanent Marker row was FALSE IN BOTH HALVES, and a neighbouring fact held it up
+
+**Not a stale row.** Stale means it was true once and the world moved; this one was wrong in both
+clauses on the day it was written, and stayed wrong through nine exports:
+
+| It said | It is |
+|---|---|
+| *"not embeddable"* | **Apache 2.0** — nameID 13 says so, and Apache permits redistribution outright |
+| *"ABSENT BY DECISION"* | **embedded in two castings**, elmer and fifth-member, by `juce_add_binary_data` |
+
+**What kept it upright is the clause that IS true.** The letterforms genuinely are baked into
+`fifth-member-plate-3x.png`. So the row read as coherent — *not embeddable, therefore baked into the
+plate, and here is the plate* — and the true half supplied the evidence a reader would look for
+before doubting the false half. Nobody had to be careless; the row answered its own obvious
+follow-up question.
+
+**Same shape as the plate enumeration that came out thirteen rows short**, and as the
+`Application Support` paragraph in the root `CLAUDE.md` where a true clause carried a false one, and
+as *"Wordmark — stays baked, it is the CHORUS badge"*, true about the badge and false about the
+nameplate. The family is: **a claim reads as checked because a fact standing next to it is checked.**
+The tell is that you cannot name evidence for the specific clause — only for its neighbour.
+
+**And it was found by deriving, not by reading.** Enumerating from each casting's own
+`juce_add_binary_data` block and from the generated `BinaryData.h` produced a list this table could
+not: two faces that ship and were not registered. Reading the table again — carefully, twice, by
+someone looking for exactly this — returns the same coherent row every time.
+
+**Elmer's copy is not a leftover, which was the first hypothesis and was refuted.** It was checked
+before being licensed: `Font::marker` is built at `PanelBackground.cpp:424` and drawn at 469 in
+`Colour::markerInk`, inside `paintFooter`, which `paint()` calls unconditionally. It draws that
+casting's scribble strip, `CH 24 — MIX BUS / GLUE`. Had nothing drawn it, the right move was
+deleting it rather than licensing it.
 
 ## "Licensed, embeddable" was a claim nobody could check
 

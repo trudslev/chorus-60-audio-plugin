@@ -198,3 +198,33 @@ target_link_libraries(Chorus60
         juce::juce_recommended_warning_flags)
 
 add_subdirectory(Tests)
+
+# ---------------------------------------------------------------------------------------------
+# THIRD-PARTY-LICENCES.txt — into every bundle's Contents/Resources
+#
+# **Embedding a font in the binary is redistribution**, and both licences these faces carry — OFL
+# 1.1 and Apache 2.0 — require the copyright notice and licence text to travel with what is
+# redistributed. The unit of redistribution is the PLUG-IN BUNDLE: someone receives a .vst3 on its
+# own, so a licence file at the repo root discharges nothing for them. It has to be inside.
+#
+# The file is GENERATED from this CMakeLists' own juce_add_binary_data block by
+# tools/generate_third_party_licences.py, so it cannot drift from what actually ships. Regenerate
+# after adding or removing an embedded face; `--check` fails if any casting is stale.
+#
+# **macOS only, stated rather than silently true.** MACOSX_PACKAGE_LOCATION is what puts a file in
+# a bundle, and on Windows and Linux the licence has to reach the user through the installer
+# instead — see installer/ . Adding the .txt to target_sources off Apple would have CMake try to
+# build it, which is why this is guarded rather than merely inert.
+if(APPLE)
+    set(NF_LICENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/THIRD-PARTY-LICENCES.txt")
+    if(NOT EXISTS "${NF_LICENCE_FILE}")
+        message(FATAL_ERROR
+            "THIRD-PARTY-LICENCES.txt is missing. Run: python3 tools/generate_third_party_licences.py")
+    endif()
+    set_source_files_properties("${NF_LICENCE_FILE}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    foreach(_nf_fmt IN ITEMS AU AUv3 VST3 Standalone)
+        if(TARGET Chorus60_${_nf_fmt})
+            target_sources(Chorus60_${_nf_fmt} PRIVATE "${NF_LICENCE_FILE}")
+        endif()
+    endforeach()
+endif()
