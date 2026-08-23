@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chorus60Theme.h"
+#include <nf/AboutPart.h>
 #include "Chorus60LookAndFeel.h"
 #include "DimmableGroup.h"
 #include "KnobComponent.h"
@@ -79,6 +80,12 @@ public:
     void paintOverChildren(juce::Graphics&) override;
 
 private:
+    /*  `ABOUT-PART.md`. The tab replaces the drawn footer stamp; the box is added over the whole
+        canvas and is invisible until opened. §6: neither touches a parameter and neither
+        serialises — the box is not a state of the plugin and is closed on every load. */
+    std::unique_ptr<nf::AboutTab> aboutTab;
+    std::unique_ptr<nf::AboutBox> aboutBox;
+
     void timerCallback() override;
 
     // Re-points the four slots and the switch at another configuration's parameters. Called when the

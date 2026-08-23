@@ -89,7 +89,9 @@ target_compile_definitions(Chorus60Tests PRIVATE
     NF_PRODUCT_NAME="${CHORUS60_PRODUCT_NAME}"
     JucePlugin_Name="${CHORUS60_PRODUCT_NAME}"
     JucePlugin_Manufacturer="${CHORUS60_COMPANY_NAME}"
-    NF_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+    NF_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    # ABOUT-PART.md §1: the box prints semver, which major.minor cannot carry.
+    NF_VERSION="${PROJECT_VERSION}")
 
 target_link_libraries(Chorus60Tests PRIVATE
     # The bug sweep's measurement drivers. TEST target only — never the plugin, which must not

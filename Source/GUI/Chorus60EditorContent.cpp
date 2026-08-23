@@ -240,6 +240,37 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
     menuHost.toFront(false);
     programHeader.setMenuParent(&menuHost);
 
+    /*  `ABOUT-PART.md`. §9's materials and §1's five strings are all this casting supplies.
+        **Registered last**, because JUCE paints children in the order they were added and a tab
+        registered beside its construction ends up under the panel — drawn, correct and invisible,
+        which is how it shipped for one build on reflect-84. */
+    {
+        const juce::String midDot = juce::String::charToString (juce::juce_wchar (0x00B7));
+
+        const nf::AboutMaterials m {
+            Colour::aboutGlass, Colour::aboutBody, Colour::aboutDim, Colour::aboutAccent,
+            Colour::aboutRing, Colour::aboutWellTop, Colour::aboutWellBottom, Colour::aboutWellInk,
+            barlowSemiBoldTypeface(), barlowSemiBoldTypeface(), shareTechMonoTypeface()
+        };
+
+        const nf::AboutContent c {
+            "CHORUS-60", "CH-60", NF_VERSION, nf::suiteRelease,
+            "github.com/trudslev/chorus-60-audio-plugin",
+            "Barlow Condensed, Share Tech Mono and Librestile Extended, "
+            "all under the SIL Open Font License."
+        };
+
+        aboutBox = std::make_unique<nf::AboutBox> (m, c);
+        aboutTab = std::make_unique<nf::AboutTab> (m, "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT,
+                                                   Layout::footerCssPx, Layout::footerTrackingEm);
+        aboutTab->onClick = [this] { aboutBox->open(); };
+
+        aboutTab->layoutFor ((int) Layout::canvasHeight);
+        aboutBox->setBounds (0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
+        addAndMakeVisible (*aboutTab);
+        addChildComponent (*aboutBox);
+    }
+
     // Seed at the settled position so the first frame after opening the editor is correct rather
     // than sweeping up from zero.
     const auto initial = processorRef.resolveActiveConfiguration();
@@ -516,11 +547,8 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
         coincidence until the suite went to 1.0.0 and would have quietly lied at the first 1.1.
         NF_VERSION_SHORT comes from PROJECT_VERSION in CMakeLists, so the panel and the plugin's
         reported version cannot disagree.  */
-    const juce::String midDot = juce::String::charToString (juce::juce_wchar (0x00B7));
-    const juce::String footer = "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT;
-    const juce::Rectangle<float> footerRect(Layout::footerRight - 400.0f, Layout::footerY,
-                                             400.0f, Layout::footerLineBox);
-    drawTrackedText(g, footer, monoFont(monoFontHeightForCssPx(Layout::footerCssPx)),
-                     trackingPxForEm(Layout::footerTrackingEm, Layout::footerCssPx),
-                     footerRect, juce::Justification::right, Colour::captionTertiary);
+    /*  **The footer stamp is no longer drawn here** — `ABOUT-PART.md` §2 promotes it to a recessed
+        tab (`nf::AboutTab`), which needs a hit region and so is a component, and which re-inks it
+        from flavour class to functional against the well. Everything above about the codepoint and
+        the derived version still holds: the tab is handed the same string, built the same way. */
 }

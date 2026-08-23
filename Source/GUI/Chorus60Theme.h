@@ -88,6 +88,22 @@ namespace Chorus60Theme
         // contrast: 7.09-7.59:1 vs plate:scopeCaptionRow,plate:footerRow [functional]
         inline const juce::Colour captionTertiary{0xFF9CA2A6};
 
+        /*  **§9's About materials.** The box is this casting's own display GLASS, not its fascia.
+            **Chorus-60 is the one casting whose fascia is dark**, so its box separates from the panel
+            by the veil, the ring and the shadow rather than by value — §9.1 names that and rules it
+            sufficient: the box is not required to contrast with the fascia, only with its own
+            contents. */
+        inline const juce::Colour aboutGlass      { 0xFF0B0D0F };   // §9.1
+        inline const juce::Colour aboutBody       { 0xFFE6EBEE };   // 16.21 on glass
+        inline const juce::Colour aboutDim        { 0xFF9AA2A6 };   //  7.50
+        inline const juce::Colour aboutAccent     { 0xFFE5A021 };   //  8.70
+        inline const juce::Colour aboutRing       { 0xFF242A2D };
+
+        // §9.2's tab well. The ink is measured against the WELL, never the fascia.
+        inline const juce::Colour aboutWellTop    { 0xFF191C1E };
+        inline const juce::Colour aboutWellBottom { 0xFF212527 };
+        inline const juce::Colour aboutWellInk    { 0xFFCDD4D8 };   // 10.31 on the well
+
         /*  **THE HEADER BLOCK'S OWN MATERIAL. §1: `linear-gradient(180deg, #24292c, #171a1c)`.**
 
             Not on the plate — drawn. It was silkscreen for one revision, which is why these

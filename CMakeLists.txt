@@ -178,6 +178,8 @@ target_sources(Chorus60 PRIVATE
 
 target_compile_definitions(Chorus60 PUBLIC
     NF_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    # ABOUT-PART.md §1: the box prints semver, which major.minor cannot carry.
+    NF_VERSION="${PROJECT_VERSION}"
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
