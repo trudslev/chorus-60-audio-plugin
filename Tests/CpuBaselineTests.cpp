@@ -82,11 +82,35 @@ public:
                         + " on " + baseline->provenance.machine
                         + ", core " + baseline->provenance.coreCommit);
 
-            for (const auto& c : nf::testing::compareToBaseline (measured, *baseline))
+            /*  **A CPU baseline is a property of the machine that recorded it.** On any other
+                machine the figures are still worth printing and the BAR is not worth applying:
+                Elmer's first CI run failed five editor cells at 1.26x to 1.39x, with every closed
+                cell over by the same proportion — the free control saying the whole column was the
+                machine, not the code.
+
+                So this asserts at home and reports on a runner, rather than the two alternatives —
+                a bar that fails everywhere it is not run at home, or a performance test skipped
+                wherever it is inconvenient, which is how a check stops being trusted. */
+            const bool sameMachine = nf::testing::baselineTakenOnThisMachine (baseline->provenance);
+
+            if (! sameMachine)
+                logMessage ("  running on " + nf::testing::currentMachine()
+                            + " — cells are REPORTED, not asserted");
+
+            const auto comparisons = nf::testing::compareToBaseline (measured, *baseline);
+
+            for (const auto& c : comparisons)
             {
                 logMessage ("  " + c.describe());
-                expect (c.withinTolerance, c.describe());
+
+                if (sameMachine)
+                    expect (c.withinTolerance, c.describe());
             }
+
+            // The suite must still fail if the comparison produced nothing at all, on any machine:
+            // "reported, not asserted" must not quietly become "measured nothing".
+            expectGreaterThan ((int) comparisons.size(), 0,
+                               "the baseline comparison produced no cells");
         }
     }
 };
