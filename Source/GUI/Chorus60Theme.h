@@ -1260,6 +1260,16 @@ namespace Chorus60Theme
     // **Librestile is BACK.** It was dropped when the wordmark was baked; this file said so for one
     // revision. The revision-4 plate carries no nameplate, so the wordmark is drawn again and the
     // face has to be embedded again with it. It is the only user of this typeface on the panel.
+    /** §4's prose weight. The About box's credits and note are Barlow Condensed **500** in all
+        six delivered prototypes; this casting drew them at 600 until the face landed. */
+    inline juce::Typeface::Ptr barlowMediumTypeface()
+    {
+        static const juce::Typeface::Ptr t =
+            juce::Typeface::createSystemTypefaceFor(BinaryData::BarlowCondensedMedium_ttf,
+                                                    (size_t) BinaryData::BarlowCondensedMedium_ttfSize);
+        return t;
+    }
+
     inline juce::Typeface::Ptr barlowSemiBoldTypeface()
     {
         static const juce::Typeface::Ptr typeface =

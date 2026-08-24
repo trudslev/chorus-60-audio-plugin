@@ -98,6 +98,16 @@ juce_add_binary_data(Chorus60BinaryData
         design/assets/switch-thumb@3x.png
         design/assets/BarlowCondensed-SemiBold.ttf
         design/assets/BarlowCondensed-Bold.ttf
+        # ABOUT-PART.md §4 sets the About box's credits and note in Barlow Condensed **500**,
+        # in all six - verified in every delivered prototype, not read off the prose. This
+        # casting embedded 600 and 700 only, so the two prose rows drew at the wrong weight.
+        #
+        # **It is the delivered 1.408 cut and the other two here are 1.101**, so this casting
+        # now carries mixed cuts. That is deliberate and it is the lesser of two: the weights
+        # are used for different roles and never meet inside one string, where drawing prose
+        # at 600 is visible on the panel. See design-asks/cs40-count-and-chorus60-barlow-cut.md
+        # - this makes the wholesale move to 1.408 more attractive, not less.
+        design/assets/BarlowCondensed-Medium.ttf
         design/assets/ShareTechMono-Regular.ttf
         # Back as of the revision-4 plate. It was dropped when the wordmark was baked; that plate
         # carries the fascia, the badge and the box frames only, so the nameplate is drawn again.

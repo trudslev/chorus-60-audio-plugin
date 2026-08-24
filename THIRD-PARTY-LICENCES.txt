@@ -59,10 +59,10 @@ JUCE 8.0.14
 ==============================================================================
 TYPEFACES
 ==============================================================================
-Barlow Condensed  (Bold, SemiBold)
+Barlow Condensed  (Bold, Medium, SemiBold)
     Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
     Licence: SIL Open Font License, Version 1.1  —  full text below under [OFL-1.1]
-    Embedded as: BarlowCondensed-Bold.ttf, BarlowCondensed-SemiBold.ttf
+    Embedded as: BarlowCondensed-Bold.ttf, BarlowCondensed-Medium.ttf, BarlowCondensed-SemiBold.ttf
 
 Librestile Extended Bold  (Bold)
     Copyright (c) 2024, ocelothe2k1 (https://www.youtube.com/@OCELOTHE / https://www.youtube.com/@ocelothe2k1),

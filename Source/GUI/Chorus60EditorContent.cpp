@@ -250,7 +250,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         const nf::AboutMaterials m {
             Colour::aboutGlass, Colour::aboutBody, Colour::aboutDim, Colour::aboutAccent,
             Colour::aboutRing, Colour::aboutWellTop, Colour::aboutWellBottom, Colour::aboutWellInk,
-            barlowSemiBoldTypeface(), barlowSemiBoldTypeface(), shareTechMonoTypeface(),
+            barlowSemiBoldTypeface(), barlowMediumTypeface(), shareTechMonoTypeface(),
             Cursor::help()
         };
 
