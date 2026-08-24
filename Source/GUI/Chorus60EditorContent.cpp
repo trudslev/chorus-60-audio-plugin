@@ -275,7 +275,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
             correct here and the argument is the same one: the part adds the recess, the ink, the
             cursor and the handlers, and does not restate the type. */
         aboutTab = std::make_unique<nf::AboutTab> (m, shareTechMonoTypeface(),
-                                                   "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT,
+                                                   "CHORUS-60 " + midDot + " v" NF_VERSION,
                                                    Layout::footerCssPx, Layout::footerTrackingEm);
         aboutTab->onClick = [this] { aboutBox->open(); };
 
@@ -565,11 +565,16 @@ void Chorus60EditorContent::paintOverChildren(juce::Graphics& g)
         out as a stray glyph. `charToString` is what the rest of this suite uses.
 
         **The version is derived, not a literal.** It read `v1.0` hard-coded, which was true only by
-        coincidence until the suite went to 1.0.0 and would have quietly lied at the first 1.1.
-        NF_VERSION_SHORT comes from PROJECT_VERSION in CMakeLists, so the panel and the plugin's
-        reported version cannot disagree.  */
+        coincidence until the suite went to 1.0.0 and would have quietly lied at the first 1.1. It
+        comes from PROJECT_VERSION in CMakeLists, so the panel and the plugin's reported version
+        cannot disagree.  */
     /*  **The footer stamp is no longer drawn here** — `ABOUT-PART.md` §2 promotes it to a recessed
         tab (`nf::AboutTab`), which needs a hit region and so is a component, and which re-inks it
-        from flavour class to functional against the well. Everything above about the codepoint and
-        the derived version still holds: the tab is handed the same string, built the same way. */
+        from flavour class to functional against the well.
+
+        **One thing above no longer holds: the FIELD changed.** This drew `NF_VERSION_SHORT`; the
+        tab prints `NF_VERSION`. Every delivered prototype that spells its tab's version literally
+        prints the patch field, and §1 states the plugin version as semver — the short form is right
+        for a panel stamp and wrong for the box's own identity line. The codepoint note and the
+        derived-not-literal note both still stand. */
 }
