@@ -230,12 +230,21 @@ add_subdirectory(Tests)
 # a bundle, and on Windows and Linux the licence has to reach the user through the installer
 # instead — see installer/ . Adding the .txt to target_sources off Apple would have CMake try to
 # build it, which is why this is guarded rather than merely inert.
+# **The path and its guard sit OUTSIDE the platform branch, and that is load-bearing.** Both used
+# to live inside `if(APPLE)`, where the `set()` only executes on Apple — so every Windows and Linux
+# build dereferenced an undefined variable and handed `copy_if_different` an empty source argument,
+# and the missing-file FATAL_ERROR could not fire there either.
+#
+# It survived because nothing had ever built off Apple: all six castings' CI is macOS-first, three
+# had never run at all, and a defect on a path nobody walks leaves no trace. Found while planning
+# the release pipeline, proved with a minimal CMake reproduction rather than by reading.
+set(NF_LICENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/THIRD-PARTY-LICENCES.txt")
+if(NOT EXISTS "${NF_LICENCE_FILE}")
+    message(FATAL_ERROR
+        "THIRD-PARTY-LICENCES.txt is missing. Run: python3 tools/generate_third_party_licences.py")
+endif()
+
 if(APPLE)
-    set(NF_LICENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/THIRD-PARTY-LICENCES.txt")
-    if(NOT EXISTS "${NF_LICENCE_FILE}")
-        message(FATAL_ERROR
-            "THIRD-PARTY-LICENCES.txt is missing. Run: python3 tools/generate_third_party_licences.py")
-    endif()
     set_source_files_properties("${NF_LICENCE_FILE}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     foreach(_nf_fmt IN ITEMS AU AUv3 VST3 Standalone)
         if(TARGET Chorus60_${_nf_fmt})
