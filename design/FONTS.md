@@ -19,6 +19,7 @@ kind is the only kind anyone should try to fix by adding a file.
 | **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings, scribble strips | **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. Redistribution permitted outright | **SHIPS in both**, via `juce_add_binary_data`, and always has. Fifth Member's letterforms are **also** baked into `fifth-member-plate-3x.png` — both are true |
 | **Special Elite** | **nothing draws it** — two roles in README prose, implemented in no artefact; one use in a **rejected** icon concept | **Apache 2.0** — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **ORPHAN. The removal was correct and stands.** This register's reopening is retracted — see below |
 
+<<<<<<< HEAD
 ## Barlow Condensed: **1.408 is canonical, 1.101 is the outlier** — ruled 2026-08-24
 
 **Chorus-60's build embeds `BarlowCondensed-SemiBold.ttf` version 1.101 (89 916 bytes); everything
@@ -67,6 +68,8 @@ reserves *Share*; the Archivo authors reserve nothing. A single shared `OFL.txt`
 that clause for one family — the same filename-collision trap `reflect-84/fonts/ABSENT.md` already
 records.
 
+=======
+>>>>>>> parent of 97b5b8c (§2b revision 4: retire the custom help cursor for PointingHandCursor)
 ## Who owns which column — ruled **(a)**, 2026-08-23
 
 **The *Used by*, *Licence* and *State* columns become the build's, generated and delivered each

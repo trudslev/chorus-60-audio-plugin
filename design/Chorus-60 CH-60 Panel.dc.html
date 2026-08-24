@@ -24,8 +24,8 @@
 <div style="position:relative;margin:0 auto;width:1340px;height:812px;background:linear-gradient(180deg,#141618,#0e1012 55%,#0a0c0d);box-shadow:inset 0 0 0 1px #000000, 0 10px 40px rgba(0,0,0,.5);overflow:hidden;">
 
   <div style="position:absolute;left:16px;top:16px;width:1308px;height:104px;box-sizing:border-box;border-radius:5px;background:linear-gradient(180deg,#24292c,#171a1c);box-shadow:inset 0 0 0 1px #0a0c0d, inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 8px rgba(0,0,0,.5);">
-    <div onClick="{{ aboutOpen }}" title="About" style="cursor:pointer;position:absolute;left:22px;top:14px;width:303px;height:84px;">
-      <div style="font-family:'Librestile Ext','Barlow Condensed',sans-serif;font-size:28px;line-height:32px;letter-spacing:.02em;color:#e6ebee;white-space:nowrap;;cursor:pointer">CHORUS-60</div>
+    <div style="position:absolute;left:22px;top:14px;width:303px;height:84px;">
+      <div onClick="{{ aboutOpen }}" title="About" style="font-family:'Librestile Ext','Barlow Condensed',sans-serif;font-size:28px;line-height:32px;letter-spacing:.02em;color:#e6ebee;white-space:nowrap;;cursor:help">CHORUS-60</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;line-height:17px;letter-spacing:.26em;color:#e6ebee;margin-top:16px;">BBD CHORUS PROCESSOR</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:11px;line-height:14px;letter-spacing:.20em;color:#b6bec2;">MODEL CH-60 · STEREO</div>
     </div>
@@ -123,7 +123,7 @@
   </div>
 
   <div style="position:absolute;left:24px;top:782px;width:400px;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#8a9196;">CH-60 · SN 0061</div>
-  <div onClick="{{ aboutOpen }}" title="About" style="position:absolute;right:38px;top:768px;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 10px;border-radius:2px;background:linear-gradient(180deg,#191c1e,#212527);box-shadow:inset 0 0 0 1px #131618, inset 0 1px 3px rgba(0,0,0,.55);cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#cdd4d8;" style-hover="background:linear-gradient(180deg,#212527,#2a2f32);color:#e5a021;">CHORUS-60 &middot; v1.0.0</div>
+  <div onClick="{{ aboutOpen }}" title="About" style="position:absolute;right:38px;top:768px;height:24px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 10px;border-radius:2px;background:linear-gradient(180deg,#191c1e,#212527);box-shadow:inset 0 0 0 1px #131618, inset 0 1px 3px rgba(0,0,0,.55);cursor:help;font-family:'Share Tech Mono',monospace;font-size:10px;line-height:13px;letter-spacing:.10em;color:#cdd4d8;" style-hover="background:linear-gradient(180deg,#212527,#2a2f32);color:#e5a021;">CHORUS-60 &middot; v1.0.0</div>
 
   <sc-if value="{{ aboutIsOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ aboutClose }}" style="position:absolute;inset:0;z-index:60;background:rgba(8,9,11,.72);cursor:default;"></div>
