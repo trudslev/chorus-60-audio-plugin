@@ -86,6 +86,7 @@ jobs:
       - name: Configure (ad-hoc signing; architectures come from CMakeLists.txt)
         run: |
           cmake -B build -G Xcode \
+            -DNF_COPY_PLUGIN_AFTER_BUILD=OFF \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Manual \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="-" \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=YES \
@@ -203,7 +204,7 @@ jobs:
       # windows-latest forward (it has already moved to VS2026); omitting -G lets CMake detect
       # whatever VS is installed, and -A x64 still applies to that generator.
       - name: Configure
-        run: cmake -B build -A x64
+        run: cmake -B build -A x64 -DNF_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build (VST3/Standalone + tests)
         run: cmake --build build --config Release
@@ -263,7 +264,7 @@ jobs:
       # Single-config generator: CMAKE_BUILD_TYPE must be set at configure time, unlike the
       # Xcode/Visual Studio multi-config generators used above.
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DNF_COPY_PLUGIN_AFTER_BUILD=OFF
 
       # Capped at 2 jobs rather than one-per-core. JUCE's amalgamated per-module translation units
       # (juce_dsp.cpp, juce_gui_basics.cpp, ...) are heavy enough that building several at once
