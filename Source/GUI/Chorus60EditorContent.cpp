@@ -250,8 +250,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         const nf::AboutMaterials m {
             Colour::aboutGlass, Colour::aboutBody, Colour::aboutDim, Colour::aboutAccent,
             Colour::aboutRing, Colour::aboutWellTop, Colour::aboutWellBottom, Colour::aboutWellInk,
-            barlowSemiBoldTypeface(), barlowMediumTypeface(), shareTechMonoTypeface(),
-            Cursor::help()
+            barlowSemiBoldTypeface(), barlowMediumTypeface(), shareTechMonoTypeface()
         };
 
         const nf::AboutContent c {
@@ -281,7 +280,7 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
 
         // §2a: the wordmark is the PRIMARY affordance. It draws nothing - the panel already draws
         // the nameplate; this only claims HeaderGeometry's zone, 303 x 84, shared by all six.
-        aboutWordmark = std::make_unique<nf::AboutWordmarkHit> (Cursor::help());
+        aboutWordmark = std::make_unique<nf::AboutWordmarkHit>();
         aboutWordmark->onClick = [this] { aboutBox->open(); };
 
         aboutTab->layoutFor ((int) Layout::canvasHeight, frameOriginX);

@@ -19,6 +19,38 @@ kind is the only kind anyone should try to fix by adding a file.
 | **Permanent Marker** | **elmer AND fifth-member** — nameplate, tape strings, scribble strips | **Apache 2.0** — nameID 13 *"Licensed under the Apache License, Version 2.0"*, nameID 14 `apache.org/licenses/LICENSE-2.0`, © 2010 Font Diner, Inc. Redistribution permitted outright | **SHIPS in both**, via `juce_add_binary_data`, and always has. Fifth Member's letterforms are **also** baked into `fifth-member-plate-3x.png` — both are true |
 | **Special Elite** | **nothing draws it** — two roles in README prose, implemented in no artefact; one use in a **rejected** icon concept | **Apache 2.0** — © 2010 Brian J. Bonislawsky DBA Astigmatic (AOETI) | **ORPHAN. The removal was correct and stands.** This register's reopening is retracted — see below |
 
+## Barlow Condensed: **1.408 is canonical, 1.101 is the outlier** — ruled 2026-08-24
+
+**Chorus-60's build embeds `BarlowCondensed-SemiBold.ttf` version 1.101 (89 916 bytes); everything
+else in the suite is 1.408.** The two cuts are not the same face under two numbers: 391 codepoints
+against 525, **19 of 95 ASCII advances differ**, and `·` U+00B7 is **148 against 215 — +45.3 %**. All
+three 1.408 copies in the tree are metrically identical, so the target is unambiguous.
+
+**1.408 is what the designers deliver, what four castings carry, and what every prototype now uses.**
+The two castings on 1.101 are on it by age, not by decision. **Every measurement taken from
+Chorus-60's prototype is currently against a face its build does not have**, which is the class this
+project has already been bitten by.
+
+**Held, not cancelled.** Adopting it is one line per casting and a re-read of two panels, and it moves
+labels on two shipping panels — `MODEL CH-60 · STEREO` moves **+0.830 px**, left-aligned, so its right
+end takes the full amount. **Doing it inside the About round would confound each panel's
+render-and-read with a change that has nothing to do with the About part.** It lands as its own change
+set once the About round closes. Nothing is missing meanwhile: U+00B7 and U+2212 are the only
+non-ASCII codepoints either casting draws and **both are present in 1.101**.
+
+**And it is measured out of Gatecrasher's `REVERB TANK` residue** — build 95.5 px against prototype
+89.5. The cut accounts for **0.336 px** of it and `ENVELOPE` is identical in both. Type size stays the
+named next candidate.
+
+## Two delivered faces have no licence beside them
+
+`designs/fonts/` delivers **eight faces and four licence files**. **Archivo Expanded Bold** and
+**Share Tech Mono Regular** ship without one. Both are OFL 1.1 by their own `name` tables and both are
+credited as OFL in §9.3, so this is a missing file rather than a wrong claim — but this register's own
+rule is that a licence claim is carried by a file in the tree, not by a row. **`ShareTechMono-OFL.txt`
+and `ArchivoExpanded-OFL.txt` are owed**, and one of them is the plausible identity of change set 40's
+missing 117th file.
+
 ## Who owns which column — ruled **(a)**, 2026-08-23
 
 **The *Used by*, *Licence* and *State* columns become the build's, generated and delivered each

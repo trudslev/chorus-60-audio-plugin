@@ -198,30 +198,6 @@ namespace Chorus60Theme
             ring. The LCD and both meter wells carry it. */
         inline const juce::Colour ledWindowRecess{0xE6000000};
     }
-
-    //==============================================================================
-    namespace Cursor
-    {
-        /*  §2b: `help`, not `pointer`. `pointer` says *this acts*; `help` says *this explains
-            something*, and an About box explains. JUCE has no help cursor in `StandardCursorType`,
-            so the delivered 64 x 64 @2x asset is embedded and a cursor built from it.
-
-            **Hotspot (7, 4) in image pixels**, which is the arrow's tip - read off the artwork
-            rather than assumed at the origin, because a cursor whose hotspot is wrong is off by the
-            distance from the corner to the tip on every click. */
-        inline juce::MouseCursor help()
-        {
-            static const juce::MouseCursor c = []
-            {
-                const auto img = juce::ImageFileFormat::loadFrom (BinaryData::aboutcursor2x_png,
-                                                                  (size_t) BinaryData::aboutcursor2x_pngSize);
-                return img.isValid() ? juce::MouseCursor (img, 7, 4, 2.0f)
-                                     : juce::MouseCursor (juce::MouseCursor::PointingHandCursor);
-            }();
-            return c;
-        }
-    }
-
     /** Which of the two re-rendered filmstrips a knob uses. */
     enum class KnobFilmstripSize { mod, global };
 

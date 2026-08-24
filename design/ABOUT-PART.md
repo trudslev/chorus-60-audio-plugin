@@ -24,7 +24,7 @@ only rendering is the study in `designs/`. Outstanding, in the order it has to h
 | ~~Five castings' stamp rows~~ | **DONE, change set 35.** All six now carry an About section of their own: chorus-60 §11, elmer §9, gatecrasher §13, taperot §11, fifth-member §13, reflect-84 §11 — tab box and well, box position from this file's law against each canvas height, the ink triple with its measured ratio, the repository slug and the embedded-face list. **None restates the shared geometry** |
 | ~~Five prototypes~~ | **DONE, change set 38. All six are fitted** — tab, veil, box, both affordances, `help` cursor, Escape / veil-click / CLOSE |
 | ~~The study's faces~~ | **DONE, change set 36.** Eleven faces in `designs/fonts/`, all six panels and the study on local `@font-face`. **Permanent Marker is the one face with no file in the tree**, so elmer and fifth-member keep a CDN link for it alone |
-| **The cursor asset** | **cut, change set 38** — `shared/assets/about-cursor-1x.png` and `-2x.png`, to §2c |
+| ~~The cursor asset~~ | **RETIRED, revision 4.** `shared/assets/about-cursor-1x.png` and `-2x.png` stay in the tree unreferenced. §2b now rules `PointingHandCursor` |
 
 **The box y differs per casting** and is the only figure that does: 136 at chorus-60's 812, 125 at
 TapeRot's 790, 80 at Gatecrasher's 700, 60 at Elmer's 660, 54 at Reflect-84's 648, 236 at Fifth
@@ -99,6 +99,7 @@ figure where there are two.
 | Width | **shrink-to-fit**, padding 10 each side | The strings differ in length by casting: `v1.0` to `GL-87 · SN 0042 · v1.0` |
 | Face | **the face that casting's stamp already uses, at the size it already uses** | see below |
 | Construction | **inset ring, not a border** | `HEADER-PART.md` §3 applies unchanged |
+| Height | **24, and it may not be squeezed** | the two in-flow castings sit the tab in a fixed-height flex column, where the default `flex-shrink: 1` took it to **19**. `flex-shrink: 0` on the tab, both castings |
 
 **The stamp's ink moves from flavour class to functional class.** Today it is the dimmest text on
 several panels — Reflect-84's is `#5e5440` at **4.71**, below the 7:1 functional floor, and that was
@@ -108,15 +109,21 @@ no ink can achieve on two of the six. Figures in §9.2. This is the only change 
 to a panel in its resting state, and it is not optional.
 
 **Hover** lightens the well one step and takes the ink to the casting's accent, **and the cursor
-becomes `help`.**
+becomes `PointingHandCursor`** (§2b revision 4).
 
 **Revision 2 said the tab takes "the casting's own mono at 10 / 13" and that was wrong for two
 castings.** Fifth Member's stamp is Barlow Condensed 600 at 11 / 13 / .26 em by its own §8 foot-strip
 row, and Reflect-84's is Barlow Condensed 600 at 10 / 13 / .1 em. **Forcing mono on them would have
 re-typed a string the casting had already specified**, to satisfy a figure describing what the other
 four happened to do. The tab takes **the stamp's existing face and size**; the recess, ink, cursor and
-handlers are what the part adds. Same reasoning as §2d: the part specifies the result, not the
-mechanism, and a casting that already reads correctly is already conformant.
+handlers are what the part adds. **The part specifies the result, not the mechanism**, and a casting
+that already reads correctly is already conformant.
+
+**Revision 3 named Fifth Member and Reflect-84 and only Fifth Member's prototype was re-fitted.**
+Reflect-84's prototype tab was still IBM Plex Mono 500 — revision 2's rule, and against that casting's
+own §8 row 412. **The builds were right; the prototype was stale.** Corrected in change set 41:
+Reflect-84's tab is Barlow Condensed 600 at 10 / 13 / .10 em in the prototype too, and all six
+prototypes now agree with their own §8 stamp rows.
 
 ### 2a · Two affordances, because one was undiscoverable
 
@@ -150,17 +157,39 @@ figure for six castings, it is already specified, and **it is immune to the artw
 difference** that made the wordmark look unusable as an affordance in the first place. A hit region
 over a bitmap and a hit region over live text are the same rectangle.
 
-### 2b · The cursor is `help`, not `pointer`
+**The zone is the nameplate wrapper, not the wordmark element inside it.** All six prototypes had the
+handler on the ink — the text div, the plate, or the `<img>` — which is 303 × 40 on Reflect-84 and
+smaller still inside Fifth Member's rotated plate. **The figure was right in the prose and absent from
+every file.** Change set 41 moves the handler and the cursor onto the 303 × 84 wrapper in all six, so
+the claim is now true of the artefacts. Hover treatment stays on the ink, where it is visible.
 
-**On both affordances.** `pointer` says *this acts*; `help` says *this explains something*, which is
-what an About box is. It is the one signal that costs no ink, changes nothing in the resting panel,
-and fires on an ordinary sweep.
+### 2b · The cursor is `PointingHandCursor` — revision 4
 
-**JUCE has no help cursor in `StandardCursorType`.** The nearest standard is
-`PointingHandCursor`, which says the wrong thing. **So this needs a custom cursor image** — stated
-here rather than discovered at implementation, because the idiom is available in CSS and not in the
-toolkit's standard set. If a custom cursor is refused, `PointingHandCursor` is the fallback and the
-distinction is lost, not the affordance.
+**Revision 3's custom bitmap help cursor is struck, and the asset is retired.** The reasoning below is
+kept because it was good; what killed it is a fact about the platform, not a change of taste.
+
+**`help` said the better thing.** `pointer` says *this acts*; `help` says *this explains something*,
+which is what an About box is. That distinction is real and we are not pretending otherwise.
+
+**What it costs is an accessibility setting.** JUCE has no help cursor in `StandardCursorType`, so
+`help` can only be a custom `juce::MouseCursor`, which becomes an app-supplied `NSImage` on
+`[[NSCursor alloc] initWithImage:hotSpot:]`. **macOS's Accessibility → Display → Pointer size does not
+scale an app-supplied cursor image.** A reader running an enlarged pointer gets a system arrow up to
+~4× everywhere on screen and a 20 × 24 bitmap on the two elements the part built to be noticed — the
+pointer shrinks to a quarter of itself at exactly the two places that want attention. Apple's own
+help artwork via `fromHIServices` does not escape it: that loader ends in `setSize:` and hands a
+fixed `NSImage` to the same initialiser, and it is macOS-only besides.
+
+**A signal that degrades for the reader most likely to need it is a signal with a condition on it.**
+This suite does not ship those. `PointingHandCursor` is a system cursor: it scales, it is native on
+all three platforms, and it needs no asset. The distinction lost is between two kinds of *this is
+interactive*, and **both affordances open the same box** — a reader who reads `pointer` as *this acts*
+is not misled, because nothing is claimed that the box does not deliver.
+
+**Unchanged either way:** the two affordances, the 303 × 84 hit zone, and the hover treatment — well
+lightened one step, ink to the accent. **The hover is what does the visible work**, and it is the
+signal that carries the distinction now.
+
 
 ---
 
