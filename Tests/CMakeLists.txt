@@ -31,6 +31,7 @@ target_sources(Chorus60Tests PRIVATE
     DisplayBudgetTests.cpp
     KnobRenderTests.cpp
     PrintedScaleTests.cpp
+    AboutPartTests.cpp
     ../Source/GUI/KnobScaleRing.cpp
     ../Source/DSP/ModulationEngine.cpp
     ../Source/DSP/BBDDelayLine.cpp

@@ -250,7 +250,8 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         const nf::AboutMaterials m {
             Colour::aboutGlass, Colour::aboutBody, Colour::aboutDim, Colour::aboutAccent,
             Colour::aboutRing, Colour::aboutWellTop, Colour::aboutWellBottom, Colour::aboutWellInk,
-            barlowSemiBoldTypeface(), barlowSemiBoldTypeface(), shareTechMonoTypeface()
+            barlowSemiBoldTypeface(), barlowSemiBoldTypeface(), shareTechMonoTypeface(),
+            Cursor::help()
         };
 
         const nf::AboutContent c {
@@ -261,12 +262,27 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         };
 
         aboutBox = std::make_unique<nf::AboutBox> (m, c);
-        aboutTab = std::make_unique<nf::AboutTab> (m, "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT,
+
+        /*  §2, revision 3: the tab takes **the face and size this casting's stamp already uses**
+            rather than a mono 10 / 13 the part imposes. §8's footer row gives Share Tech Mono
+            10 / 13 / .10 em, which is what the footer already drew - so unlike Reflect-84, whose
+            §8 asks for Barlow Condensed 600 against a panel drawing mono, there is nothing to
+            correct here and the argument is the same one: the part adds the recess, the ink, the
+            cursor and the handlers, and does not restate the type. */
+        aboutTab = std::make_unique<nf::AboutTab> (m, shareTechMonoTypeface(),
+                                                   "CHORUS-60 " + midDot + " v" NF_VERSION_SHORT,
                                                    Layout::footerCssPx, Layout::footerTrackingEm);
         aboutTab->onClick = [this] { aboutBox->open(); };
 
+        // §2a: the wordmark is the PRIMARY affordance. It draws nothing - the panel already draws
+        // the nameplate; this only claims HeaderGeometry's zone, 303 x 84, shared by all six.
+        aboutWordmark = std::make_unique<nf::AboutWordmarkHit> (Cursor::help());
+        aboutWordmark->onClick = [this] { aboutBox->open(); };
+
         aboutTab->layoutFor ((int) Layout::canvasHeight);
+        aboutWordmark->setBounds (nf::AboutWordmarkHit::zone());
         aboutBox->setBounds (0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
+        addAndMakeVisible (*aboutWordmark);
         addAndMakeVisible (*aboutTab);
         addChildComponent (*aboutBox);
     }
