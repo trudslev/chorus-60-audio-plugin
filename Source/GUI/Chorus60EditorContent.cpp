@@ -261,7 +261,12 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
             "all under the SIL Open Font License."
         };
 
-        aboutBox = std::make_unique<nf::AboutBox> (m, c);
+        /*  §4's law is FRAME-local. This casting's frame starts at the window's left edge, so its
+            origin is 0 - written out rather than defaulted, because the one casting that is not 0
+            is the one nobody would remember to change. */
+        constexpr int frameOriginX = 0;   // no rack ears: the frame IS the window
+
+        aboutBox = std::make_unique<nf::AboutBox> (m, c, frameOriginX);
 
         /*  §2, revision 3: the tab takes **the face and size this casting's stamp already uses**
             rather than a mono 10 / 13 the part imposes. §8's footer row gives Share Tech Mono
@@ -279,8 +284,8 @@ Chorus60EditorContent::Chorus60EditorContent(Chorus60AudioProcessor& p)
         aboutWordmark = std::make_unique<nf::AboutWordmarkHit> (Cursor::help());
         aboutWordmark->onClick = [this] { aboutBox->open(); };
 
-        aboutTab->layoutFor ((int) Layout::canvasHeight);
-        aboutWordmark->setBounds (nf::AboutWordmarkHit::zone());
+        aboutTab->layoutFor ((int) Layout::canvasHeight, frameOriginX);
+        aboutWordmark->setBounds (nf::AboutWordmarkHit::zone (frameOriginX));
         aboutBox->setBounds (0, 0, (int) Layout::canvasWidth, (int) Layout::canvasHeight);
         addAndMakeVisible (*aboutWordmark);
         addAndMakeVisible (*aboutTab);

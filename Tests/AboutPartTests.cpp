@@ -82,7 +82,8 @@ public:
         expect (tab->getHeight() == nf::AboutGeometry::tabH, "tab height");
 
         // §4: 880 x 540, x = 230, y = (canvasH - 540) / 2.
-        const auto expected = nf::AboutGeometry::boxFor (canvasH);
+        // §4's law is frame-local; this casting has no rack ears, so its frame origin is 0.
+        const auto expected = nf::AboutGeometry::boxFor (canvasH, 0);
         expect (box->getBounds() == juce::Rectangle<int> (0, 0, (int) Layout::canvasWidth, canvasH),
                 "the box's component spans the canvas — its veil is the dismissal target");
         logMessage ("  box law gives " + expected.toString() + " inside a "
