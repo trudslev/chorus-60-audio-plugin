@@ -31,7 +31,14 @@ The two castings on 1.101 are on it by age, not by decision. **Every measurement
 Chorus-60's prototype is currently against a face its build does not have**, which is the class this
 project has already been bitten by.
 
-**Held, not cancelled.** Adopting it is one line per casting and a re-read of two panels, and it moves
+**ADOPTED 2026-08-24.** Chorus-60 and Gatecrasher are on 1.408; 18 strings move on each panel, 4.41 px
+and 4.66 px total, largest `GATED AMBIENCE PROCESSOR` at −0.85 px. **The one remaining 1.101 file —
+`gatecrasher/design/assets/fonts/BarlowCondensed-Regular.ttf` — is dropped.** Nothing embeds it, no
+bundle delivers a Barlow Regular, and it is not a delivered face this round: it is the last piece of a
+cut this suite has now ruled against. Re-cutting it would deliver a weight no casting draws. **Delete
+it rather than keep the only 1.101 binary in the tree as the thing a future check has to except.**
+
+Superseded reasoning, kept: adopting it was one line per casting and a re-read of two panels, and it moves
 labels on two shipping panels — `MODEL CH-60 · STEREO` moves **+0.830 px**, left-aligned, so its right
 end takes the full amount. **Doing it inside the About round would confound each panel's
 render-and-read with a change that has nothing to do with the About part.** It lands as its own change
@@ -42,14 +49,23 @@ non-ASCII codepoints either casting draws and **both are present in 1.101**.
 89.5. The cut accounts for **0.336 px** of it and `ENVELOPE` is identical in both. Type size stays the
 named next candidate.
 
-## Two delivered faces have no licence beside them
+## ~~Two delivered faces have no licence beside them~~ — **delivered 2026-08-24**
 
 `designs/fonts/` delivers **eight faces and four licence files**. **Archivo Expanded Bold** and
 **Share Tech Mono Regular** ship without one. Both are OFL 1.1 by their own `name` tables and both are
 credited as OFL in §9.3, so this is a missing file rather than a wrong claim — but this register's own
-rule is that a licence claim is carried by a file in the tree, not by a row. **`ShareTechMono-OFL.txt`
-and `ArchivoExpanded-OFL.txt` are owed**, and one of them is the plausible identity of change set 40's
-missing 117th file.
+rule is that a licence claim is carried by a file in the tree, not by a row. ~~**`ShareTechMono-OFL.txt` and `ArchivoExpanded-OFL.txt` are owed.**~~ **Both are cut**, into
+`designs/fonts/` and beside every casting copy of either face — elmer gets both, reflect-84 gets Share
+Tech Mono's. **The copyright lines are read from each font's own `name` table, not composed**: Archivo
+Expanded gives *"Copyright 2020 The Archivo Project Authors"* at ID 0 and Share Tech Mono gives
+*"Copyright (c) 2012, Carrois Type Design, Ralph du Carrois … with Reserved Font Name 'Share'"*, and
+both name ID 13 states OFL 1.1 with ID 14 pointing at `scripts.sil.org/OFL`. The licence body is the
+same text this bundle already ships for Barlow, Jost and Plex.
+
+**The Reserved Font Name matters and is why the two files are not interchangeable.** Share Tech Mono
+reserves *Share*; the Archivo authors reserve nothing. A single shared `OFL.txt` would have dropped
+that clause for one family — the same filename-collision trap `reflect-84/fonts/ABSENT.md` already
+records.
 
 ## Who owns which column — ruled **(a)**, 2026-08-23
 
@@ -649,10 +665,22 @@ nobody will, but the two kinds of absence sitting in one table is what keeps tha
 
 ## Where the prototypes look for these faces
 
-Two of the six `designs/*.dc.html` panels declare a per-casting face with `url('fonts/…')` — a path
-relative to the prototype, not to its casting folder. **So `designs/fonts/` carries those binaries as
-well**, duplicating files that also ship under `gatecrasher/fonts/` and chorus-60's. The
-duplication is deliberate: a missing `@font-face` source is silent, the browser substitutes and lays
+**`designs/` is the measurable artefact, and the casting folders' `fonts/` are not a resolution set —
+ruled 2026-08-24.** All nine `designs/*.dc.html` panels declare every face they draw with
+`url('fonts/…')`, a path relative to the prototype, and **`designs/fonts/` carries all fourteen files
+those rules ask for**. There is no second copy of any prototype in this bundle: `handoff/designs/` holds
+the only nine, and no casting folder contains a `.dc.html`. A per-casting `fonts/` directory records
+**what that casting's build embeds**, which is a different and smaller question than what a prototype
+resolves — Chorus-60 has no such directory precisely because it embeds nothing not already suite-wide.
+
+**So a casting-folder copy of a panel is not a thing this bundle delivers, and any width taken from
+one is not a figure about this suite.** Take every measurement from `designs/`. If a recipient's tree
+has panels sitting beside casting folders, that placement happened downstream of the bundle and the
+faces will not resolve — which is worth saying plainly, because the failure is silent and the numbers
+it produces look ordinary. **Reflect-84's folder is complete by coincidence of what its build embeds,
+not because it was built as the pattern**; it is not the shape the other five should be made to match.
+
+The suite-wide duplication in `designs/fonts/` is deliberate for its own reason: a missing `@font-face` source is silent, the browser substitutes and lays
 the page out on the fallback's metrics, and every width measured afterwards belongs to a face nobody
 chose. Two extra binaries are cheaper than one silent substitution.
 
