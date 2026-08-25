@@ -74,6 +74,8 @@ jobs:
 
   build-macos:
     needs: version
+    outputs:
+      suites: ${{ steps.tests.outputs.suites }}
     runs-on: macos-14
     timeout-minutes: 30
 
@@ -98,7 +100,13 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Run DSP test suite
-        run: ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
+        id: tests
+        run: |
+          set +e
+          ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET} 2>&1 | tee test-output.txt
+          RC=${PIPESTATUS[0]}
+          echo "suites=$(grep -c 'Starting tests in' test-output.txt)" >> "$GITHUB_OUTPUT"
+          exit $RC
 
       - name: Stage raw bundles
         run: |
@@ -194,6 +202,8 @@ jobs:
 
   build-windows:
     needs: version
+    outputs:
+      suites: ${{ steps.tests.outputs.suites }}
     runs-on: windows-latest
     timeout-minutes: 40
 
@@ -213,9 +223,16 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Run DSP test suite
+        id: tests
         # $(...) rather than bare ${env:X}: the variable is immediately followed by literal text
         # ("_artefacts"), which PowerShell would otherwise read as part of the variable name.
-        run: '& ".\build\Tests\$($env:TEST_TARGET)_artefacts\Release\$($env:TEST_TARGET).exe"'
+        run: |
+          & ".\build\Tests\$($env:TEST_TARGET)_artefacts\Release\$($env:TEST_TARGET).exe" 2>&1 |
+            Tee-Object -FilePath test-output.txt
+          $rc = $LASTEXITCODE
+          $n = (Select-String -Path test-output.txt -Pattern 'Starting tests in').Count
+          "suites=$n" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          exit $rc
 
       - name: Stage raw bundles
         shell: bash
@@ -246,6 +263,8 @@ jobs:
 
   build-linux:
     needs: version
+    outputs:
+      suites: ${{ steps.tests.outputs.suites }}
     # Pinned to 22.04 rather than ubuntu-latest for an older glibc baseline, so the binaries load on
     # users' older distributions.
     runs-on: ubuntu-22.04
@@ -265,8 +284,7 @@ jobs:
             libfreetype6-dev libfontconfig1-dev \
             libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
             libwebkit2gtk-4.1-dev \
-            libglu1-mesa-dev mesa-common-dev \
-            xvfb
+            libglu1-mesa-dev mesa-common-dev
 
       # Single-config generator: CMAKE_BUILD_TYPE must be set at configure time, unlike the
       # Xcode/Visual Studio multi-config generators used above.
@@ -279,17 +297,24 @@ jobs:
       - name: Build (VST3/Standalone + tests)
         run: cmake --build build --config Release --parallel 2
 
-      # **Under xvfb: the test binary needs a DISPLAY before it prints anything.**
+      # **NO DISPLAY IS NEEDED, AND THE COMMENT THAT USED TO SIT HERE SAID OTHERWISE.**
       #
-      # `TestMain.cpp`'s first line is `juce::ScopedJuceInitialiser_GUI`, which on Linux opens an
-      # X11 connection. The runner has the X libraries and no X server, so the binary hung for the
-      # full 6-hour job limit having produced no output at all — not a failure, a stall, which is
-      # why it read as `cancelled` rather than `failure` and cost a whole runner each time.
+      # xvfb was added on the theory that `ScopedJuceInitialiser_GUI` blocked on an X11 connection.
+      # The stall was our own malloc interposition recursing during `_dl_init` — before `main`, so
+      # the initialiser was never reached and the display was never the question. Fixed in
+      # neon-foundry-core; a clean A/B differing only in the display then exited 0 on BOTH arms
+      # (elmer 32816655867).
       #
-      # The initialiser is not optional: three castings' Program tests once passed while proving
-      # nothing because it was missing, and `run_tests.py` refuses a target without it.
+      # The initialiser itself is not optional: three castings' Program tests once passed while
+      # proving nothing without it, and `run_tests.py` refuses a target that lacks it.
       - name: Run DSP test suite
-        run: xvfb-run -a ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
+        id: tests
+        run: |
+          set +e
+          ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET} 2>&1 | tee test-output.txt
+          RC=${PIPESTATUS[0]}
+          echo "suites=$(grep -c 'Starting tests in' test-output.txt)" >> "$GITHUB_OUTPUT"
+          exit $RC
 
       - name: Stage raw bundles
         run: |
@@ -311,6 +336,44 @@ jobs:
           name: linux-bundles
           path: ${{ env.PRODUCT_NAME }}-${{ needs.version.outputs.version }}-linux-bundles.tar.gz
           retention-days: 14
+
+  # **THE SUITE COUNTS MUST AGREE, AND A ZERO IS NOT AGREEMENT.**
+  #
+  # Elmer's Windows step printed 8 lines against macOS's 94 — no `Random seed`, no `Starting tests
+  # in` — and the job was green, for the whole history of this suite. JUCE's default logger writes
+  # to OutputDebugString on Windows, so every line went to a debugger and nowhere else. The tests
+  # were running; nothing said so.
+  #
+  # **The two numbers were in one run's output, side by side, and nothing compared them.** That is
+  # the same free signal the closed-cell CPU rule is about, and the class has now cost two findings.
+  # One job, three strings, no fixture.
+  #
+  # The `> 0` arm is the vacuity guard: three platforms reporting zero AGREE, and agreeing about
+  # nothing is exactly the state this exists to catch.
+  suite-parity:
+    name: Suite counts agree across platforms
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Compare
+        run: |
+          M="${{ needs.build-macos.outputs.suites }}"
+          W="${{ needs.build-windows.outputs.suites }}"
+          L="${{ needs.build-linux.outputs.suites }}"
+          echo "macOS $M   Windows $W   Linux $L"
+
+          for v in "$M" "$W" "$L"; do
+            case "$v" in
+              ''|*[!0-9]*) echo "::error::a platform reported no suite count at all"; exit 1 ;;
+            esac
+            [ "$v" -gt 0 ] || { echo "::error::a platform ran 0 suites — green with no evidence"; exit 1; }
+          done
+
+          [ "$M" = "$W" ] && [ "$W" = "$L" ] \
+            || { echo "::error::suite counts differ — a platform is not running what the others are"; exit 1; }
+          echo "all three platforms ran $M suites"
 
   publish:
     # Skipped on workflow_dispatch: a manual run is for verifying the pipeline, not for releasing.
