@@ -33,6 +33,7 @@ public:
 
     void runTest() override
     {
+        beginTest ("exchangePendingProgram and takePendingProgram touch no heap under the lock");
         /*  **These figures are asserted only where a non-zero count is OURS.**
 
             `AllocationSentinel`'s counters include a different population on each platform, so the
@@ -57,7 +58,6 @@ public:
                 "the allocation sentinel counted nothing for a known allocation — every allocation "
                 "figure in this suite is vacuous");
 
-        beginTest ("exchangePendingProgram and takePendingProgram touch no heap under the lock");
         {
             Chorus60AudioProcessor processor;
             auto& mgr = processor.getProgramManager();

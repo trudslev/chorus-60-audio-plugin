@@ -39,6 +39,7 @@ public:
 
     void runTest() override
     {
+        beginTest ("processBlock allocation — matched block size, cold and steady");
         /*  **Asserted only where a non-zero count is OURS.**
 
             `AllocationSentinel` counts a different population on each platform: on glibc Linux an
@@ -55,7 +56,6 @@ public:
                 "the allocation sentinel counted nothing for a known allocation — every allocation "
                 "figure in this suite is vacuous");
 
-        beginTest ("processBlock allocation — matched block size, cold and steady");
         {
             Chorus60AudioProcessor cold;
             const auto c = nf::testing::probeProcessBlockAllocation (cold, 48000.0, 512, 512, 2, 1, 0);
