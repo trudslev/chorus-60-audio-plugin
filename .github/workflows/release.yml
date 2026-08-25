@@ -246,6 +246,9 @@ jobs:
     # Pinned to 22.04 rather than ubuntu-latest for an older glibc baseline, so the binaries load on
     # users' older distributions.
     runs-on: ubuntu-22.04
+    # A hung test step is a stall, not a failure, so without this it runs to GitHub's 6-hour
+    # limit before anyone learns anything. 45 minutes is generous against a ~12-minute build.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -259,7 +262,8 @@ jobs:
             libfreetype6-dev libfontconfig1-dev \
             libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
             libwebkit2gtk-4.1-dev \
-            libglu1-mesa-dev mesa-common-dev
+            libglu1-mesa-dev mesa-common-dev \
+            xvfb
 
       # Single-config generator: CMAKE_BUILD_TYPE must be set at configure time, unlike the
       # Xcode/Visual Studio multi-config generators used above.
@@ -272,8 +276,17 @@ jobs:
       - name: Build (VST3/Standalone + tests)
         run: cmake --build build --config Release --parallel 2
 
+      # **Under xvfb: the test binary needs a DISPLAY before it prints anything.**
+      #
+      # `TestMain.cpp`'s first line is `juce::ScopedJuceInitialiser_GUI`, which on Linux opens an
+      # X11 connection. The runner has the X libraries and no X server, so the binary hung for the
+      # full 6-hour job limit having produced no output at all — not a failure, a stall, which is
+      # why it read as `cancelled` rather than `failure` and cost a whole runner each time.
+      #
+      # The initialiser is not optional: three castings' Program tests once passed while proving
+      # nothing because it was missing, and `run_tests.py` refuses a target without it.
       - name: Run DSP test suite
-        run: ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
+        run: xvfb-run -a ./build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}
 
       - name: Stage raw bundles
         run: |
