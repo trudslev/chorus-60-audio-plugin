@@ -353,6 +353,16 @@ jobs:
   suite-parity:
     name: Suite counts agree across platforms
     needs: [build-macos, build-windows, build-linux]
+    # **`always()`, because `needs` alone skips this exactly where it matters most.**
+    #
+    # A casting with a documented open arm CANNOT go green — reflect-84 has one, taperot has five —
+    # and for those the Stage 2 criterion IS that the three platforms fail in the same places and
+    # nowhere else. Gated on the build jobs succeeding, this job never runs on them: disarmed on the
+    # two castings whose whole criterion is agreement.
+    #
+    # A platform that never reached its test step reports no count, and the guard below fails on
+    # that rather than comparing three blanks — which is the same vacuity arm, doing its job.
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
