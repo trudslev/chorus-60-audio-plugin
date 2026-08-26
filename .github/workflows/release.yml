@@ -431,12 +431,26 @@ jobs:
           # does — so the VST3 links no ALSA and only the standalone does. Checking the VST3 and the
           # test runner would have produced a list with ALSA missing, which is the half of the
           # dependency question a user hits when they run the app.
-          for f in $(find build -name '*.so' -path '*VST3*' | head -1) \
-                   $(find build -path '*Standalone*' -type f -perm -u+x ! -name '*.so' | head -1); do
-            [ -e "$f" ] || continue
+          # **Null-delimited, because Fifth Member's product name has a space in it.** The first
+          # version looped over an unquoted $(find ...), which splits on whitespace:
+          # "…/Standalone/Fifth Member" became "Fifth" and "Member", neither existed, both were
+          # skipped by the -e guard, and the step printed its header and nothing else while exiting
+          # 0. Five castings were unaffected; the sixth reported an empty list as a success.
+          n=0
+          while IFS= read -r -d "" f; do
             echo "-- $f"
             ldd "$f" | awk '{print $1}' | grep -E '^lib' | sort -u | sed 's/^/     /'
-          done
+            n=$((n+1))
+          done < <(
+            find build -name '*.so' -path '*VST3*' -print0 | head -z -n1
+            find build -path '*Standalone*' -type f -perm -u+x ! -name '*.so' -print0 | head -z -n1
+          )
+
+          # A step that inspects nothing must not pass. That is exactly how this defect hid.
+          if [ "$n" -lt 2 ]; then
+            echo "::error::inspected $n artefact(s), expected 2 (a VST3 .so and a standalone)"
+            exit 1
+          fi
 
       - name: Stage raw bundles
         run: |
