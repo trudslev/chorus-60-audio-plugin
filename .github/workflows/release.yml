@@ -427,8 +427,12 @@ jobs:
         run: |
           set -euo pipefail
           . /etc/os-release; echo "== $PRETTY_NAME, $(ldd --version | head -1) =="
+          # **The STANDALONE, not the test binary.** A plugin does not open audio devices — the host
+          # does — so the VST3 links no ALSA and only the standalone does. Checking the VST3 and the
+          # test runner would have produced a list with ALSA missing, which is the half of the
+          # dependency question a user hits when they run the app.
           for f in $(find build -name '*.so' -path '*VST3*' | head -1) \
-                   "build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}"; do
+                   $(find build -path '*Standalone*' -type f -perm -u+x ! -name '*.so' | head -1); do
             [ -e "$f" ] || continue
             echo "-- $f"
             ldd "$f" | awk '{print $1}' | grep -E '^lib' | sort -u | sed 's/^/     /'
