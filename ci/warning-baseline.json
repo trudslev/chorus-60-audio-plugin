@@ -9,8 +9,7 @@
   "linux": {
     "-Wdeprecated-declarations": 1,
     "-Wfloat-equal": 13,
-    "-Woverloaded-virtual": 28,
-    "-Wshadow": 18
+    "-Wshadow": 13
   },
   "windows": {
     "C4456": 1,
