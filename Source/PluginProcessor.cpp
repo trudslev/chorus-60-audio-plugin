@@ -8,7 +8,7 @@ Chorus60AudioProcessor::Chorus60AudioProcessor()
     : AudioProcessor(BusesProperties()
                           .withInput("Input", juce::AudioChannelSet::stereo(), true)
                           .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts(*this, nullptr, "PARAMETERS", createChorus60ParameterLayout()),
+      apvts(*this, nullptr, ParamIDs::stateTreeType, createChorus60ParameterLayout()),
       programManager(apvts)
 {
     engine1Param = apvts.getRawParameterValue(ParamIDs::engine1);
