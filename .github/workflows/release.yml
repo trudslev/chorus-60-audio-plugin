@@ -329,9 +329,22 @@ jobs:
     needs: version
     outputs:
       suites: ${{ steps.tests.outputs.suites }}
-    # Pinned to 22.04 rather than ubuntu-latest for an older glibc baseline, so the binaries load on
-    # users' older distributions.
-    runs-on: ubuntu-22.04
+    # **Pinned to 24.04, moved from 22.04 on 2026-08-26. The point was never the number.**
+    #
+    # A pinned image rather than `ubuntu-latest` because the glibc the binaries link against is a
+    # property of the release, and `ubuntu-latest` changes it without anybody deciding to. But the
+    # reason for pinning is that **the tested machine and the building machine agree**, and 22.04
+    # had stopped being somewhere both could be:
+    #
+    #   * GitHub retires runner images on a schedule and 22.04's turn is coming. This is a move that
+    #     has to happen, and it is cheaper chosen than forced.
+    #   * Xubuntu 22.04 is EOL — its ISO is off old-releases and survives only on mirrors — so a
+    #     local verification machine cannot practically match a 22.04 runner. The match that the
+    #     22.04 pin existed to preserve had already stopped existing.
+    #
+    # Expect this to surface things: a newer glibc and newer library versions are exactly the axis
+    # the six Stage 2 defects lived on, and none of them was visible until something walked the path.
+    runs-on: ubuntu-24.04
     # A hung test step is a stall, not a failure, so without this it runs to GitHub's 6-hour
     # limit before anyone learns anything. 45 minutes is generous against a ~12-minute build.
     timeout-minutes: 45
@@ -401,6 +414,25 @@ jobs:
           RC=${PIPESTATUS[0]}
           echo "suites=$(grep -c 'Starting tests in' test-output.txt)" >> "$GITHUB_OUTPUT"
           exit $RC
+
+      # **The runtime dependency list is DERIVED from the built artefact, not carried forward.**
+      #
+      # The Linux README asserts "ALSA, FreeType, Fontconfig, X11" — written once, from a 22.04
+      # build, true of that build on that base. A claim about what a binary needs is a claim about
+      # the binary, and changing the base is exactly when it stops being true.
+      #
+      # `ldd` on the actual .so is the producer. Read this run's output and put the real list into
+      # installer/linux/build_tarball.py, so it is right once rather than re-guessed per release.
+      - name: Runtime dependencies, read off the artefact
+        run: |
+          set -euo pipefail
+          . /etc/os-release; echo "== $PRETTY_NAME, $(ldd --version | head -1) =="
+          for f in $(find build -name '*.so' -path '*VST3*' | head -1) \
+                   "build/Tests/${TEST_TARGET}_artefacts/Release/${TEST_TARGET}"; do
+            [ -e "$f" ] || continue
+            echo "-- $f"
+            ldd "$f" | awk '{print $1}' | grep -E '^lib' | sort -u | sed 's/^/     /'
+          done
 
       - name: Stage raw bundles
         run: |
@@ -516,7 +548,7 @@ jobs:
             |---|---|
             | `*-macos-bundles.tar.gz` | AU, VST3, Standalone (universal: arm64 + x86_64) |
             | `*-windows-bundles.zip` | VST3, Standalone (x64) |
-            | `*-linux-bundles.tar.gz` | VST3, Standalone (x86_64, glibc from Ubuntu 22.04) |
+            | `*-linux-bundles.tar.gz` | VST3, Standalone (x86_64, glibc from Ubuntu 24.04) |
 
             Verify with `sha256sum -c SHA256SUMS.txt`.
 
