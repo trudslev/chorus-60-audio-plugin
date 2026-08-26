@@ -41,6 +41,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
       publish: ${{ steps.v.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
@@ -61,14 +62,33 @@ jobs:
 
           if [ "${GITHUB_REF_TYPE:-}" = tag ]; then
             TAG_VERSION="${GITHUB_REF_NAME#v}"
-            if [ "$TAG_VERSION" != "$CMAKE_VERSION" ]; then
-              echo "::error::Tag ${GITHUB_REF_NAME} declares ${TAG_VERSION} but CMakeLists.txt declares ${CMAKE_VERSION}. Bump project() or retag - the suite installer pins these by version and cannot tell them apart otherwise."
+
+            # **Compare the RELEASE portion, because CMake cannot express a pre-release.**
+            # `project(VERSION)` takes numeric components only, so a casting declaring 1.0.0 can
+            # never declare 1.0.0-rc.1 — and comparing the whole tag would reject every pre-release
+            # tag this project will ever cut. `${VAR%%-*}` takes everything before the first hyphen,
+            # which is exactly semver's release portion.
+            TAG_CORE="${TAG_VERSION%%-*}"
+
+            # The pre-release test is the HYPHEN, per semver — not a list of suffixes to maintain.
+            # `rc.N` is dotted so rc.2 sorts below rc.10.
+            case "$TAG_VERSION" in
+              *-*) PRERELEASE=true ;;
+              *)   PRERELEASE=false ;;
+            esac
+
+            if [ "$TAG_CORE" != "$CMAKE_VERSION" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} declares ${TAG_CORE} (from ${TAG_VERSION}) but CMakeLists.txt declares ${CMAKE_VERSION}. Bump project() or retag - the suite installer pins these by version and cannot tell them apart otherwise."
               exit 1
             fi
-            echo "version=${CMAKE_VERSION}" >> "$GITHUB_OUTPUT"
+            # The FULL tag version, suffix included: it names the artefacts and the release, and
+            # the suite manifest pins by exactly this string.
+            echo "version=${TAG_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "version=${CMAKE_VERSION}-dev.${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -481,6 +501,11 @@ jobs:
           tag: ${{ github.ref_name }}
           name: "${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}"
           body: |
+            > **This is a release-candidate build of unreleased software, published to
+            > exercise the release pipeline.** It is not a product announcement and nothing here
+            > has shipped. The tag and this release are expected to be deleted once the pipeline
+            > has been proven end to end.
+
             Raw plugin bundles for **${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}**.
 
             These are the unpackaged plugin bundles, not an installer - they are what the Neon
@@ -497,6 +522,7 @@ jobs:
 
             Nothing here is signed or notarized, so installing manually means clearing the
             quarantine attribute on macOS (`xattr -dr com.apple.quarantine <bundle>`).
+          prerelease: ${{ needs.version.outputs.prerelease }}
           artifacts: "dist/*"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
