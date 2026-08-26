@@ -1,0 +1,19 @@
+{
+  "macos": {
+    "-Wdeprecated-declarations": 2,
+    "-Wpotentially-evaluated-expression": 2,
+    "-Wshadow": 10,
+    "-Wshadow-uncaptured-local": 2,
+    "-Wunused-private-field": 8
+  },
+  "linux": {
+    "-Wdeprecated-declarations": 1,
+    "-Wfloat-equal": 13,
+    "-Woverloaded-virtual": 28,
+    "-Wshadow": 18
+  },
+  "windows": {
+    "C4456": 1,
+    "C4458": 10
+  }
+}

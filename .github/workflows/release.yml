@@ -97,7 +97,29 @@ jobs:
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=YES
 
       - name: Build (AU/VST3/Standalone + tests)
-        run: cmake --build build --config Release
+        run: |
+          set +e
+          cmake --build build --config Release 2>&1 | tee build-output.txt
+          exit ${PIPESTATUS[0]}
+
+      # **THE WARNING CLASSES ARE BASELINED BY CLASS, and a class nobody named fails.**
+      #
+      # `/we4566` and friends detect classes that have already cost a finding — instance one, by
+      # name. They cannot reach a class nobody has thought of, because the list is written from what
+      # is already known. This table is the other half: a new class appears as a NEW ROW and fails.
+      #
+      # It also absorbs the EXISTING population visibly. A single warning count would have taken its
+      # baseline from today's output and swallowed the 168 C4566 as part of one number; per class
+      # they are one line in a file somebody had to write, which is where they get noticed.
+      #
+      # `always()` so a failing build still has its warnings read — that is the case where a new
+      # class is most likely and least likely to be looked at.
+      - name: Warning classes at baseline
+        if: always()
+        shell: bash
+        run: |
+          python3 build/_deps/neonfoundrycore-src/tools/check_warning_baseline.py \
+            macos build-output.txt ci/warning-baseline.json
 
       - name: Run DSP test suite
         id: tests
@@ -220,7 +242,29 @@ jobs:
         run: cmake -B build -A x64 -DNF_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build (VST3/Standalone + tests)
-        run: cmake --build build --config Release
+        run: |
+          set +e
+          cmake --build build --config Release 2>&1 | tee build-output.txt
+          exit ${PIPESTATUS[0]}
+
+      # **THE WARNING CLASSES ARE BASELINED BY CLASS, and a class nobody named fails.**
+      #
+      # `/we4566` and friends detect classes that have already cost a finding — instance one, by
+      # name. They cannot reach a class nobody has thought of, because the list is written from what
+      # is already known. This table is the other half: a new class appears as a NEW ROW and fails.
+      #
+      # It also absorbs the EXISTING population visibly. A single warning count would have taken its
+      # baseline from today's output and swallowed the 168 C4566 as part of one number; per class
+      # they are one line in a file somebody had to write, which is where they get noticed.
+      #
+      # `always()` so a failing build still has its warnings read — that is the case where a new
+      # class is most likely and least likely to be looked at.
+      - name: Warning classes at baseline
+        if: always()
+        shell: bash
+        run: |
+          python3 build/_deps/neonfoundrycore-src/tools/check_warning_baseline.py \
+            windows build-output.txt ci/warning-baseline.json
 
       - name: Run DSP test suite
         id: tests
@@ -295,7 +339,29 @@ jobs:
       # (juce_dsp.cpp, juce_gui_basics.cpp, ...) are heavy enough that building several at once
       # OOM-killed cc1plus on this runner's memory.
       - name: Build (VST3/Standalone + tests)
-        run: cmake --build build --config Release --parallel 2
+        run: |
+          set +e
+          cmake --build build --config Release --parallel 2 2>&1 | tee build-output.txt
+          exit ${PIPESTATUS[0]}
+
+      # **THE WARNING CLASSES ARE BASELINED BY CLASS, and a class nobody named fails.**
+      #
+      # `/we4566` and friends detect classes that have already cost a finding — instance one, by
+      # name. They cannot reach a class nobody has thought of, because the list is written from what
+      # is already known. This table is the other half: a new class appears as a NEW ROW and fails.
+      #
+      # It also absorbs the EXISTING population visibly. A single warning count would have taken its
+      # baseline from today's output and swallowed the 168 C4566 as part of one number; per class
+      # they are one line in a file somebody had to write, which is where they get noticed.
+      #
+      # `always()` so a failing build still has its warnings read — that is the case where a new
+      # class is most likely and least likely to be looked at.
+      - name: Warning classes at baseline
+        if: always()
+        shell: bash
+        run: |
+          python3 build/_deps/neonfoundrycore-src/tools/check_warning_baseline.py \
+            linux build-output.txt ci/warning-baseline.json
 
       # **NO DISPLAY IS NEEDED, AND THE COMMENT THAT USED TO SIT HERE SAID OTHERWISE.**
       #
