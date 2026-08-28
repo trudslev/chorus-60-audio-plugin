@@ -545,33 +545,61 @@ jobs:
           sha256sum *.tar.gz *.zip > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
+      # **The banner is conditional on the SAME fact as the prerelease flag**, so the two cannot
+      # disagree. It used to be literal YAML with no expression in it — right for one exercise, and
+      # certain to publish "a release-candidate build of unreleased software ... expected to be
+      # deleted" on the first real v1.0.0, underneath a flag correctly saying full release. The
+      # release would have contradicted its own metadata, and the wrong half is the half a person
+      # reads. One derivation drives both now: semver's hyphen test, computed once in `version`.
+      #
+      # The body is written to a file and echoed, so every run's log carries the body it published
+      # rather than leaving it to be inferred from the release page.
+      - name: Release body
+        env:
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          : > body.md
+          if [ "$PRERELEASE" = "true" ]; then
+            cat >> body.md <<'BANNER'
+          > **This is a release-candidate build of unreleased software, published to
+          > exercise the release pipeline.** It is not a product announcement and nothing here
+          > has shipped. The tag and this release are expected to be deleted once the pipeline
+          > has been proven end to end.
+
+          BANNER
+          fi
+          cat >> body.md <<EOF
+          Raw plugin bundles for **${PRODUCT_NAME} ${VERSION}**.
+          EOF
+          cat >> body.md <<'EOF'
+
+          These are the unpackaged plugin bundles, not an installer - they are what the Neon
+          Foundry suite installer consumes. If you are looking for something to double-click,
+          use the Neon Foundry installer instead.
+
+          | Archive | Contains |
+          |---|---|
+          | `*-macos-bundles.tar.gz` | AU, VST3, Standalone (universal: arm64 + x86_64) |
+          | `*-windows-bundles.zip` | VST3, Standalone (x64) |
+          | `*-linux-bundles.tar.gz` | VST3, Standalone (x86_64, glibc from Ubuntu 24.04) |
+
+          Verify with `sha256sum -c SHA256SUMS.txt`.
+
+          Nothing here is signed or notarized, so installing manually means clearing the
+          quarantine attribute on macOS (`xattr -dr com.apple.quarantine <bundle>`).
+          EOF
+          echo "----- body.md (prerelease=$PRERELEASE) -----"
+          cat body.md
+          echo "----- end -----"
+
       - name: Publish release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: "${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}"
-          body: |
-            > **This is a release-candidate build of unreleased software, published to
-            > exercise the release pipeline.** It is not a product announcement and nothing here
-            > has shipped. The tag and this release are expected to be deleted once the pipeline
-            > has been proven end to end.
-
-            Raw plugin bundles for **${{ env.PRODUCT_NAME }} ${{ needs.version.outputs.version }}**.
-
-            These are the unpackaged plugin bundles, not an installer - they are what the Neon
-            Foundry suite installer consumes. If you are looking for something to double-click,
-            use the Neon Foundry installer instead.
-
-            | Archive | Contains |
-            |---|---|
-            | `*-macos-bundles.tar.gz` | AU, VST3, Standalone (universal: arm64 + x86_64) |
-            | `*-windows-bundles.zip` | VST3, Standalone (x64) |
-            | `*-linux-bundles.tar.gz` | VST3, Standalone (x86_64, glibc from Ubuntu 24.04) |
-
-            Verify with `sha256sum -c SHA256SUMS.txt`.
-
-            Nothing here is signed or notarized, so installing manually means clearing the
-            quarantine attribute on macOS (`xattr -dr com.apple.quarantine <bundle>`).
+          bodyFile: body.md
           prerelease: ${{ needs.version.outputs.prerelease }}
           artifacts: "dist/*"
           allowUpdates: true
