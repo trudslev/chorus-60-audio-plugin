@@ -308,6 +308,8 @@ void ProgramHeader::mouseUp(const juce::MouseEvent& e)
     }
 }
 
+void ProgramHeader::beginNamingForTest() { enterNamingMode(); }
+
 void ProgramHeader::enterNamingMode()
 {
     readout.suppress();
@@ -514,17 +516,19 @@ void ProgramHeader::renderStaticLayer (float deviceScale, const juce::String& ke
 
     if (namingMode)
     {
-        // Left-aligned, cleared, with a blinking block caret (1s period, 50% duty).
-        const bool caretOn = (juce::Time::getMillisecondCounter() % 1000) < 500;
-        const juce::String text = typedName + (caretOn ? juce::String(juce::CharPointer_UTF8("\xe2\x96\x88"))
-                                                         : juce::String());
-        // **The same run as every other path.** This used reduced(12, 0) — 328 px against the
-        // 326 the stored-name path draws into — so the field a name is TYPED in was two pixels
-        // wider than the field it is SHOWN in. One run now, so a name that fits while typing
-        // cannot fail to fit once stored.
-        drawTrackedText(g, text, lcdFont, lcdTracking,
-                         nameCellRect.withTrimmedRight(Layout::lcdNameRightPadding),
-                         juce::Justification::left, Colour::ledWindowText);
+        // **Deliberately nothing.** The typed name and its caret are drawn in the LIVE half of
+        // paint(), not here.
+        //
+        // They used to be drawn into this cached image, and the caret's 1 s / 50 % blink was
+        // sampled at whatever instant the cache key last changed. The key holds what varies -
+        // bank, name, modified, naming state, typed text, menu, readout - and a clock phase is not
+        // in it, so the layer was rebuilt on entering naming and on each keystroke and never in
+        // between. The caret therefore appeared about half the time on entry, appeared again when
+        // a character was typed, and never blinked. Reported from a real panel on 2026-08-30.
+        //
+        // Adding the phase to the key would be the obvious fix and the wrong one: it would rebuild
+        // this 1308 x 104 image twice a second and hand back the 1.546 ms -> 0.114 ms that caching
+        // bought. A blinking thing is by definition not static.
     }
     else if (const auto takeover = readout.textAt(juce::Time::getMillisecondCounter());
              takeover.isNotEmpty())
@@ -728,6 +732,23 @@ void ProgramHeader::paint (juce::Graphics& g)
     drawTrackedText (g, Layout::formatMeterDb (processorRef.getOutputMeterDb()), meterFont,
                       meterTracking, outWindowRect, juce::Justification::centred,
                       Colour::ledWindowText);
+
+    // **The name being typed, with its blinking block caret - live, because it animates.**
+    // The whole string is drawn here rather than the caret alone, so nothing has to measure where
+    // the typed text ends: one run, one rect, the same rect and trim the stored-name path uses, so
+    // a name that fits while typing cannot fail to fit once stored.
+    if (namingMode)
+    {
+        const bool caretOn = (juce::Time::getMillisecondCounter() % 1000) < 500;
+        const auto caret   = juce::String (juce::CharPointer_UTF8 ("\xe2\x96\x88"));
+
+        // `meterFont` / `meterTracking` above ARE the LCD font and tracking - same constants,
+        // computed once for this half rather than restated here.
+        drawTrackedText (g, typedName + (caretOn ? caret : juce::String()),
+                          meterFont, meterTracking,
+                          nameCellRect.withTrimmedRight (Layout::lcdNameRightPadding),
+                          juce::Justification::left, Colour::ledWindowText);
+    }
 }
 
 /*  **What varies, and nothing else.** The meter values are deliberately absent: a key including them
@@ -737,7 +758,7 @@ juce::String ProgramHeader::staticCacheKey() const
     return juce::String ((int) displayedId.bank) + displayedId.id
          + "|" + displayedId.displayName
          + "|" + juce::String ((int) displayedIsModified)
-         + "|" + juce::String ((int) namingMode) + typedName
+         + "|" + juce::String ((int) namingMode)
          + "|" + juce::String ((int) menuOpen)
          + "|" + readout.textAt (juce::Time::getMillisecondCounter());
 }

@@ -176,6 +176,14 @@ public:
     /** Rebuild count, so a test can assert the cache is a cache rather than a per-frame redraw. */
     int staticLayerBuildCount() const noexcept { return staticLayerBuilds; }
 
+    /** Test seam: enters naming mode, as SAVE's first press does.
+
+        Public for the same reason `staticLayerBuildCount()` is. The property under test - that the
+        caret animates rather than being frozen into a cached image - cannot be observed without
+        reaching this state, and a synthetic MouseEvent would be testing JUCE's hit-testing rather
+        than the caret. */
+    void beginNamingForTest();
+
 private:
 
     // Dresses the dropdown as an extension of the PROGRAM glass. Owned here so it outlives every
